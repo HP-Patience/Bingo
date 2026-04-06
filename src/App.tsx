@@ -509,11 +509,13 @@ const ToolbarItem = ({ icon, label, onClick }: { icon: React.ReactNode, label: s
 const TaskEditModal = ({ 
   task, 
   onClose, 
-  onSave 
+  onSave,
+  isNew = false
 }: { 
   task: Task, 
   onClose: () => void, 
-  onSave: (updates: Partial<Task>) => void 
+  onSave: (updates: Partial<Task>) => void,
+  isNew?: boolean
 }) => {
   const [name, setName] = useState(task.name);
   const [difficulty, setDifficulty] = useState(task.difficulty);
@@ -547,7 +549,7 @@ const TaskEditModal = ({
         className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black tracking-tight uppercase">编辑任务</h3>
+          <h3 className="text-xl font-black tracking-tight uppercase">{isNew ? '新建任务' : '编辑任务'}</h3>
           <button onClick={onClose} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -648,7 +650,7 @@ const TasksView = ({
   onDeleteGroup: (groupId: string) => void,
   onEditGroup: (groupId: string, name: string) => void,
   onUpdateTask: (groupId: string, taskId: string, updates: Partial<Task>) => void,
-  onAddTask: (groupId: string, name: string) => void,
+  onAddTask: (groupId: string, name: string, updates?: Partial<Task>) => void,
   onDeleteTask: (groupId: string, taskId: string) => void,
   onApplyGroup: (groupId: string) => void,
   onApplyTask: (task: Task) => void,
@@ -668,6 +670,8 @@ const TasksView = ({
   const [activeSubTab, setActiveSubTab] = useState<'tasks' | 'notes'>('tasks');
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [deleteMode, setDeleteMode] = useState<Set<string>>(new Set());
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
 
   const handleAddGroup = () => {
     if (newGroupName.trim()) {
@@ -678,10 +682,14 @@ const TasksView = ({
 
   const handleAddTask = (groupId: string) => {
     const name = newTaskNames[groupId];
-    if (name?.trim()) {
-      onAddTask(groupId, name.trim());
-      setNewTaskNames(prev => ({ ...prev, [groupId]: '' }));
-    }
+    const newTask: Task = {
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: name?.trim() || '',
+      completed: false,
+      difficulty: 'easy',
+      priority: 'medium'
+    };
+    setEditingTask({ groupId, task: newTask, isNew: true });
   };
 
   const startEditing = (group: TaskGroup) => {
@@ -757,7 +765,7 @@ const TasksView = ({
 
           <div className="space-y-10">
         {groups.map(group => {
-          const allSelected = group.tasks.length > 0 && group.tasks.every(t => t.completed);
+          const allSelected = group.tasks.length > 0 && group.tasks.every(t => selectedTaskIds.has(t.id));
           return (
             <div key={group.id} className="space-y-4">
               <div className="flex items-center justify-between">
@@ -777,13 +785,6 @@ const TasksView = ({
                   <span className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mt-1">{group.tasks.length} 任务</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => onToggleGroupTasks(group.id, !allSelected)}
-                    className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1"
-                  >
-                    {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
-                    {allSelected ? '取消' : '全选'}
-                  </button>
                   <button 
                     onClick={() => {
                       const allTasks = groups.flatMap(g => g.tasks);
@@ -809,7 +810,7 @@ const TasksView = ({
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button 
-                    onClick={() => onDeleteGroup(group.id)}
+                    onClick={() => setDeletingGroupId(group.id)}
                     className="p-2 text-on-surface-variant hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -832,29 +833,70 @@ const TasksView = ({
                 >
                   <Plus className="w-5 h-5" />
                 </button>
+                <button 
+                  onClick={() => {
+                    const newSelected = new Set(selectedTaskIds);
+                    if (allSelected) {
+                      group.tasks.forEach(t => newSelected.delete(t.id));
+                    } else {
+                      group.tasks.forEach(t => newSelected.add(t.id));
+                    }
+                    setSelectedTaskIds(newSelected);
+                  }}
+                  className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 px-3"
+                >
+                  {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
+                  {allSelected ? '取消' : '全选'}
+                </button>
+                <button 
+                  onClick={() => {
+                    if (deleteMode.has(group.id)) {
+                      const newMode = new Set(deleteMode);
+                      newMode.delete(group.id);
+                      setDeleteMode(newMode);
+                    } else {
+                      setDeleteMode(new Set([...deleteMode, group.id]));
+                    }
+                  }}
+                  className={cn(
+                    "p-2 rounded-xl transition-colors",
+                    deleteMode.has(group.id) 
+                      ? "bg-red-500 text-white" 
+                      : "text-on-surface-variant hover:text-red-500 hover:bg-red-500/10"
+                  )}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
               </div>
 
               <div className="flex flex-wrap gap-3">
                 {group.tasks.map(task => {
                   const isSelected = selectedTaskIds.has(task.id);
+                  const isDeleteMode = deleteMode.has(group.id);
                   const toggleTask = () => {
-                    const newSelected = new Set(selectedTaskIds);
-                    if (isSelected) {
-                      newSelected.delete(task.id);
+                    if (isDeleteMode) {
+                      onDeleteTask(group.id, task.id);
                     } else {
-                      newSelected.add(task.id);
+                      const newSelected = new Set(selectedTaskIds);
+                      if (isSelected) {
+                        newSelected.delete(task.id);
+                      } else {
+                        newSelected.add(task.id);
+                      }
+                      setSelectedTaskIds(newSelected);
                     }
-                    setSelectedTaskIds(newSelected);
                   };
                   return (
                   <div key={task.id} className="group relative">
                     <button 
                       onClick={toggleTask}
                       onMouseDown={() => {
-                        const timer = setTimeout(() => {
-                          setEditingTask({ groupId: group.id, task });
-                        }, 500);
-                        setLongPressTimer(timer);
+                        if (!isDeleteMode) {
+                          const timer = setTimeout(() => {
+                            setEditingTask({ groupId: group.id, task });
+                          }, 500);
+                          setLongPressTimer(timer);
+                        }
                       }}
                       onMouseUp={() => {
                         if (longPressTimer) {
@@ -869,10 +911,12 @@ const TasksView = ({
                         }
                       }}
                       onTouchStart={() => {
-                        const timer = setTimeout(() => {
-                          setEditingTask({ groupId: group.id, task });
-                        }, 500);
-                        setLongPressTimer(timer);
+                        if (!isDeleteMode) {
+                          const timer = setTimeout(() => {
+                            setEditingTask({ groupId: group.id, task });
+                          }, 500);
+                          setLongPressTimer(timer);
+                        }
                       }}
                       onTouchEnd={() => {
                         if (longPressTimer) {
@@ -882,12 +926,12 @@ const TasksView = ({
                       }}
                       className={cn(
                         "px-3 py-2 rounded-xl font-bold text-xs flex flex-col items-start gap-1 transition-all cursor-pointer active:scale-95",
-                        isSelected ? "bg-primary text-on-primary ring-2 ring-primary ring-offset-2" : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest"
+                        isSelected && !isDeleteMode ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest",
+                        isDeleteMode && "cursor-pointer"
                       )}
                     >
                       <div className="flex items-center gap-1.5">
                         {task.name}
-                        {isSelected && <CheckCircle2 className="w-3 h-3" />}
                       </div>
                       <div className="flex items-center gap-2 opacity-60">
                         <div className="flex gap-0.5">
@@ -909,15 +953,27 @@ const TasksView = ({
                         )}
                       </div>
                     </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteTask(group.id, task.id);
-                      }}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                    {!isDeleteMode ? (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTask(group.id, task.id);
+                        }}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTask(group.id, task.id);
+                        }}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm z-10"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 );
                 })}
@@ -957,12 +1013,69 @@ const TasksView = ({
         {editingTask && (
           <TaskEditModal 
             task={editingTask.task}
-            onClose={() => setEditingTask(null)}
-            onSave={(updates) => {
-              onUpdateTask(editingTask.groupId, editingTask.task.id, updates);
+            isNew={(editingTask as any).isNew}
+            onClose={() => {
               setEditingTask(null);
+              if ((editingTask as any).isNew) {
+                setNewTaskNames(prev => ({ ...prev, [editingTask.groupId]: '' }));
+              }
+            }}
+            onSave={(updates) => {
+              if ((editingTask as any).isNew) {
+                onAddTask(editingTask.groupId, updates.name || editingTask.task.name, updates);
+              } else {
+                onUpdateTask(editingTask.groupId, editingTask.task.id, updates);
+              }
+              setEditingTask(null);
+              setNewTaskNames(prev => ({ ...prev, [editingTask.groupId]: '' }));
             }}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deletingGroupId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeletingGroupId(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                  <Trash2 className="w-8 h-8 text-red-500" />
+                </div>
+                <h3 className="text-xl font-black tracking-tight uppercase">确认删除</h3>
+                <p className="text-on-surface-variant text-sm font-bold">确定要删除这个组别吗？此操作无法撤销。</p>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeletingGroupId(null)}
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => {
+                    onDeleteGroup(deletingGroupId);
+                    setDeletingGroupId(null);
+                  }}
+                  className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  删除
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
         </>
@@ -3145,14 +3258,15 @@ export default function App() {
     }));
   };
 
-  const addTask = (groupId: string, name: string) => {
+  const addTask = (groupId: string, name: string, updates?: Partial<Task>) => {
     const newTask: Task = { 
       id: Date.now().toString(), 
       name, 
       completed: false,
       difficulty: 'easy',
       priority: 'medium',
-      xpValue: 10
+      xpValue: 10,
+      ...updates
     };
     setTaskGroups(prev => prev.map(g => {
       if (g.id === groupId) {
