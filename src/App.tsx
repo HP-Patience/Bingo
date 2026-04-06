@@ -634,6 +634,7 @@ const TasksView = ({
   onDeleteTask, 
   onApplyGroup,
   onApplyTask,
+  onApplyMultipleTasks,
   gridSize,
   onGridSizeChange,
   onShuffleTasks,
@@ -651,6 +652,7 @@ const TasksView = ({
   onDeleteTask: (groupId: string, taskId: string) => void,
   onApplyGroup: (groupId: string) => void,
   onApplyTask: (task: Task) => void,
+  onApplyMultipleTasks: (tasks: Task[]) => void,
   gridSize: number,
   onGridSizeChange: (size: number) => void,
   onShuffleTasks: () => void,
@@ -664,7 +666,7 @@ const TasksView = ({
   const [editName, setEditName] = useState('');
   const [editingTask, setEditingTask] = useState<{ groupId: string, task: Task } | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'tasks' | 'notes'>('tasks');
-  const [selectedTask, setSelectedTask] = useState<{ groupId: string, task: Task } | null>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
 
   const handleAddGroup = () => {
@@ -784,8 +786,14 @@ const TasksView = ({
                   </button>
                   <button 
                     onClick={() => {
-                      if (selectedTask) {
-                        onApplyTask(selectedTask.task);
+                      const allTasks = groups.flatMap(g => g.tasks);
+                      const selectedTasks = allTasks.filter(task => selectedTaskIds.has(task.id));
+                      if (selectedTasks.length > 0) {
+                        if (selectedTasks.length === 1) {
+                          onApplyTask(selectedTasks[0]);
+                        } else {
+                          onApplyMultipleTasks(selectedTasks);
+                        }
                       } else {
                         onApplyGroup(group.id);
                       }
@@ -828,11 +836,20 @@ const TasksView = ({
 
               <div className="flex flex-wrap gap-3">
                 {group.tasks.map(task => {
-                  const isSelected = selectedTask?.task.id === task.id;
+                  const isSelected = selectedTaskIds.has(task.id);
+                  const toggleTask = () => {
+                    const newSelected = new Set(selectedTaskIds);
+                    if (isSelected) {
+                      newSelected.delete(task.id);
+                    } else {
+                      newSelected.add(task.id);
+                    }
+                    setSelectedTaskIds(newSelected);
+                  };
                   return (
                   <div key={task.id} className="group relative">
                     <button 
-                      onClick={() => setSelectedTask(selectedTask?.task.id === task.id ? null : { groupId: group.id, task })}
+                      onClick={toggleTask}
                       onMouseDown={() => {
                         const timer = setTimeout(() => {
                           setEditingTask({ groupId: group.id, task });
@@ -870,7 +887,7 @@ const TasksView = ({
                     >
                       <div className="flex items-center gap-1.5">
                         {task.name}
-                        {task.completed && <CheckCircle2 className="w-3 h-3" />}
+                        {isSelected && <CheckCircle2 className="w-3 h-3" />}
                       </div>
                       <div className="flex items-center gap-2 opacity-60">
                         <div className="flex gap-0.5">
@@ -3294,6 +3311,35 @@ export default function App() {
     setActiveTab('today');
   };
 
+  const applyMultipleTasksToGrid = (tasks: Task[]) => {
+    const newTiles = bingoTiles.map(row => row.map(tile => ({ ...tile })));
+    
+    let taskIdx = 0;
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        if (!newTiles[r][c].completed && taskIdx < tasks.length) {
+          const task = tasks[taskIdx];
+          const taskDifficulty = task.difficulty || 'easy';
+          const taskPriority = task.priority || 'medium';
+          newTiles[r][c] = {
+            ...newTiles[r][c],
+            taskName: task.name,
+            completed: false,
+            difficulty: taskDifficulty,
+            priority: taskPriority,
+            xpValue: task.xpValue || calculateXP(taskDifficulty, taskPriority),
+            isGolden: false,
+            isFreeTile: false
+          };
+          taskIdx++;
+        }
+      }
+    }
+    
+    setBingoTiles(newTiles);
+    setActiveTab('today');
+  };
+
   const shuffleTiles = () => {
     const tiles = bingoTiles.flat();
     // 保存任务的完成状态
@@ -3454,6 +3500,7 @@ export default function App() {
               onDeleteTask={deleteTask}
               onApplyGroup={applyGroupToGrid}
               onApplyTask={applyTaskToGrid}
+              onApplyMultipleTasks={applyMultipleTasksToGrid}
               gridSize={gridSize}
               onGridSizeChange={handleGridSizeChange}
               onShuffleTasks={shuffleTasks}
