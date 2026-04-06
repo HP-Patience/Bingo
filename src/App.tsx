@@ -350,11 +350,11 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="space-y-2">
         <h2 className="font-headline font-extrabold text-5xl tracking-tighter leading-none">已完成 {progress}%</h2>
         <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">做得很棒！继续加油！</p>
-        <div className="mt-6 h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+        <div className="mt-4 h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
@@ -395,7 +395,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
               )}
               <span className="z-10">{tile.taskName}</span>
               {!tile.completed && (
-                <div className="mt-1 flex items-center gap-1.5 opacity-40">
+                <div className="mt-1 flex items-center gap-1 opacity-40 whitespace-nowrap">
                   <div className="flex gap-0.5">
                     {[...Array(tile.difficulty === 'hard' ? 3 : tile.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
                       <div key={i} className="w-1 h-1 rounded-full bg-current" />
@@ -405,7 +405,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                     "w-1.5 h-1.5 rounded-full",
                     tile.priority === 'high' ? "bg-red-500" : tile.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
                   )} />
-                  <span className="text-[10px] font-bold">+{tile.xpValue || 10} XP</span>
+                  <span className="text-[9px] font-bold">+{tile.xpValue || 10} XP</span>
                 </div>
               )}
               {tile.note && (
@@ -984,9 +984,9 @@ const TasksView = ({
       </div>
 
       <div className="space-y-4 pt-6">
-        <div className="bg-surface-container-lowest rounded-2xl p-4 flex items-center border border-outline-variant">
+        <div className="bg-surface-container-lowest rounded-2xl p-4 flex items-center border border-outline-variant transition-all hover:border-primary/40">
           <input 
-            className="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/40 font-medium" 
+            className="w-full bg-transparent border-none text-on-surface placeholder:text-on-surface-variant/40 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             placeholder="添加一个新组别" 
             type="text"
             value={newGroupName}
@@ -995,14 +995,14 @@ const TasksView = ({
           />
           <button 
             onClick={handleAddGroup}
-            className="text-primary p-1 active:scale-90 transition-all"
+            className="text-primary p-2 rounded-full hover:bg-primary/10 active:scale-90 transition-all"
           >
-            <PlusCircle className="w-6 h-6" />
+            <PlusCircle className="w-5 h-5" />
           </button>
         </div>
         <button 
           onClick={handleAddGroup}
-          className="w-full bg-surface-container-low text-on-surface-variant py-5 rounded-3xl font-extrabold flex items-center justify-center gap-3 hover:bg-surface-container-high transition-colors border-2 border-dashed border-outline-variant"
+          className="w-full bg-surface-container-low text-on-surface-variant py-5 rounded-3xl font-extrabold flex items-center justify-center gap-3 hover:bg-surface-container-high hover:border-primary/40 transition-all border-2 border-dashed border-outline-variant"
         >
           <FolderPlus className="w-6 h-6" />
           新建分组
@@ -2686,7 +2686,12 @@ const PomodoroView = ({
   );
 };
 
-const SettingsView = ({ settings, onUpdateSettings, user, onLogout }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void }) => {
+const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onUpdateUser }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onUpdateUser: (updates: Partial<User>) => void }) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  
   const themes: { name: Theme, color: string }[] = [
     { name: 'zinc', color: '#6f797a' },
     { name: 'slate', color: '#475569' },
@@ -2698,6 +2703,26 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout }: { settings
     { name: 'violet', color: '#7c3aed' },
     { name: 'dark', color: '#1a1a1a' },
   ];
+
+  const handleEditProfile = () => {
+    if (user) {
+      setEditUsername(user.username);
+      setEditEmail(user.email);
+      setEditAvatar(user.avatar);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (user) {
+      onUpdateUser({
+        username: editUsername.trim(),
+        email: editEmail.trim(),
+        avatar: editAvatar.trim()
+      });
+      setIsEditModalOpen(false);
+    }
+  };
 
   return (
     <div className="space-y-10">
@@ -2711,6 +2736,12 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout }: { settings
               <h2 className="text-xl font-black tracking-tight">{user.username}</h2>
               <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest opacity-60">{user.email}</p>
             </div>
+            <button 
+              onClick={handleEditProfile}
+              className="ml-auto text-primary p-2 hover:bg-primary/10 rounded-full transition-all"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant">
@@ -2780,6 +2811,112 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout }: { settings
           <p className="text-[10px] uppercase font-black tracking-[0.3em]">© 2024 Zenith Grid Labs</p>
         </div>
       </footer>
+
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black tracking-tight uppercase">编辑个人信息</h3>
+                <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20">
+                    <img src={editAvatar} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    id="avatar-upload"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setEditAvatar(event.target?.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  <label 
+                    htmlFor="avatar-upload"
+                    className="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
+                  >
+                    选择图片
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">用户名</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">邮箱地址</label>
+                  <input 
+                    type="email" 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">头像 URL (可选)</label>
+                  <input 
+                    type="url" 
+                    placeholder="输入头像图片链接" 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={editAvatar}
+                    onChange={(e) => setEditAvatar(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={handleSaveProfile}
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  保存
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -3211,6 +3348,10 @@ export default function App() {
   const logout = () => {
     setUser(null);
     setActiveTab('today');
+  };
+
+  const updateUser = (updates: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
   };
 
   const toggleTask = (groupId: string, taskId: string) => {
@@ -3686,6 +3827,7 @@ export default function App() {
               onUpdateSettings={updateSettings} 
               user={user}
               onLogout={logout}
+              onUpdateUser={updateUser}
             />
           </motion.div>
         )}
