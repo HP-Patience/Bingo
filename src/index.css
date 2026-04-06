@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Manrope", sans-serif;
+
+  --surface: #f9f9f9;
+  --surface-container-low: #f2f4f4;
+  --surface-container-lowest: #ffffff;
+  --surface-container-high: #e4e9ea;
+  --surface-container-highest: #d1d5db;
+  --primary: #6f797a;
+  --primary-dim: #535252;
+  --on-surface: #2d3335;
+  --on-surface-variant: #5a6061;
+  --on-primary: #faf7f6;
+  --tertiary: #607b8b;
+  --outline-variant: rgba(173, 179, 180, 0.2);
+}
+
+[data-theme='slate'] {
+  --primary: #475569;
+  --primary-dim: #334155;
+}
+
+[data-theme='gray'] {
+  --primary: #4b5563;
+  --primary-dim: #374151;
+}
+
+[data-theme='blue'] {
+  --primary: #2563eb;
+  --primary-dim: #1d4ed8;
+}
+
+[data-theme='rose'] {
+  --primary: #e11d48;
+  --primary-dim: #be123c;
+}
+
+[data-theme='amber'] {
+  --primary: #d97706;
+  --primary-dim: #b45309;
+}
+
+[data-theme='emerald'] {
+  --primary: #059669;
+  --primary-dim: #047857;
+}
+
+[data-theme='violet'] {
+  --primary: #7c3aed;
+  --primary-dim: #6d28d9;
+}
+
+[data-theme='dark'] {
+  --surface: #0a0a0a;
+  --surface-container-low: #1a1a1a;
+  --surface-container-lowest: #000000;
+  --surface-container-high: #2a2a2a;
+  --surface-container-highest: #3a3a3a;
+  --primary: #bb86fc;
+  --primary-dim: #9965f4;
+  --on-surface: #f0f0f0;
+  --on-surface-variant: #a0a0a0;
+  --on-primary: #000000;
+  --outline-variant: rgba(255, 255, 255, 0.1);
+}
+
+@layer base {
+  body {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headline);
+  }
+
+  /* 确保按钮有点击效果 */
+  button {
+    @apply transition-all duration-200;
+  }
+
+  /* 为交互元素添加背景底色 */
+  .bg-surface {
+    background-color: var(--surface);
+  }
+
+  .bg-surface-container-low {
+    background-color: var(--surface-container-low);
+  }
+
+  .bg-surface-container-lowest {
+    background-color: var(--surface-container-lowest);
+  }
+
+  .bg-surface-container-high {
+    background-color: var(--surface-container-high);
+  }
+
+  .bg-surface-container-highest {
+    background-color: var(--surface-container-highest);
+  }
+
+  .bg-primary {
+    background-color: var(--primary);
+  }
+
+  .text-on-surface {
+    color: var(--on-surface);
+  }
+
+  .text-on-surface-variant {
+    color: var(--on-surface-variant);
+  }
+
+  .text-primary {
+    color: var(--primary);
+  }
+
+  .text-on-primary {
+    color: var(--on-primary);
+  }
+
+  .border-outline-variant {
+    border-color: var(--outline-variant);
+  }
+}
+
+@layer utilities {
+  .glass {
+    background-color: rgba(249, 249, 249, 0.8);
+    backdrop-filter: blur(24px);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* 为 dark 主题添加玻璃效果 */
+[data-theme='dark'] .glass {
+  background-color: rgba(10, 10, 10, 0.8);
+}
