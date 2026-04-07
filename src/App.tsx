@@ -1,10 +1,33 @@
 import React, { useState } from 'react';
-import { TaskDifficulty, TaskPriority } from './types';
+import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState } from './types';
+import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS } from './constants';
+import { getDrawsPerLevel, getPoolByLevel, drawReward, addDrawHistory } from './gachaUtils';
 
-const calculateXP = (difficulty: TaskDifficulty, priority: TaskPriority): number => {
-  const baseXP = difficulty === 'hard' ? 30 : difficulty === 'medium' ? 20 : 10;
-  const priorityBonus = priority === 'high' ? 10 : priority === 'medium' ? 5 : 0;
-  return baseXP + priorityBonus;
+// 计算任务经验值
+export const calculateXP = (difficulty: TaskDifficulty, priority: TaskPriority): number => {
+  let baseXP = 10;
+  
+  // 根据难度调整
+  switch (difficulty) {
+    case 'easy': baseXP = 10;
+      break;
+    case 'medium': baseXP = 20;
+      break;
+    case 'hard': baseXP = 30;
+      break;
+  }
+  
+  // 根据优先级调整
+  switch (priority) {
+    case 'low': baseXP *= 1;
+      break;
+    case 'medium': baseXP *= 1.2;
+      break;
+    case 'high': baseXP *= 1.5;
+      break;
+  }
+  
+  return Math.round(baseXP);
 };
 import { 
   Grid, 
@@ -48,6 +71,7 @@ import {
   Mail,
   Info,
   ShoppingBag,
+  History,
   Cookie,
   Film,
   Gamepad2,
@@ -67,7 +91,11 @@ import {
   Flame,
   Award,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Gift,
+  Circle,
+  HelpCircle,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -85,15 +113,7 @@ import {
   Pie
 } from 'recharts';
 import { cn } from './lib/utils';
-import { 
-  INITIAL_TASK_GROUPS, 
-  INITIAL_BINGO_TILES, 
-  INITIAL_ACHIEVEMENTS, 
-  INITIAL_STATS, 
-  INITIAL_SETTINGS,
-  INITIAL_SHOP_ITEMS
-} from './constants';
-import { TaskGroup, BingoTile, Achievement, Stats, Settings, Theme, HistoryEntry, User, ShopItem, Task } from './types';
+import { Theme, Task } from './types';
 
 // --- Components ---
 
@@ -380,7 +400,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                 handleLongPress(rIdx, cIdx, tile);
               }}
               className={cn(
-                "aspect-square rounded-2xl flex flex-col items-center justify-center p-2 text-center text-[10px] font-bold leading-tight transition-all active:scale-90 relative overflow-hidden",
+                "aspect-square rounded-2xl flex flex-col items-center justify-between p-2 text-center text-[10px] font-bold leading-tight transition-all active:scale-90 relative overflow-hidden",
                 tile.completed 
                   ? "bg-primary text-on-primary" 
                   : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest",
@@ -393,10 +413,12 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                   <Star className={cn("w-3 h-3", tile.completed ? "text-on-primary" : "text-amber-400")} />
                 </div>
               )}
-              <span className="z-10">{tile.taskName}</span>
+              <div className="flex-1 flex items-center justify-center">
+                <span className="z-10">{tile.taskName}</span>
+              </div>
               {!tile.completed && (
-                <div className="mt-1 flex items-center gap-1 opacity-40 whitespace-nowrap">
-                  <div className="flex gap-0.5">
+                <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap h-4">
+                  <div className="flex gap-0.5 items-center">
                     {[...Array(tile.difficulty === 'hard' ? 3 : tile.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
                       <div key={i} className="w-1 h-1 rounded-full bg-current" />
                     ))}
@@ -405,7 +427,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                     "w-1.5 h-1.5 rounded-full",
                     tile.priority === 'high' ? "bg-red-500" : tile.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
                   )} />
-                  <span className="text-[9px] font-bold">+{tile.xpValue || 10} XP</span>
+                  <span className="text-[9px] font-bold flex-shrink-0">+{tile.xpValue || 10} XP</span>
                 </div>
               )}
               {tile.note && (
@@ -667,6 +689,7 @@ const TasksView = ({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editingTask, setEditingTask] = useState<{ groupId: string, task: Task } | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [activeSubTab, setActiveSubTab] = useState<'tasks' | 'notes'>('tasks');
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -702,6 +725,13 @@ const TasksView = ({
       onEditGroup(editingGroupId, editName.trim());
       setEditingGroupId(null);
     }
+  };
+
+  const toggleGroupExpanded = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
   };
 
   return (
@@ -770,6 +800,16 @@ const TasksView = ({
             <div key={group.id} className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => toggleGroupExpanded(group.id)}
+                    className="p-1 text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    {expandedGroups[group.id] ? (
+                      <ChevronDown className="w-5 h-5" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5" />
+                    )}
+                  </button>
                   {editingGroupId === group.id ? (
                     <input 
                       autoFocus
@@ -780,7 +820,12 @@ const TasksView = ({
                       onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                     />
                   ) : (
-                    <span className="text-xl font-extrabold tracking-tight">{group.name}</span>
+                    <span 
+                      className="text-xl font-extrabold tracking-tight cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => startEditing(group)}
+                    >
+                      {group.name}
+                    </span>
                   )}
                   <span className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mt-1">{group.tasks.length} 任务</span>
                 </div>
@@ -804,12 +849,6 @@ const TasksView = ({
                     应用
                   </button>
                   <button 
-                    onClick={() => startEditing(group)}
-                    className="p-2 text-on-surface-variant hover:text-primary transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button 
                     onClick={() => setDeletingGroupId(group.id)}
                     className="p-2 text-on-surface-variant hover:text-red-500 transition-colors"
                   >
@@ -818,166 +857,170 @@ const TasksView = ({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <input 
-                  type="text"
-                  placeholder="添加任务..."
-                  className="flex-1 bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-1 focus:ring-primary"
-                  value={newTaskNames[group.id] || ''}
-                  onChange={(e) => setNewTaskNames(prev => ({ ...prev, [group.id]: e.target.value }))}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
-                />
-                <button 
-                  onClick={() => handleAddTask(group.id)}
-                  className="bg-primary/10 text-primary p-2 rounded-xl hover:bg-primary/20 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => {
-                    const newSelected = new Set(selectedTaskIds);
-                    if (allSelected) {
-                      group.tasks.forEach(t => newSelected.delete(t.id));
-                    } else {
-                      group.tasks.forEach(t => newSelected.add(t.id));
-                    }
-                    setSelectedTaskIds(newSelected);
-                  }}
-                  className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 px-3"
-                >
-                  {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
-                  {allSelected ? '取消' : '全选'}
-                </button>
-                <button 
-                  onClick={() => {
-                    if (deleteMode.has(group.id)) {
-                      const newMode = new Set(deleteMode);
-                      newMode.delete(group.id);
-                      setDeleteMode(newMode);
-                    } else {
-                      setDeleteMode(new Set([...deleteMode, group.id]));
-                    }
-                  }}
-                  className={cn(
-                    "p-2 rounded-xl transition-colors",
-                    deleteMode.has(group.id) 
-                      ? "bg-red-500 text-white" 
-                      : "text-on-surface-variant hover:text-red-500 hover:bg-red-500/10"
-                  )}
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {group.tasks.map(task => {
-                  const isSelected = selectedTaskIds.has(task.id);
-                  const isDeleteMode = deleteMode.has(group.id);
-                  const toggleTask = () => {
-                    if (isDeleteMode) {
-                      onDeleteTask(group.id, task.id);
-                    } else {
-                      const newSelected = new Set(selectedTaskIds);
-                      if (isSelected) {
-                        newSelected.delete(task.id);
-                      } else {
-                        newSelected.add(task.id);
-                      }
-                      setSelectedTaskIds(newSelected);
-                    }
-                  };
-                  return (
-                  <div key={task.id} className="group relative">
+              {expandedGroups[group.id] && (
+                <>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      placeholder="添加任务..."
+                      className="flex-1 bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-1 focus:ring-primary"
+                      value={newTaskNames[group.id] || ''}
+                      onChange={(e) => setNewTaskNames(prev => ({ ...prev, [group.id]: e.target.value }))}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)}
+                    />
                     <button 
-                      onClick={toggleTask}
-                      onMouseDown={() => {
-                        if (!isDeleteMode) {
-                          const timer = setTimeout(() => {
-                            setEditingTask({ groupId: group.id, task });
-                          }, 500);
-                          setLongPressTimer(timer);
+                      onClick={() => handleAddTask(group.id)}
+                      className="bg-primary/10 text-primary p-2 rounded-xl hover:bg-primary/20 transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const newSelected = new Set(selectedTaskIds);
+                        if (allSelected) {
+                          group.tasks.forEach(t => newSelected.delete(t.id));
+                        } else {
+                          group.tasks.forEach(t => newSelected.add(t.id));
                         }
+                        setSelectedTaskIds(newSelected);
                       }}
-                      onMouseUp={() => {
-                        if (longPressTimer) {
-                          clearTimeout(longPressTimer);
-                          setLongPressTimer(null);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        if (longPressTimer) {
-                          clearTimeout(longPressTimer);
-                          setLongPressTimer(null);
-                        }
-                      }}
-                      onTouchStart={() => {
-                        if (!isDeleteMode) {
-                          const timer = setTimeout(() => {
-                            setEditingTask({ groupId: group.id, task });
-                          }, 500);
-                          setLongPressTimer(timer);
-                        }
-                      }}
-                      onTouchEnd={() => {
-                        if (longPressTimer) {
-                          clearTimeout(longPressTimer);
-                          setLongPressTimer(null);
+                      className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 px-3"
+                    >
+                      {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
+                      {allSelected ? '取消' : '全选'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (deleteMode.has(group.id)) {
+                          const newMode = new Set(deleteMode);
+                          newMode.delete(group.id);
+                          setDeleteMode(newMode);
+                        } else {
+                          setDeleteMode(new Set([...deleteMode, group.id]));
                         }
                       }}
                       className={cn(
-                        "px-3 py-2 rounded-xl font-bold text-xs flex flex-col items-start gap-1 transition-all cursor-pointer active:scale-95",
-                        isSelected && !isDeleteMode ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest",
-                        isDeleteMode && "cursor-pointer"
+                        "p-2 rounded-xl transition-colors",
+                        deleteMode.has(group.id) 
+                          ? "bg-red-500 text-white" 
+                          : "text-on-surface-variant hover:text-red-500 hover:bg-red-500/10"
                       )}
                     >
-                      <div className="flex items-center gap-1.5">
-                        {task.name}
-                      </div>
-                      <div className="flex items-center gap-2 opacity-60">
-                        <div className="flex gap-0.5">
-                          {[...Array(task.difficulty === 'hard' ? 3 : task.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
-                            <div key={i} className="w-1 h-1 rounded-full bg-current" />
-                          ))}
-                        </div>
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          task.priority === 'high' ? "bg-red-500" : task.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
-                        )} />
-                        <span className="text-[10px] font-bold">+{task.xpValue || 10} XP</span>
-                        {task.tags && task.tags.length > 0 && (
-                          <div className="flex gap-1">
-                            {task.tags.slice(0, 2).map(tag => (
-                              <span key={tag} className="text-[8px] uppercase tracking-tighter opacity-80">#{tag}</span>
-                            ))}
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    {group.tasks.map(task => {
+                      const isSelected = selectedTaskIds.has(task.id);
+                      const isDeleteMode = deleteMode.has(group.id);
+                      const toggleTask = () => {
+                        if (isDeleteMode) {
+                          onDeleteTask(group.id, task.id);
+                        } else {
+                          const newSelected = new Set(selectedTaskIds);
+                          if (isSelected) {
+                            newSelected.delete(task.id);
+                          } else {
+                            newSelected.add(task.id);
+                          }
+                          setSelectedTaskIds(newSelected);
+                        }
+                      };
+                      return (
+                      <div key={task.id} className="group relative">
+                        <button 
+                          onClick={toggleTask}
+                          onMouseDown={() => {
+                            if (!isDeleteMode) {
+                              const timer = setTimeout(() => {
+                                setEditingTask({ groupId: group.id, task });
+                              }, 500);
+                              setLongPressTimer(timer);
+                            }
+                          }}
+                          onMouseUp={() => {
+                            if (longPressTimer) {
+                              clearTimeout(longPressTimer);
+                              setLongPressTimer(null);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            if (longPressTimer) {
+                              clearTimeout(longPressTimer);
+                              setLongPressTimer(null);
+                            }
+                          }}
+                          onTouchStart={() => {
+                            if (!isDeleteMode) {
+                              const timer = setTimeout(() => {
+                                setEditingTask({ groupId: group.id, task });
+                              }, 500);
+                              setLongPressTimer(timer);
+                            }
+                          }}
+                          onTouchEnd={() => {
+                            if (longPressTimer) {
+                              clearTimeout(longPressTimer);
+                              setLongPressTimer(null);
+                            }
+                          }}
+                          className={cn(
+                            "px-3 py-2 rounded-xl font-bold text-xs flex flex-col items-start gap-1 transition-all cursor-pointer active:scale-95",
+                            isSelected && !isDeleteMode ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest",
+                            isDeleteMode && "cursor-pointer"
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            {task.name}
                           </div>
+                          <div className="flex items-center gap-2 opacity-60">
+                            <div className="flex gap-0.5">
+                              {[...Array(task.difficulty === 'hard' ? 3 : task.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
+                                <div key={i} className="w-1 h-1 rounded-full bg-current" />
+                              ))}
+                            </div>
+                            <div className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              task.priority === 'high' ? "bg-red-500" : task.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
+                            )} />
+                            <span className="text-[10px] font-bold">+{task.xpValue || 10} XP</span>
+                            {task.tags && task.tags.length > 0 && (
+                              <div className="flex gap-1">
+                                {task.tags.slice(0, 2).map(tag => (
+                                  <span key={tag} className="text-[8px] uppercase tracking-tighter opacity-80">#{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                        {!isDeleteMode ? (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteTask(group.id, task.id);
+                            }}
+                            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteTask(group.id, task.id);
+                            }}
+                            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm z-10"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         )}
                       </div>
-                    </button>
-                    {!isDeleteMode ? (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteTask(group.id, task.id);
-                        }}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteTask(group.id, task.id);
-                        }}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm z-10"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
+                      );
+                    })}
                   </div>
-                );
-                })}
-              </div>
+                </>
+              )}
             </div>
           );
         })}
@@ -2059,24 +2102,267 @@ const AchievementsView = ({
   );
 };
 
+const GachaView = ({ 
+  userLevel, 
+  gachaState, 
+  onDraw
+}: { 
+  userLevel: number,
+  gachaState: GachaState,
+  onDraw: () => void
+}) => {
+  const [showHelp, setShowHelp] = useState(false);
+  
+  const getPoolName = (level: number) => {
+    if (level >= 30) return '传说奖池';
+    if (level >= 16) return '高级奖池';
+    if (level >= 6) return '进阶奖池';
+    return '新手奖池';
+  };
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'legendary': return 'text-yellow-500';
+      case 'epic': return 'text-purple-500';
+      case 'rare': return 'text-blue-500';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const getRarityName = (rarity: string) => {
+    switch (rarity) {
+      case 'legendary': return '传说';
+      case 'epic': return '史诗';
+      case 'rare': return '稀有';
+      default: return '普通';
+    }
+  };
+
+  return (
+    <div className="space-y-8 py-4">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">抽奖系统</h2>
+      </div>
+      
+      <section className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-[2rem] p-8 relative overflow-hidden shadow-sm">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        <div className="relative z-10">
+          <div className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">当前奖池</p>
+            <h3 className="text-3xl font-extrabold tracking-tighter text-primary mb-2">{getPoolName(userLevel)}</h3>
+            <p className="text-on-surface-variant font-bold text-sm">等级 {userLevel}</p>
+          </div>
+          
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <div className="text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">可用抽奖次数</p>
+              <div className="text-6xl font-extrabold tracking-tighter text-primary">
+                {gachaState.availableDraws}
+              </div>
+            </div>
+            
+            <button
+              onClick={onDraw}
+              disabled={gachaState.availableDraws <= 0}
+              className={cn(
+                "w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg",
+                gachaState.availableDraws > 0
+                  ? "bg-primary text-on-primary hover:scale-[1.02] shadow-primary/30"
+                  : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed"
+              )}
+            >
+              {gachaState.availableDraws > 0 ? '🎁 开始抽奖' : '升级获取抽奖机会'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold uppercase tracking-tight">抽奖记录</h2>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="p-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+        </div>
+        {gachaState.history.length > 0 && (
+          <div className="space-y-3">
+            {gachaState.history.slice(0, 10).map((entry) => (
+              <div 
+                key={entry.id}
+                className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
+                    {entry.reward.type === 'xp' ? <Zap className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm">{entry.poolName}</span>
+                      <span className={cn("text-[10px] font-bold uppercase", getRarityColor(entry.reward.rarity))}>
+                        {getRarityName(entry.reward.rarity)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-on-surface-variant font-medium">
+                      {new Date(entry.timestamp).toLocaleDateString('zh-CN')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={cn("font-black text-lg", entry.reward.type === 'xp' ? 'text-primary' : 'text-secondary')}>
+                    +{entry.actualValue}
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant font-bold block">
+                    {entry.reward.type === 'xp' ? 'XP' : '余额'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <AnimatePresence>
+        {showHelp && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setShowHelp(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-surface rounded-3xl shadow-2xl max-h-[70vh] w-full max-w-md flex flex-col"
+            >
+              <div className="p-6 pb-0">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-black">抽奖机制说明</h2>
+                  <button 
+                    onClick={() => setShowHelp(false)}
+                    className="p-2 rounded-full hover:bg-surface-container-low transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 pt-4 space-y-4 overflow-y-auto flex-1">
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-primary" />
+                      新手奖池（1-5级）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 30-60（70%）/ 稀有 60-100（30%）</li>
+                      <li>• 余额 50%：普通 24-48（70%）/ 稀有 48-80（30%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-500" />
+                      进阶奖池（6-15级）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 120-200（65%）/ 稀有 200-350（35%）</li>
+                      <li>• 余额 50%：普通 96-160（65%）/ 稀有 160-280（35%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-purple-500" />
+                      高级奖池（16-29级）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 600-900（65%）/ 稀有 900-1400（35%）</li>
+                      <li>• 余额 50%：普通 480-720（65%）/ 稀有 720-1120（35%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-yellow-500" />
+                      传说奖池（30级+）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 1200-1800（55%）/ 稀有 1800-3000（45%）</li>
+                      <li>• 余额 50%：普通 960-1440（55%）/ 稀有 1440-2400（45%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      抽奖频率
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• 1-15级：每升1级抽1次</li>
+                      <li>• 16-29级：每升2级抽1次</li>
+                      <li>• 30级+：每升2级抽1次</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      保底机制
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• 连续3次普通奖励 → 下次必中稀有奖励</li>
+                      <li>• 连续5次同类型奖励 → 下次必换另一种类型</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-primary" />
+                      奖励类型
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• 经验值（XP）：可用于升级</li>
+                      <li>• 余额：可在商店购买奖励</li>
+                    </ul>
+                  </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const ShopView = ({ 
   items, 
   userBalance, 
+  userLevel,
   onBuyItem,
   onAddItem,
   onUpdateItem,
-  onDeleteItem
+  onDeleteItem,
+  onTabChange,
+  shopHistory
 }: { 
   items: ShopItem[], 
   userBalance: number, 
+  userLevel: number,
   onBuyItem: (item: ShopItem) => void,
   onAddItem: (item: Omit<ShopItem, 'id'>) => void,
   onUpdateItem: (item: ShopItem) => void,
-  onDeleteItem: (id: string) => void
+  onDeleteItem: (id: string) => void,
+  onTabChange: (tab: string) => void,
+  shopHistory: ShopHistoryEntry[]
 }) => {
   const [isManageMode, setIsManageMode] = useState(false);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const [newItem, setNewItem] = useState<Omit<ShopItem, 'id'>>({
     name: '',
@@ -2103,6 +2389,20 @@ const ShopView = ({
 
   return (
     <div className="space-y-10">
+      <div className="bg-surface-container-low rounded-2xl p-1 flex gap-1">
+        <button
+          className="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all"
+          style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}
+        >
+          商店
+        </button>
+        <button
+          onClick={() => onTabChange('gacha')}
+          className="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all text-on-surface-variant hover:text-on-surface"
+        >
+          抽奖
+        </button>
+      </div>
       <section className="bg-surface-container-lowest border border-outline-variant rounded-[2rem] p-8 relative overflow-hidden shadow-sm">
         <div className="relative z-10 flex justify-between items-center">
           <div>
@@ -2110,15 +2410,24 @@ const ShopView = ({
             <h3 className="text-5xl font-extrabold tracking-tighter text-primary">{userBalance.toLocaleString()}</h3>
             <p className="text-on-surface-variant font-bold text-sm mt-1">Spendable XP</p>
           </div>
-          <button 
-            onClick={() => setIsManageMode(!isManageMode)}
-            className={cn(
-              "p-4 rounded-2xl transition-all active:scale-95",
-              isManageMode ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant"
-            )}
-          >
-            <Settings2 className="w-6 h-6" />
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowHistory(true)}
+              className="p-4 rounded-2xl bg-surface-container-low text-on-surface-variant hover:text-primary transition-all active:scale-95"
+              title="查看购买记录"
+            >
+              <History className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={() => setIsManageMode(!isManageMode)}
+              className={cn(
+                "p-4 rounded-2xl transition-all active:scale-95",
+                isManageMode ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant"
+              )}
+            >
+              <Settings2 className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </section>
 
@@ -2136,7 +2445,7 @@ const ShopView = ({
         </div>
 
         <div className="grid grid-cols-1 gap-4">
-          {items.map(item => (
+          {items.filter(item => !item.levelRequirement || userLevel >= item.levelRequirement).map(item => (
             <div 
               key={item.id}
               className="bg-surface-container-lowest border border-outline-variant rounded-3xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all group"
@@ -2146,7 +2455,14 @@ const ShopView = ({
                   <ShopItemIcon name={item.icon} className="w-7 h-7" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="font-bold text-sm">{item.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm">{item.name}</h4>
+                    {item.levelRequirement && item.levelRequirement > 1 && (
+                      <span className="text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">
+                        等级 {item.levelRequirement}+
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-on-surface-variant font-medium">{item.description}</p>
                 </div>
               </div>
@@ -2273,6 +2589,66 @@ const ShopView = ({
             </motion.div>
           </div>
         )}
+        {showHistory && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistory(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6 max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black tracking-tight uppercase">购买记录</h3>
+                <button onClick={() => setShowHistory(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {shopHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-on-surface-variant font-medium">还没有购买记录</p>
+                </div>
+              ) : (
+                <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-2">
+                  {shopHistory.map((entry) => (
+                    <div 
+                      key={entry.id}
+                      className="bg-surface-container-low border border-outline-variant rounded-2xl p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-surface-container rounded-xl flex items-center justify-center text-primary">
+                          <ShopItemIcon name={entry.itemIcon} className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-sm">{entry.itemName}</span>
+                          <p className="text-[10px] text-on-surface-variant font-medium">
+                            {new Date(entry.timestamp).toLocaleDateString('zh-CN')} · 等级 {entry.level}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-black text-lg text-secondary">
+                          -{entry.cost}
+                        </span>
+                        <span className="text-[10px] text-on-surface-variant font-bold block">
+                          XP
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
@@ -2330,12 +2706,15 @@ const PomodoroView = ({
   const [isActive, setIsActive] = React.useState(false);
   const [selectedTask, setSelectedTask] = React.useState<string | null>(null);
   const [isTaskSelectorOpen, setIsTaskSelectorOpen] = React.useState(false);
+  const [isModeSwitchConfirmOpen, setIsModeSwitchConfirmOpen] = React.useState(false);
+  const [pendingMode, setPendingMode] = React.useState<'work' | 'shortBreak' | 'longBreak' | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const [customDurations, setCustomDurations] = React.useState<{ work: number; shortBreak: number; longBreak: number }>(() => {
+    const saved = localStorage.getItem('pomodoro-durations');
+    return saved ? JSON.parse(saved) : { work: 25 * 60, shortBreak: 5 * 60, longBreak: 15 * 60 };
+  });
 
-  const durations = {
-    work: 25 * 60,
-    shortBreak: 5 * 60,
-    longBreak: 15 * 60
-  };
+  const durations = customDurations;
 
   React.useEffect(() => {
     let interval: any = null;
@@ -2349,6 +2728,26 @@ const PomodoroView = ({
     }
     return () => clearInterval(interval);
   }, [isActive, timeLeft]);
+
+  // 保存自定义时长到 localStorage
+  React.useEffect(() => {
+    localStorage.setItem('pomodoro-durations', JSON.stringify(customDurations));
+  }, [customDurations]);
+
+  // 处理自定义时长变更
+  const handleDurationChange = (key: 'work' | 'shortBreak' | 'longBreak', value: number) => {
+    setCustomDurations(prev => ({
+      ...prev,
+      [key]: value * 60 // 转换为秒
+    }));
+  };
+
+  // 保存设置并关闭窗口
+  const saveSettings = () => {
+    setIsSettingsOpen(false);
+    // 如果当前模式的时长发生了变化，更新计时器
+    setTimeLeft(durations[mode]);
+  };
 
   const handleSessionComplete = () => {
     playSound('complete');
@@ -2364,14 +2763,35 @@ const PomodoroView = ({
           let newLevel = prev.level;
           let nextLevelXp = prev.nextLevelXp;
 
+          let newTitle = prev.title;
           if (newXp >= nextLevelXp) {
             newXp -= nextLevelXp;
             newLevel += 1;
-            nextLevelXp = Math.floor(nextLevelXp * 1.5);
+            // 调整升级曲线
+            if (newLevel <= 5) {
+              // 1-5级：固定值
+              const levelThresholds = [0, 50, 70, 90, 110, 130];
+              nextLevelXp = levelThresholds[newLevel];
+            } else if (newLevel <= 24) {
+              // 6-24级：每级递增15%
+              nextLevelXp = Math.floor(nextLevelXp * 1.15);
+            } else {
+              // 25级及以上：固定值
+              nextLevelXp = 2000;
+            }
+            // 更新等级头衔
+            if (newLevel % 10 === 0) {
+              if (newLevel === 10) newTitle = '资深玩家';
+              else if (newLevel === 20) newTitle = '大师级';
+              else if (newLevel === 30) newTitle = '传说级';
+              else if (newLevel === 40) newTitle = '神话级';
+              else if (newLevel === 50) newTitle = '不朽级';
+              else if (newLevel > 50) newTitle = '超越不朽';
+            }
             playSound('levelUp');
           }
 
-          return { ...prev, xp: newXp, level: newLevel, nextLevelXp };
+          return { ...prev, xp: newXp, level: newLevel, nextLevelXp, title: newTitle };
         });
       }
 
@@ -2420,10 +2840,33 @@ const PomodoroView = ({
   };
 
   const switchMode = (newMode: 'work' | 'shortBreak' | 'longBreak') => {
-    setMode(newMode);
-    setTimeLeft(durations[newMode]);
-    setIsActive(false);
-    triggerHaptic('light');
+    if (isActive) {
+      // 如果番茄钟正在运行，显示确认对话框
+      setPendingMode(newMode);
+      setIsModeSwitchConfirmOpen(true);
+    } else {
+      // 如果番茄钟没有运行，直接切换模式
+      setMode(newMode);
+      setTimeLeft(durations[newMode]);
+      setIsActive(false);
+      triggerHaptic('light');
+    }
+  };
+
+  const confirmModeSwitch = () => {
+    if (pendingMode) {
+      setMode(pendingMode);
+      setTimeLeft(durations[pendingMode]);
+      setIsActive(false);
+      setIsModeSwitchConfirmOpen(false);
+      setPendingMode(null);
+      triggerHaptic('light');
+    }
+  };
+
+  const cancelModeSwitch = () => {
+    setIsModeSwitchConfirmOpen(false);
+    setPendingMode(null);
   };
 
   const progress = ((durations[mode] - timeLeft) / durations[mode]) * 100;
@@ -2446,183 +2889,360 @@ const PomodoroView = ({
 
   return (
     <div className="space-y-8 pb-10">
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onBack}
+            className="p-3 bg-surface-container-low rounded-2xl text-on-surface-variant active:scale-90 transition-all"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <h1 className="font-headline font-black text-xl tracking-tight uppercase">专注进程</h1>
+        </div>
         <button 
-          onClick={onBack}
+          onClick={() => setIsSettingsOpen(true)}
           className="p-3 bg-surface-container-low rounded-2xl text-on-surface-variant active:scale-90 transition-all"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <Settings2 className="w-5 h-5" />
         </button>
-        <h1 className="font-headline font-black text-xl tracking-tight uppercase">专注进程</h1>
-
       </header>
 
-      {/* Mode Selector */}
-      <div className="flex bg-surface-container-low p-1 rounded-3xl border border-outline-variant">
-        <button 
-          onClick={() => switchMode('work')}
-          className={cn(
-            "flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-            mode === 'work' ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:bg-surface-container-highest"
-          )}
-        >
-          专注
-        </button>
-        <button 
-          onClick={() => switchMode('shortBreak')}
-          className={cn(
-            "flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-            mode === 'shortBreak' ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:bg-surface-container-highest"
-          )}
-        >
-          短休
-        </button>
-        <button 
-          onClick={() => switchMode('longBreak')}
-          className={cn(
-            "flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-            mode === 'longBreak' ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:bg-surface-container-highest"
-          )}
-        >
-          长休
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <button 
-          onClick={() => setIsTaskSelectorOpen(true)}
-          className="col-span-2 bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm text-left active:scale-[0.98] transition-all group"
-        >
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest">当前任务</span>
-            <Edit2 className="w-3 h-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <h2 className="text-3xl font-black tracking-tight text-primary truncate">
-            {selectedTask || '选择一个任务...'}
-          </h2>
-        </button>
-        
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm flex flex-col justify-between aspect-square">
-          <span className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest block mb-4">番茄钟历史</span>
-          <div>
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-3xl font-black tracking-tighter">{sessionsToday}</span>
-              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">/ {totalSessionsGoal} 组完成</span>
-            </div>
-            <div className="flex gap-1.5">
-              {[...Array(totalSessionsGoal)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={cn(
-                    "h-1.5 flex-1 rounded-full transition-all duration-500",
-                    i < sessionsToday ? "bg-primary" : "bg-surface-container-high"
-                  )} 
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm flex flex-col justify-between aspect-square">
-          <span className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest block mb-4">今日专注时长</span>
-          <div>
-            <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-3xl font-black tracking-tighter">{focusTimeToday.toFixed(1)}</span>
-              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">小时</span>
-            </div>
-            <div className="text-[10px] font-black text-primary uppercase tracking-widest">
-              {focusTimeToday > 0 ? '+100% vs 昨天' : '开始专注吧'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative flex items-center justify-center py-6">
-        <div className="relative w-72 h-72 flex items-center justify-center">
-          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <circle 
-              cx="50" cy="50" r="45" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="3" 
-              className="text-surface-container-low"
-            />
-            <motion.circle 
-              cx="50" cy="50" r="45" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="4" 
-              strokeDasharray="282.7"
-              animate={{ strokeDashoffset: 282.7 - (282.7 * progress) / 100 }}
-              className="text-primary"
-              strokeLinecap="round"
-              transition={{ type: 'spring', bounce: 0, duration: 1 }}
-            />
-          </svg>
-          <div className="flex flex-col items-center z-10">
-            <span className="text-7xl font-black tracking-tighter tabular-nums text-on-surface">
-              {formatTime(timeLeft)}
-            </span>
-            <div className="flex items-center gap-2 mt-3 text-primary">
-              {mode === 'work' ? <Focus className="w-4 h-4" /> : <Coffee className="w-4 h-4" />}
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                {isActive ? (mode === 'work' ? '工作中' : '休息中') : '已暂停'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-surface-container-lowest border border-outline-variant p-8 rounded-[2.5rem] shadow-sm space-y-6">
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">今日目标进度</span>
-          <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-            {Math.min(100, Math.round((focusTimeToday / 6) * 100))}%
-          </span>
-        </div>
-        <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${Math.min(100, (focusTimeToday / 6) * 100)}%` }}
-            className="h-full bg-primary rounded-full" 
-          />
-        </div>
-        <div className="flex justify-between text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
-          <span>周目标 ({weeklyGoal}h)</span>
-          <span>已完成 {weeklyProgress.toFixed(1)}h</span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <div className="flex gap-4">
+      {/* Main Pomodoro Container */}
+      <div className="bg-gradient-to-br from-surface-container-lowest to-surface-container border border-outline-variant p-8 rounded-[2.5rem] shadow-xl space-y-8">
+        {/* Mode Selector */}
+        <div className="flex bg-surface-container p-2 rounded-3xl border border-outline-variant shadow-md gap-2">
           <button 
-            onClick={toggleTimer}
+            onClick={() => switchMode('work')}
             className={cn(
-              "flex-[1.5] py-6 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all shadow-xl",
-              isActive ? "bg-surface-container-high text-on-surface-variant/40" : "bg-primary text-on-primary shadow-primary/20 active:scale-95"
+              "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+              mode === 'work' ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:bg-surface-container-high"
             )}
           >
-            {isActive ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-            {isActive ? '暂停' : '开始'}
+            专注
           </button>
           <button 
-            onClick={resetTimer}
-            className="flex-1 bg-surface-container-high text-on-surface py-6 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 active:scale-95 transition-all"
+            onClick={() => switchMode('shortBreak')}
+            className={cn(
+              "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+              mode === 'shortBreak' ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:bg-surface-container-high"
+            )}
           >
-            <RotateCcw className="w-5 h-5" />
-            重置
+            短休
+          </button>
+          <button 
+            onClick={() => switchMode('longBreak')}
+            className={cn(
+              "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+              mode === 'longBreak' ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:bg-surface-container-high"
+            )}
+          >
+            长休
           </button>
         </div>
-        <button 
-          onClick={() => {
-            setIsActive(false);
-            setTimeLeft(durations[mode]);
-          }}
-          className="w-full py-4 text-[10px] font-black text-on-surface-variant/30 uppercase tracking-[0.3em] hover:text-red-500 transition-colors"
+
+        {/* Task Selector */}
+        <motion.button 
+          onClick={() => setIsTaskSelectorOpen(true)}
+          className="w-full bg-surface-container p-6 rounded-2xl text-left active:scale-[0.98] transition-all group shadow-md border border-outline-variant"
+          whileHover={{ y: -2 }}
+          whileTap={{ y: 0 }}
         >
-          放弃本次会话
-        </button>
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">当前任务</span>
+            <Edit2 className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <h2 className="text-2xl font-black tracking-tight text-primary truncate">
+            {selectedTask || '选择一个任务...'}
+          </h2>
+        </motion.button>
+
+        {/* Timer */}
+        <div className="relative flex items-center justify-center py-8">
+          <div className="relative w-80 h-80 flex items-center justify-center">
+            <motion.div 
+              className="absolute inset-0 flex items-center justify-center"
+              animate={{ rotate: isActive ? 360 : 0 }}
+              transition={{ duration: 60, repeat: isActive ? Infinity : 0, ease: "linear" }}
+            >
+              <div className="w-2 h-10 bg-primary/20 rounded-full"></div>
+            </motion.div>
+            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="6" 
+                className="text-surface-container"
+              />
+              <motion.circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="6" 
+                strokeDasharray="282.7"
+                animate={{ strokeDashoffset: 282.7 - (282.7 * progress) / 100 }}
+                className="text-primary"
+                strokeLinecap="round"
+                transition={{ type: 'spring', bounce: 0, duration: 1 }}
+              />
+            </svg>
+            <div className="flex flex-col items-center z-10">
+              <span className="text-8xl font-black tracking-tighter tabular-nums text-on-surface">
+                {formatTime(timeLeft)}
+              </span>
+              <motion.div 
+                className="flex items-center gap-2 mt-4 text-primary"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                {mode === 'work' ? <Focus className="w-5 h-5" /> : <Coffee className="w-5 h-5" />}
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {isActive ? (mode === 'work' ? '工作中' : '休息中') : '已暂停'}
+                </span>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col gap-5">
+          <div className="flex gap-5">
+            <motion.button 
+              onClick={toggleTimer}
+              className={cn(
+                "flex-[1.5] py-7 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all shadow-xl",
+                isActive ? "bg-surface-container text-on-surface-variant/60" : "bg-primary text-on-primary shadow-primary/30"
+              )}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isActive ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+              {isActive ? '暂停' : '开始'}
+            </motion.button>
+            <motion.button 
+              onClick={resetTimer}
+              className="flex-1 bg-surface-container text-on-surface py-7 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all shadow-lg"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <RotateCcw className="w-6 h-6" />
+              重置
+            </motion.button>
+          </div>
+          <motion.button 
+            onClick={() => {
+              setIsActive(false);
+              setTimeLeft(durations[mode]);
+            }}
+            className="w-full py-4 text-[10px] font-black text-on-surface-variant/40 uppercase tracking-[0.3em] hover:text-red-500 transition-colors"
+            whileHover={{ y: 2 }}
+          >
+            放弃本次会话
+          </motion.button>
+        </div>
+
+        {/* Stats */}
+        <div className="space-y-5 pt-6 border-t border-outline-variant/50">
+          {/* Today's Goal Progress */}
+          <motion.div 
+            className="bg-surface-container p-6 rounded-2xl space-y-4 shadow-md border border-outline-variant"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">今日目标进度</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                {Math.min(100, Math.round((focusTimeToday / 6) * 100))}%
+              </span>
+            </div>
+            <div className="h-3 w-full bg-surface-container-high rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, (focusTimeToday / 6) * 100)}%` }}
+                className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
+                transition={{ duration: 1 }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+              <span>周目标 ({weeklyGoal}h)</span>
+              <span>已完成 {weeklyProgress.toFixed(1)}h</span>
+            </div>
+          </motion.div>
+
+          {/* Tomato History and Focus Time */}
+          <div className="grid grid-cols-2 gap-5">
+            <motion.div 
+              className="bg-surface-container p-6 rounded-2xl shadow-md border border-outline-variant"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest block mb-4">番茄钟历史</span>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-4xl font-black tracking-tighter">{sessionsToday}</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">/ {totalSessionsGoal} 组完成</span>
+              </div>
+              <div className="flex gap-2">
+                {[...Array(totalSessionsGoal)].map((_, i) => (
+                  <motion.div 
+                    key={i} 
+                    className={cn(
+                      "h-2 flex-1 rounded-full transition-all duration-500",
+                      i < sessionsToday ? "bg-primary" : "bg-surface-container-high"
+                    )}
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ delay: 0.1 * i }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="bg-surface-container p-6 rounded-2xl shadow-md border border-outline-variant"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest block mb-4">今日专注时长</span>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-4xl font-black tracking-tighter">{focusTimeToday.toFixed(1)}</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">小时</span>
+              </div>
+              <motion.div 
+                className="text-[10px] font-black text-primary uppercase tracking-widest"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: focusTimeToday > 0 ? Infinity : 0 }}
+              >
+                {focusTimeToday > 0 ? '+100% vs 昨天' : '开始专注吧'}
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
       </div>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSettingsOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black tracking-tight uppercase">番茄钟设置</h3>
+                <button onClick={() => setIsSettingsOpen(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                {/* 专注时长设置 */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">专注时长 (分钟)</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="60"
+                    value={Math.round(customDurations.work / 60)}
+                    onChange={(e) => handleDurationChange('work', parseInt(e.target.value) || 25)}
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                
+                {/* 短休时长设置 */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">短休时长 (分钟)</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="30"
+                    value={Math.round(customDurations.shortBreak / 60)}
+                    onChange={(e) => handleDurationChange('shortBreak', parseInt(e.target.value) || 5)}
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                
+                {/* 长休时长设置 */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">长休时长 (分钟)</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="60"
+                    value={Math.round(customDurations.longBreak / 60)}
+                    onChange={(e) => handleDurationChange('longBreak', parseInt(e.target.value) || 15)}
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+              
+              <button 
+                onClick={saveSettings}
+                className="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+              >
+                保存设置
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Mode Switch Confirmation Modal */}
+      <AnimatePresence>
+        {isModeSwitchConfirmOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={cancelModeSwitch}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                  <Clock className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-black tracking-tight uppercase">确认切换模式</h3>
+                <p className="text-on-surface-variant text-sm font-bold">当前番茄钟正在运行，切换模式将重置计时器。确定要继续吗？</p>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={cancelModeSwitch}
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={confirmModeSwitch}
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  确认
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Task Selector Modal */}
       <AnimatePresence>
@@ -2639,43 +3259,75 @@ const PomodoroView = ({
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="relative w-full max-w-md bg-surface-container-lowest rounded-t-[3rem] p-10 border-t border-outline-variant shadow-2xl space-y-8"
+              transition={{ type: 'spring', bounce: 0.1, duration: 0.5 }}
+              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-t-[3rem] p-12 border-t border-gray-200 dark:border-gray-700 shadow-2xl space-y-8 z-10"
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black tracking-tight uppercase">选择专注任务</h3>
-                <button onClick={() => setIsTaskSelectorOpen(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                <h3 className="text-2xl font-black tracking-tight uppercase text-gray-900 dark:text-white">选择专注任务</h3>
+                <motion.button 
+                  onClick={() => setIsTaskSelectorOpen(false)} 
+                  className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
                   <X className="w-5 h-5" />
-                </button>
+                </motion.button>
               </div>
 
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-                {allTasks.map(task => (
-                  <button
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto px-4 pt-8">
+                {allTasks.map((task, index) => (
+                  <motion.button
                     key={task.id}
                     onClick={() => {
                       setSelectedTask(task.taskName);
                       setIsTaskSelectorOpen(false);
                     }}
                     className={cn(
-                      "w-full p-6 rounded-2xl border text-left transition-all flex items-center justify-between group",
+                      "w-full p-8 rounded-2xl border text-left transition-all flex items-center justify-between group shadow-sm",
                       selectedTask === task.taskName 
-                        ? "bg-primary/5 border-primary" 
-                        : "bg-surface-container-low border-outline-variant hover:border-primary/50"
+                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 shadow-blue-100 dark:shadow-blue-900/20" 
+                        : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md"
                     )}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ scale: 1.01, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <div className="space-y-1">
-                      <span className="text-sm font-black text-on-surface group-hover:text-primary transition-colors">{task.taskName}</span>
-                      <div className="flex items-center gap-1">
-                        <div className="flex gap-0.5">
-                          {[...Array(task.difficulty === 'hard' ? 3 : task.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
-                            <div key={i} className="w-1 h-1 rounded-full bg-primary/30" />
+                    <div className="space-y-2">
+                      <span className="text-base font-black text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{task.taskName}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-1">
+                          {[...Array((task.difficulty || 'easy') === 'hard' ? 3 : (task.difficulty || 'easy') === 'medium' ? 2 : 1)].map((_, i) => (
+                            <motion.div 
+                              key={i} 
+                              className="w-2 h-2 rounded-full bg-gray-400" 
+                              whileHover={{ scale: 1.2 }}
+                            />
                           ))}
                         </div>
-                        <span className="text-[10px] font-bold text-primary/60">+{task.xpValue || 10} XP</span>
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          (task.priority || 'medium') === 'high' ? "bg-red-500" : (task.priority || 'medium') === 'medium' ? "bg-amber-500" : "bg-emerald-500"
+                        )} />
+                        <motion.span 
+                          className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          +{task.xpValue || 10} XP
+                        </motion.span>
                       </div>
                     </div>
-                    {selectedTask === task.taskName && <CheckCircle2 className="w-5 h-5 text-primary" />}
-                  </button>
+                    {selectedTask === task.taskName && (
+                      <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="p-2 bg-primary/10 rounded-full"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
+                      </motion.div>
+                    )}
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
@@ -2733,7 +3385,14 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onUpdateUser
               <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
             </div>
             <div className="space-y-0.5">
-              <h2 className="text-xl font-black tracking-tight">{user.username}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black tracking-tight">{user.username}</h2>
+                {user.title && (
+                  <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">
+                    {user.title}
+                  </span>
+                )}
+              </div>
               <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest opacity-60">{user.email}</p>
             </div>
             <button 
@@ -2938,6 +3597,7 @@ const SettingsButton = ({ icon, label, variant = 'default' }: { icon: React.Reac
 // --- Main App ---
 
 export default function App() {
+
   const [activeTab, setActiveTab] = useState('today');
   const [activeSubTab, setActiveSubTab] = useState('achievements');
   const [user, setUser] = useState<User | null>(() => {
@@ -2950,7 +3610,7 @@ export default function App() {
             ...parsed,
             level: parsed.level || 1,
             xp: parsed.xp || 0,
-            nextLevelXp: parsed.nextLevelXp || 100,
+            nextLevelXp: parsed.nextLevelXp || 50, // 初始升级所需经验值改为50
             balance: parsed.balance || 0
           };
         }
@@ -2974,11 +3634,33 @@ export default function App() {
   });
   const [achievements, setAchievements] = useState<Achievement[]>(() => {
     const saved = localStorage.getItem('life-bingo-achievements');
-    return saved ? JSON.parse(saved) : INITIAL_ACHIEVEMENTS;
+    if (saved) {
+      const savedAchievements = JSON.parse(saved);
+      // 确保所有核心成就都存在
+      const coreAchievementIds = INITIAL_ACHIEVEMENTS.map(a => a.id);
+      const missingAchievements = INITIAL_ACHIEVEMENTS.filter(a => 
+        !savedAchievements.some((sa: Achievement) => sa.id === a.id)
+      );
+      if (missingAchievements.length > 0) {
+        const updatedAchievements = [...savedAchievements, ...missingAchievements];
+        localStorage.setItem('life-bingo-achievements', JSON.stringify(updatedAchievements));
+        return updatedAchievements;
+      }
+      return savedAchievements;
+    }
+    return INITIAL_ACHIEVEMENTS;
   });
   const [stats, setStats] = useState<Stats>(() => {
     const saved = localStorage.getItem('life-bingo-stats');
-    return saved ? JSON.parse(saved) : INITIAL_STATS;
+    if (saved) {
+      const savedStats = JSON.parse(saved);
+      // 确保所有必要的统计字段都存在
+      return {
+        ...INITIAL_STATS,
+        ...savedStats
+      };
+    }
+    return INITIAL_STATS;
   });
   const [settings, setSettings] = useState<Settings>(() => {
     const saved = localStorage.getItem('life-bingo-settings');
@@ -2991,6 +3673,34 @@ export default function App() {
   const [shopItems, setShopItems] = useState<ShopItem[]>(() => {
     const saved = localStorage.getItem('life-bingo-shop-items');
     return saved ? JSON.parse(saved) : INITIAL_SHOP_ITEMS;
+  });
+  const [gachaState, setGachaState] = useState<GachaState>(() => {
+    const saved = localStorage.getItem('life-bingo-gacha');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing gacha data:', e);
+      }
+    }
+    return {
+      availableDraws: 0,
+      lastDrawLevel: 1,
+      consecutiveLowRewards: 0,
+      consecutiveSameType: 0,
+      history: [],
+    };
+  });
+  const [shopHistory, setShopHistory] = useState<ShopHistoryEntry[]>(() => {
+    const saved = localStorage.getItem('life-bingo-shop-history');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing shop history data:', e);
+      }
+    }
+    return [];
   });
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
@@ -3017,6 +3727,14 @@ export default function App() {
   React.useEffect(() => {
     localStorage.setItem('life-bingo-stats', JSON.stringify(stats));
   }, [stats]);
+
+  React.useEffect(() => {
+    localStorage.setItem('life-bingo-gacha', JSON.stringify(gachaState));
+  }, [gachaState]);
+
+  React.useEffect(() => {
+    localStorage.setItem('life-bingo-shop-history', JSON.stringify(shopHistory));
+  }, [shopHistory]);
 
   React.useEffect(() => {
     localStorage.setItem('life-bingo-shop-items', JSON.stringify(shopItems));
@@ -3051,8 +3769,6 @@ export default function App() {
     setAchievements(prev => {
       let changed = false;
       const next = prev.map(achievement => {
-        if (achievement.unlocked) return achievement;
-
         let unlocked = false;
         switch (achievement.id) {
           case 'a1': unlocked = stats.totalCompleted >= 1; break;
@@ -3062,13 +3778,13 @@ export default function App() {
           case 'a5': unlocked = stats.totalXp >= 1000; break;
           case 'a6': unlocked = stats.earlyBirdCount >= 1; break;
           case 'a7': unlocked = stats.goldenTilesCompleted >= 5; break;
-          case 'a8': unlocked = stats.totalSpent >= 500; break;
-          case 'a9': unlocked = stats.totalCompleted >= 100; break;
+          case 'a8': unlocked = stats.nightOwlCount >= 1; break;
+          case 'a9': unlocked = stats.totalCompleted >= 50; break;
         }
 
-        if (unlocked) {
+        if (achievement.unlocked !== unlocked) {
           changed = true;
-          return { ...achievement, unlocked: true };
+          return { ...achievement, unlocked };
         }
         return achievement;
       });
@@ -3146,28 +3862,14 @@ export default function App() {
       setHistory(prev => [...prev, newEntry]);
       
       if (user) {
-        let newXp = user.xp + xpChange;
-        let newLevel = user.level;
-        let newNextLevelXp = user.nextLevelXp;
-        let newBalance = user.balance + xpChange;
-        
-        while (newXp >= newNextLevelXp) {
-          newXp -= newNextLevelXp;
-          newLevel += 1;
-          newNextLevelXp = Math.floor(newNextLevelXp * 1.2);
-          playSound('levelUp');
-          triggerHaptic('heavy');
-        }
-        
-        setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance });
-        
         const isEarlyBird = new Date().getHours() < 7;
-        setStats(prev => ({ 
-          ...prev, 
-          totalXp: prev.totalXp + xpChange,
+        const isNightOwl = new Date().getHours() >= 23;
+        
+        addXPWithLevelUp(xpChange, (prev) => ({
           totalCompleted: prev.totalCompleted + 1,
           goldenTilesCompleted: prev.goldenTilesCompleted + (tile.isGolden ? 1 : 0),
-          earlyBirdCount: prev.earlyBirdCount + (isEarlyBird ? 1 : 0)
+          earlyBirdCount: prev.earlyBirdCount + (isEarlyBird ? 1 : 0),
+          nightOwlCount: prev.nightOwlCount + (isNightOwl ? 1 : 0)
         }));
       }
 
@@ -3205,26 +3907,61 @@ export default function App() {
         let newLevel = user.level;
         let newNextLevelXp = user.nextLevelXp;
         let newBalance = Math.max(0, user.balance - xpChange);
+        let newTitle = user.title;
 
         if (newXp < 0) {
           if (newLevel > 1) {
             newLevel -= 1;
-            newNextLevelXp = Math.max(100, Math.floor(newNextLevelXp / 1.2));
+            // 调整降级曲线
+            if (newLevel <= 5) {
+              // 1-5级：固定值
+              const levelThresholds = [0, 50, 70, 90, 110, 130];
+              newNextLevelXp = levelThresholds[newLevel];
+            } else if (newLevel <= 24) {
+              // 6-24级：每级递增15%，降级时反向计算
+              newNextLevelXp = Math.max(130, Math.floor(newNextLevelXp / 1.15));
+            } else {
+              // 25级及以上：固定值
+              newNextLevelXp = 2000;
+            }
+            // 更新等级头衔 - 降级时检查是否需要移除头衔
+            if (newLevel < 10 && newTitle === '资深玩家') newTitle = undefined;
+            else if (newLevel < 20 && newTitle === '大师级') newTitle = '资深玩家';
+            else if (newLevel < 30 && newTitle === '传说级') newTitle = '大师级';
+            else if (newLevel < 40 && newTitle === '神话级') newTitle = '传说级';
+            else if (newLevel < 50 && newTitle === '不朽级') newTitle = '神话级';
+            else if (newLevel < 51 && newTitle === '超越不朽') newTitle = '不朽级';
+            
             newXp = newNextLevelXp + newXp;
           } else {
             newXp = 0;
           }
         }
 
-        setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance });
+        // 降级时回退抽奖次数
+        if (newLevel < user.level) {
+          let drawsToRemove = 0;
+          for (let level = newLevel + 1; level <= user.level; level++) {
+            drawsToRemove += getDrawsPerLevel(level);
+          }
+          setGachaState(prev => ({
+            ...prev,
+            availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
+            lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel)
+          }));
+        }
+
+        setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle });
         
         const isEarlyBird = tile.completedAt ? new Date(tile.completedAt).getHours() < 7 : false;
+        const isNightOwl = tile.completedAt ? new Date(tile.completedAt).getHours() >= 23 : false;
         setStats(prev => ({ 
           ...prev, 
           totalXp: Math.max(0, prev.totalXp - xpChange),
           totalCompleted: Math.max(0, prev.totalCompleted - 1),
           goldenTilesCompleted: Math.max(0, prev.goldenTilesCompleted - (tile.isGolden ? 1 : 0)),
-          earlyBirdCount: Math.max(0, prev.earlyBirdCount - (isEarlyBird ? 1 : 0))
+          earlyBirdCount: Math.max(0, prev.earlyBirdCount - (isEarlyBird ? 1 : 0)),
+          nightOwlCount: Math.max(0, prev.nightOwlCount - (isNightOwl ? 1 : 0))
         }));
       }
     }
@@ -3251,17 +3988,51 @@ export default function App() {
       let newLevel = user.level;
       let newNextLevelXp = user.nextLevelXp;
       let newBalance = Math.max(0, user.balance - xpToDeduct);
+      let newTitle = user.title;
 
       if (newXp < 0) {
-        if (newLevel > 1) {
-          newLevel -= 1;
-          newNextLevelXp = Math.max(100, Math.floor(newNextLevelXp / 1.2));
-          newXp = newNextLevelXp + newXp;
-        } else {
-          newXp = 0;
+          if (newLevel > 1) {
+            newLevel -= 1;
+            // 调整降级曲线
+            if (newLevel <= 5) {
+              // 1-5级：固定值
+              const levelThresholds = [0, 50, 70, 90, 110, 130];
+              newNextLevelXp = levelThresholds[newLevel];
+            } else if (newLevel <= 24) {
+              // 6-24级：每级递增15%，降级时反向计算
+              newNextLevelXp = Math.max(130, Math.floor(newNextLevelXp / 1.15));
+            } else {
+              // 25级及以上：固定值
+              newNextLevelXp = 2000;
+            }
+            // 更新等级头衔 - 降级时检查是否需要移除头衔
+            if (newLevel < 10 && newTitle === '资深玩家') newTitle = undefined;
+            else if (newLevel < 20 && newTitle === '大师级') newTitle = '资深玩家';
+            else if (newLevel < 30 && newTitle === '传说级') newTitle = '大师级';
+            else if (newLevel < 40 && newTitle === '神话级') newTitle = '传说级';
+            else if (newLevel < 50 && newTitle === '不朽级') newTitle = '神话级';
+            else if (newLevel < 51 && newTitle === '超越不朽') newTitle = '不朽级';
+            
+            newXp = newNextLevelXp + newXp;
+          } else {
+            newXp = 0;
+          }
         }
-      }
-      setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance });
+
+        // 降级时回退抽奖次数
+        if (newLevel < user.level) {
+          let drawsToRemove = 0;
+          for (let level = newLevel + 1; level <= user.level; level++) {
+            drawsToRemove += getDrawsPerLevel(level);
+          }
+          setGachaState(prev => ({
+            ...prev,
+            availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
+            lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel)
+          }));
+        }
+
+      setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle });
       setStats(prev => ({ ...prev, totalXp: Math.max(0, prev.totalXp - xpToDeduct) }));
     }
 
@@ -3274,6 +4045,101 @@ export default function App() {
     })));
   };
 
+  const addXPWithLevelUp = (xpAmount: number, additionalStatsUpdate?: (prev: Stats) => Partial<Stats>) => {
+    if (!user) return;
+
+    let newXp = user.xp + xpAmount;
+    let newLevel = user.level;
+    let newNextLevelXp = user.nextLevelXp;
+    let newBalance = user.balance + xpAmount;
+    const oldLevel = user.level;
+    
+    let newTitle = user.title;
+    while (newXp >= newNextLevelXp) {
+      newXp -= newNextLevelXp;
+      newLevel += 1;
+      // 调整升级曲线
+      if (newLevel <= 5) {
+        // 1-5级：固定值
+        const levelThresholds = [0, 50, 70, 90, 110, 130];
+        newNextLevelXp = levelThresholds[newLevel];
+      } else if (newLevel <= 24) {
+        // 6-24级：每级递增15%
+        newNextLevelXp = Math.floor(newNextLevelXp * 1.15);
+      } else {
+        // 25级及以上：固定值
+        newNextLevelXp = 2000;
+      }
+      // 更新等级头衔
+      if (newLevel % 10 === 0) {
+        if (newLevel === 10) newTitle = '资深玩家';
+        else if (newLevel === 20) newTitle = '大师级';
+        else if (newLevel === 30) newTitle = '传说级';
+        else if (newLevel === 40) newTitle = '神话级';
+        else if (newLevel === 50) newTitle = '不朽级';
+        else if (newLevel > 50) newTitle = '超越不朽';
+      }
+      // 播放升级音效和震动
+      playSound('levelUp');
+      triggerHaptic('heavy');
+    }
+    
+    // 计算新增抽奖次数
+    if (newLevel > oldLevel) {
+      let additionalDraws = 0;
+      for (let level = oldLevel + 1; level <= newLevel; level++) {
+        additionalDraws += getDrawsPerLevel(level);
+      }
+      setGachaState(prev => ({
+        ...prev,
+        availableDraws: prev.availableDraws + additionalDraws,
+        lastDrawLevel: newLevel
+      }));
+    }
+    
+    setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle });
+    
+    // 更新统计数据
+    setStats(prev => ({ 
+      ...prev, 
+      totalXp: prev.totalXp + xpAmount,
+      ...(additionalStatsUpdate ? additionalStatsUpdate(prev) : {})
+    }));
+  };
+
+  const handleGachaDraw = () => {
+    if (!user || gachaState.availableDraws <= 0) return;
+
+    const pool = getPoolByLevel(user.level);
+    const { reward, actualValue, newState } = drawReward(pool, gachaState);
+
+    const newGachaState = addDrawHistory(newState, {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      poolId: pool.id,
+      poolName: pool.name,
+      reward,
+      actualValue,
+      level: user.level,
+      timestamp: new Date().toISOString(),
+    });
+
+    newGachaState.availableDraws -= 1;
+
+    setGachaState(newGachaState);
+
+    if (reward.type === 'xp') {
+      addXPWithLevelUp(actualValue);
+    } else {
+      setUser({ ...user, balance: user.balance + actualValue });
+    }
+
+    playSound('levelUp');
+    triggerHaptic('medium');
+
+    const rewardType = reward.type === 'xp' ? '经验值' : '余额';
+    alert(`🎉 恭喜获得 ${actualValue} ${rewardType}！`);
+  };
+
   const buyItem = (item: ShopItem) => {
     if (!user || user.balance < item.cost) return;
 
@@ -3284,7 +4150,18 @@ export default function App() {
     // Track shop achievement
     setStats(prev => ({ ...prev, totalSpent: prev.totalSpent + item.cost }));
     
-    // In a real app, we'd add this to a "Purchased Items" list
+    // Add to shop history
+    const historyEntry: ShopHistoryEntry = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      itemId: item.id,
+      itemName: item.name,
+      itemIcon: item.icon,
+      cost: item.cost,
+      level: user.level,
+      timestamp: new Date().toISOString(),
+    };
+    setShopHistory(prev => [historyEntry, ...prev]);
+    
     alert(`成功购买: ${item.name}！快去享受吧~`);
   };
 
@@ -3798,6 +4675,20 @@ export default function App() {
             />
           </motion.div>
         )}
+        {activeTab === 'gacha' && (
+          <motion.div 
+            key="gacha"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <GachaView 
+              userLevel={user?.level || 1}
+              gachaState={gachaState}
+              onDraw={handleGachaDraw}
+            />
+          </motion.div>
+        )}
         {activeTab === 'shop' && (
           <motion.div 
             key="shop"
@@ -3808,10 +4699,13 @@ export default function App() {
             <ShopView 
               items={shopItems} 
               userBalance={user?.balance || 0} 
+              userLevel={user?.level || 1}
               onBuyItem={buyItem}
               onAddItem={addShopItem}
               onUpdateItem={updateShopItem}
               onDeleteItem={deleteShopItem}
+              onTabChange={setActiveTab}
+              shopHistory={shopHistory}
             />
           </motion.div>
         )}

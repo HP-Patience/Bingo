@@ -68,6 +68,7 @@ export type User = {
   xp: number;
   nextLevelXp: number;
   balance: number; // Spendable XP
+  title?: string; // 等级头衔
 };
 
 export type ShopItem = {
@@ -77,6 +78,7 @@ export type ShopItem = {
   cost: number;
   icon: string;
   category: 'snack' | 'entertainment' | 'fitness' | 'other';
+  levelRequirement?: number; // 解锁等级要求
 };
 
 export type Stats = {
@@ -89,6 +91,7 @@ export type Stats = {
   fullHousesCount: number;
   goldenTilesCompleted: number;
   earlyBirdCount: number;
+  nightOwlCount: number;
   totalSpent: number;
 };
 
@@ -96,4 +99,52 @@ export type Theme = 'zinc' | 'slate' | 'gray' | 'blue' | 'rose' | 'amber' | 'eme
 
 export type Settings = {
   theme: Theme;
+};
+
+export type GachaRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export type GachaReward = {
+  id: string;
+  type: 'xp' | 'balance';
+  value: number;
+  valueMin: number;
+  valueMax: number;
+  rarity: GachaRarity;
+  probability: number;
+};
+
+export type GachaPool = {
+  id: string;
+  name: string;
+  levelRequirement: number;
+  rewards: GachaReward[];
+};
+
+export type GachaHistoryEntry = {
+  id: string;
+  poolId: string;
+  poolName: string;
+  reward: GachaReward;
+  actualValue: number;
+  level: number;
+  timestamp: string;
+};
+
+export type ShopHistoryEntry = {
+  id: string;
+  itemId: string;
+  itemName: string;
+  itemIcon: string;
+  cost: number;
+  level: number;
+  timestamp: string;
+};
+
+export type GachaState = {
+  availableDraws: number;
+  lastDrawLevel: number;
+  consecutiveLowRewards: number;
+  consecutiveSameType: number;
+  lastRewardType?: 'xp' | 'balance';
+  history: GachaHistoryEntry[];
 };
