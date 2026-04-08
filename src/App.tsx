@@ -1572,10 +1572,9 @@ const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: 
 
 type TimeRange = 'today' | 'week' | 'quarter' | 'year' | 'all';
 
-const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }) => {
+const StatsView = ({ stats, history, timeRange, setTimeRange, isTimeRangeModalOpen, setIsTimeRangeModalOpen }: { stats: Stats, history: HistoryEntry[], timeRange: TimeRange, setTimeRange: (range: TimeRange) => void, isTimeRangeModalOpen: boolean, setIsTimeRangeModalOpen: (open: boolean) => void }) => {
   const [currentDayOffset, setCurrentDayOffset] = useState(0); // 0 = 当前日, -1 = 昨天, 1 = 明天
-  const [timeRange, setTimeRange] = useState<TimeRange>('today');
-  const [isTimeRangeModalOpen, setIsTimeRangeModalOpen] = useState(false);
+
 
   const getDateRange = (offset: number) => {
     const dates = [...Array(7)].map((_, i) => {
@@ -1936,63 +1935,7 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
         </div>
       </div>
 
-      {/* 时间范围选择模态窗口 */}
-      <AnimatePresence>
-        {isTimeRangeModalOpen && (
-          <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm" onClick={() => setIsTimeRangeModalOpen(false)}>
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-black tracking-tight uppercase">选择时间范围</h3>
-                  <button 
-                    onClick={() => setIsTimeRangeModalOpen(false)} 
-                    className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {[
-                    { value: 'today', label: '今日' },
-                    { value: 'week', label: '本周' },
-                    { value: 'quarter', label: '本季度' },
-                    { value: 'year', label: '本年度' },
-                    { value: 'all', label: '总共' }
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => {
-                        setTimeRange(option.value as TimeRange);
-                        setIsTimeRangeModalOpen(false);
-                      }}
-                      className={`w-full py-3.5 px-6 rounded-2xl text-left font-bold transition-colors ${timeRange === option.value
-                        ? 'bg-violet-100 text-violet-700'
-                        : 'bg-surface-container-low hover:bg-surface-container-high'
-                        }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setIsTimeRangeModalOpen(false)}
-                    className="flex-1 py-3.5 px-6 rounded-2xl font-bold bg-surface-container-low hover:bg-surface-container-high transition-colors"
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+
     </div>
   );
 };
@@ -2001,6 +1944,10 @@ const AchievementsView = ({
   achievements, 
   stats, 
   history,
+  timeRange,
+  setTimeRange,
+  isTimeRangeModalOpen,
+  setIsTimeRangeModalOpen,
   onAddCustomAchievement,
   onDeleteAchievement,
   onToggleAchievement,
@@ -2010,6 +1957,10 @@ const AchievementsView = ({
   achievements: Achievement[], 
   stats: Stats, 
   history: HistoryEntry[],
+  timeRange: TimeRange,
+  setTimeRange: (range: TimeRange) => void,
+  isTimeRangeModalOpen: boolean,
+  setIsTimeRangeModalOpen: (open: boolean) => void,
   onAddCustomAchievement: (title: string, requirement: string, icon: string) => void,
   onDeleteAchievement: (id: string) => void,
   onToggleAchievement: (id: string) => void,
@@ -2251,7 +2202,14 @@ const AchievementsView = ({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
           >
-            <StatsView stats={stats} history={history} />
+            <StatsView 
+              stats={stats} 
+              history={history} 
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              isTimeRangeModalOpen={isTimeRangeModalOpen}
+              setIsTimeRangeModalOpen={setIsTimeRangeModalOpen}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -3939,6 +3897,8 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('today');
   const [activeSubTab, setActiveSubTab] = useState('achievements');
+  const [isTimeRangeModalOpen, setIsTimeRangeModalOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'quarter' | 'year' | 'all'>('today');
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('life-bingo-user');
     if (saved) {
@@ -4042,8 +4002,8 @@ export default function App() {
     return [];
   });
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
+    const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+    const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [editForm, setEditForm] = useState({
     time: '',
     duration: 0
@@ -5061,6 +5021,10 @@ export default function App() {
               achievements={achievements}
               stats={stats}
               history={history}
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              isTimeRangeModalOpen={isTimeRangeModalOpen}
+              setIsTimeRangeModalOpen={setIsTimeRangeModalOpen}
               onAddCustomAchievement={addCustomAchievement}
               onDeleteAchievement={deleteAchievement}
               onToggleAchievement={toggleAchievement}
@@ -5121,11 +5085,70 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+    </Layout>
+
+      {/* 时间范围选择模态窗口 */}
+      <AnimatePresence>
+        {isTimeRangeModalOpen && (
+          <div className="fixed top-0 left-0 right-0 bottom-0 z-[1000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm" onClick={() => setIsTimeRangeModalOpen(false)}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black tracking-tight uppercase">选择时间范围</h3>
+                  <button 
+                    onClick={() => setIsTimeRangeModalOpen(false)} 
+                    className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { value: 'today', label: '今日' },
+                    { value: 'week', label: '本周' },
+                    { value: 'quarter', label: '本季度' },
+                    { value: 'year', label: '本年度' },
+                    { value: 'all', label: '总共' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setTimeRange(option.value as TimeRange);
+                        setIsTimeRangeModalOpen(false);
+                      }}
+                      className={`w-full py-3.5 px-6 rounded-2xl text-left font-bold transition-colors ${timeRange === option.value
+                        ? 'bg-violet-100 text-violet-700'
+                        : 'bg-surface-container-low hover:bg-surface-container-high'
+                        }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setIsTimeRangeModalOpen(false)}
+                    className="flex-1 py-3.5 px-6 rounded-2xl font-bold bg-surface-container-low hover:bg-surface-container-high transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Reset Confirmation Modal */}
       <AnimatePresence>
         {isResetConfirmOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -5177,7 +5200,7 @@ export default function App() {
       {/* Edit Task Modal */}
       <AnimatePresence>
         {isEditTaskModalOpen && editingEntry && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -5262,7 +5285,6 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
-    </Layout>
     </>
   );
 }
