@@ -1571,11 +1571,18 @@ const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: 
 );
 
 const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }) => {
-  const last7Days = [...Array(7)].map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    return d.toDateString();
-  }).reverse();
+  const [currentDayOffset, setCurrentDayOffset] = useState(0); // 0 = 当前日, -1 = 昨天, 1 = 明天
+
+  const getDateRange = (offset: number) => {
+    const dates = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i) + offset);
+      return d.toDateString();
+    });
+    return dates;
+  };
+
+  const last7Days = getDateRange(currentDayOffset);
 
   const xpData = last7Days.map(date => {
     const dayHistory = history.filter(h => new Date(h.completedAt).toDateString() === date);
@@ -1587,19 +1594,66 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
   });
 
   const pomoData = last7Days.map(date => {
-    const pomoCount = history.filter(h => 
-      h.type === 'pomodoro' && 
+    const dayHistory = history.filter(h => 
       new Date(h.completedAt).toDateString() === date
-    ).length;
+    );
+    const focusMinutes = dayHistory.reduce((total, h) => {
+      // 如果有明确的duration字段，使用它
+      if (h.duration) {
+        return total + h.duration;
+      }
+      // 如果是番茄钟，默认25分钟
+      if (h.type === 'pomodoro') {
+        return total + 25;
+      }
+      // 其他任务默认5分钟
+      return total + 5;
+    }, 0);
     return { 
       name: new Date(date).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }), 
-      sessions: pomoCount 
+      minutes: focusMinutes 
     };
   });
 
-  const totalFocusMinutes = history
-    .filter(h => h.type === 'pomodoro')
-    .length * 25;
+  const handlePrevDay = () => {
+    setCurrentDayOffset(prev => prev - 1);
+  };
+
+  const handleNextDay = () => {
+    setCurrentDayOffset(prev => prev + 1);
+  };
+
+  // 计算当天任务总耗时
+  const today = new Date().toDateString();
+  const todayHistory = history.filter(h => new Date(h.completedAt).toDateString() === today);
+  const todayTotalMinutes = todayHistory.reduce((total, h) => {
+    // 如果有明确的duration字段，使用它
+    if (h.duration) {
+      return total + h.duration;
+    }
+    // 如果是番茄钟，默认25分钟
+    if (h.type === 'pomodoro') {
+      return total + 25;
+    }
+    // 其他任务默认5分钟
+    return total + 5;
+  }, 0);
+  const todayHours = Math.floor(todayTotalMinutes / 60);
+  const todayMinutes = todayTotalMinutes % 60;
+
+  // 计算所有任务的总耗时（包括番茄钟和其他任务）
+  const totalFocusMinutes = history.reduce((total, h) => {
+    // 如果有明确的duration字段，使用它
+    if (h.duration) {
+      return total + h.duration;
+    }
+    // 如果是番茄钟，默认25分钟
+    if (h.type === 'pomodoro') {
+      return total + 25;
+    }
+    // 其他任务默认5分钟
+    return total + 5;
+  }, 0);
   
   const hours = Math.floor(totalFocusMinutes / 60);
   const minutes = totalFocusMinutes % 60;
@@ -1650,6 +1704,18 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
             <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {minutes}m</span>
           </div>
         </div>
+
+        {/* 今日总耗时视图已隐藏 */}
+        {/* <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm space-y-2 col-span-2">
+          <div className="flex items-center gap-2 text-blue-500">
+            <Clock className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-widest">今日总耗时</span>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-black tracking-tighter">{todayHours}</span>
+            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {todayMinutes}m</span>
+          </div>
+        </div> */}
       </div>
 
       <section className="bg-surface-container-lowest border border-outline-variant p-8 rounded-[2.5rem] shadow-sm space-y-6">
@@ -1699,9 +1765,23 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h3 className="text-sm font-black uppercase tracking-widest">专注分布</h3>
-            <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">每日番茄钟完成组数</p>
+            <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">每日专注时长记录</p>
           </div>
-          <Activity className="w-5 h-5 text-violet-500" />
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handlePrevDay}
+              className="p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-violet-500" />
+            </button>
+            <Activity className="w-5 h-5 text-violet-500" />
+            <button 
+              onClick={handleNextDay}
+              className="p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-violet-500" />
+            </button>
+          </div>
         </div>
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -1723,8 +1803,9 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
                   fontSize: '10px',
                   fontWeight: 'bold'
                 }}
+                formatter={(value) => [`${value} 分钟`, '专注时长']}
               />
-              <Bar dataKey="sessions" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="minutes" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

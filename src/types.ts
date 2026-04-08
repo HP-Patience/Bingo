@@ -38,6 +38,7 @@ export type HistoryEntry = {
   completedAt: string;
   type?: 'task' | 'pomodoro';
   xpEarned?: number;
+  duration?: number; // 任务耗时（分钟）
 };
 
 export type BingoGrid = BingoTile[][];
