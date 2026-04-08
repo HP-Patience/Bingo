@@ -346,28 +346,10 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
   );
 };
 
-const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStats, onThemeClick, onUpdateTileNote }: { tiles: BingoTile[][], onToggleTile: (r: number, c: number) => void, onShuffle: () => void, onReset: () => void, onPomodoro: () => void, onStats: () => void, onThemeClick: () => void, onUpdateTileNote: (r: number, c: number, note: string) => void }) => {
+const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStats, onThemeClick, onUpdateTileNote, showNoteModal, setShowNoteModal, selectedTile, setSelectedTile, noteText, setNoteText, handleLongPress, handleSaveNote }: { tiles: BingoTile[][], onToggleTile: (r: number, c: number) => void, onShuffle: () => void, onReset: () => void, onPomodoro: () => void, onStats: () => void, onThemeClick: () => void, onUpdateTileNote: (r: number, c: number, note: string) => void, showNoteModal: boolean, setShowNoteModal: (show: boolean) => void, selectedTile: { r: number, c: number, tile: BingoTile } | null, setSelectedTile: (tile: { r: number, c: number, tile: BingoTile } | null) => void, noteText: string, setNoteText: (text: string) => void, handleLongPress: (r: number, c: number, tile: BingoTile) => void, handleSaveNote: () => void }) => {
   const completedCount = tiles.flat().filter(t => t.completed).length;
   const totalCount = tiles.flat().length;
   const progress = Math.round((completedCount / totalCount) * 100);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [selectedTile, setSelectedTile] = useState<{ r: number, c: number, tile: BingoTile } | null>(null);
-  const [noteText, setNoteText] = useState('');
-
-  const handleLongPress = (r: number, c: number, tile: BingoTile) => {
-    setSelectedTile({ r, c, tile });
-    setNoteText(tile.note || '');
-    setShowNoteModal(true);
-  };
-
-  const handleSaveNote = () => {
-    if (selectedTile) {
-      onUpdateTileNote(selectedTile.r, selectedTile.c, noteText);
-      setShowNoteModal(false);
-      setSelectedTile(null);
-      setNoteText('');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -448,70 +430,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
         <ToolbarItem icon={<Palette className="w-5 h-5" />} label="主题" onClick={onThemeClick} />
       </div>
 
-      {/* Note Modal */}
-      <AnimatePresence>
-        {showNoteModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowNoteModal(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-black tracking-tight uppercase">任务备注</h3>
-                  <button onClick={() => setShowNoteModal(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">任务名称</label>
-                    <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
-                      {selectedTile?.tile.taskName}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">备注信息</label>
-                    <textarea 
-                      placeholder="请输入任务备注..." 
-                      className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none h-32"
-                      value={noteText}
-                      onChange={(e) => setNoteText(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex gap-3 pt-2">
-                  <button 
-                    onClick={() => setShowNoteModal(false)}
-                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
-                  >
-                    取消
-                  </button>
-                  <button 
-                    onClick={handleSaveNote}
-                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
-                  >
-                    保存备注
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+
     </div>
   );
 };
@@ -2380,14 +2299,17 @@ const GachaView = ({
   userLevel, 
   gachaState, 
   onDraw,
-  onTabChange
+  onTabChange,
+  showHelp,
+  setShowHelp
 }: { 
   userLevel: number,
   gachaState: GachaState,
   onDraw: () => void,
-  onTabChange: (tab: string) => void
+  onTabChange: (tab: string) => void,
+  showHelp: boolean,
+  setShowHelp: (show: boolean) => void
 }) => {
-  const [showHelp, setShowHelp] = useState(false);
   
   const getPoolName = (level: number) => {
     if (level >= 30) return '传说奖池';
@@ -2516,116 +2438,7 @@ const GachaView = ({
         )}
       </section>
 
-      <AnimatePresence>
-        {showHelp && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setShowHelp(false)}
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-surface rounded-3xl shadow-2xl max-h-[70vh] w-full max-w-md flex flex-col"
-            >
-              <div className="p-6 pb-0">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-black">抽奖机制说明</h2>
-                  <button 
-                    onClick={() => setShowHelp(false)}
-                    className="p-2 rounded-full hover:bg-surface-container-low transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6 pt-4 space-y-4 overflow-y-auto flex-1">
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-primary" />
-                      新手奖池（1-5级）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 30-60（70%）/ 稀有 60-100（30%）</li>
-                      <li>• 余额 50%：普通 24-48（70%）/ 稀有 48-80（30%）</li>
-                    </ul>
-                  </div>
 
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-blue-500" />
-                      进阶奖池（6-15级）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 120-200（65%）/ 稀有 200-350（35%）</li>
-                      <li>• 余额 50%：普通 96-160（65%）/ 稀有 160-280（35%）</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-purple-500" />
-                      高级奖池（16-29级）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 600-900（65%）/ 稀有 900-1400（35%）</li>
-                      <li>• 余额 50%：普通 480-720（65%）/ 稀有 720-1120（35%）</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Flame className="w-4 h-4 text-yellow-500" />
-                      传说奖池（30级+）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 1200-1800（55%）/ 稀有 1800-3000（45%）</li>
-                      <li>• 余额 50%：普通 960-1440（55%）/ 稀有 1440-2400（45%）</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-primary" />
-                      抽奖频率
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• 1-15级：每升1级抽1次</li>
-                      <li>• 16-29级：每升2级抽1次</li>
-                      <li>• 30级+：每升2级抽1次</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      保底机制
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• 连续3次普通奖励 → 下次必中稀有奖励</li>
-                      <li>• 连续5次同类型奖励 → 下次必换另一种类型</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-primary" />
-                      奖励类型
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• 经验值（XP）：可用于升级</li>
-                      <li>• 余额：可在商店购买奖励</li>
-                    </ul>
-                  </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
@@ -2639,7 +2452,9 @@ const ShopView = ({
   onUpdateItem,
   onDeleteItem,
   onTabChange,
-  shopHistory
+  shopHistory,
+  showHistory,
+  setShowHistory
 }: { 
   items: ShopItem[], 
   userBalance: number, 
@@ -2649,12 +2464,13 @@ const ShopView = ({
   onUpdateItem: (item: ShopItem) => void,
   onDeleteItem: (id: string) => void,
   onTabChange: (tab: string) => void,
-  shopHistory: ShopHistoryEntry[]
+  shopHistory: ShopHistoryEntry[],
+  showHistory: boolean,
+  setShowHistory: (show: boolean) => void
 }) => {
   const [isManageMode, setIsManageMode] = useState(false);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
 
   const [newItem, setNewItem] = useState<Omit<ShopItem, 'id'>>({
     name: '',
@@ -2886,66 +2702,7 @@ const ShopView = ({
             </motion.div>
           </div>
         )}
-        {showHistory && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowHistory(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6 max-h-[80vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black tracking-tight uppercase">购买记录</h3>
-                <button onClick={() => setShowHistory(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              {shopHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-on-surface-variant font-medium">还没有购买记录</p>
-                </div>
-              ) : (
-                <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-2">
-                  {shopHistory.map((entry) => (
-                    <div 
-                      key={entry.id}
-                      className="bg-surface-container-low border border-outline-variant rounded-2xl p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-surface-container rounded-xl flex items-center justify-center text-primary">
-                          <ShopItemIcon name={entry.itemIcon} className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <span className="font-bold text-sm">{entry.itemName}</span>
-                          <p className="text-[10px] text-on-surface-variant font-medium">
-                            {new Date(entry.timestamp).toLocaleDateString('zh-CN')} · 等级 {entry.level}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-black text-lg text-secondary">
-                          -{entry.cost}
-                        </span>
-                        <span className="text-[10px] text-on-surface-variant font-bold block">
-                          XP
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
+
       </AnimatePresence>
     </div>
   );
@@ -3635,11 +3392,7 @@ const PomodoroView = ({
   );
 };
 
-const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onUpdateUser }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onUpdateUser: (updates: Partial<User>) => void }) => {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editUsername, setEditUsername] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editAvatar, setEditAvatar] = useState('');
+const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfile }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onEditProfile: () => void }) => {
   
   const themes: { name: Theme, color: string }[] = [
     { name: 'zinc', color: '#6f797a' },
@@ -3693,7 +3446,7 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onUpdateUser
               <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest opacity-60">{user.email}</p>
             </div>
             <button 
-              onClick={handleEditProfile}
+              onClick={onEditProfile}
               className="ml-auto text-primary p-2 hover:bg-primary/10 rounded-full transition-all"
             >
               <Edit2 className="w-5 h-5" />
@@ -3768,111 +3521,7 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onUpdateUser
         </div>
       </footer>
 
-      {/* Edit Profile Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsEditModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black tracking-tight uppercase">编辑个人信息</h3>
-                <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="space-y-6">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20">
-                    <img src={editAvatar} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    id="avatar-upload"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          setEditAvatar(event.target?.result as string);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                  <label 
-                    htmlFor="avatar-upload"
-                    className="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
-                  >
-                    选择图片
-                  </label>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">用户名</label>
-                  <input 
-                    type="text" 
-                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
-                    value={editUsername}
-                    onChange={(e) => setEditUsername(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">邮箱地址</label>
-                  <input 
-                    type="email" 
-                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">头像 URL (可选)</label>
-                  <input 
-                    type="url" 
-                    placeholder="输入头像图片链接" 
-                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
-                    value={editAvatar}
-                    onChange={(e) => setEditAvatar(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button 
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
-                >
-                  取消
-                </button>
-                <button 
-                  onClick={handleSaveProfile}
-                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
-                >
-                  保存
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
@@ -3899,6 +3548,15 @@ export default function App() {
   const [activeSubTab, setActiveSubTab] = useState('achievements');
   const [isTimeRangeModalOpen, setIsTimeRangeModalOpen] = useState(false);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'quarter' | 'year' | 'all'>('today');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [selectedTile, setSelectedTile] = useState<{ r: number, c: number, tile: BingoTile } | null>(null);
+  const [noteText, setNoteText] = useState('');
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('life-bingo-user');
     if (saved) {
@@ -4899,6 +4557,48 @@ export default function App() {
     setBingoTiles(newTiles);
   };
 
+  const handleEditProfile = () => {
+    if (user) {
+      setEditUsername(user.username);
+      setEditEmail(user.email);
+      setEditAvatar(user.avatar);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (user) {
+      setUser({
+        ...user,
+        username: editUsername.trim(),
+        email: editEmail.trim(),
+        avatar: editAvatar.trim()
+      });
+      setIsEditModalOpen(false);
+    }
+  };
+
+  const handleLongPress = (r: number, c: number, tile: BingoTile) => {
+    setSelectedTile({ r, c, tile });
+    setNoteText(tile.note || '');
+    setShowNoteModal(true);
+  };
+
+  const handleSaveNote = () => {
+    if (selectedTile) {
+      setBingoTiles(prev => prev.map((row, rowIndex) => 
+        row.map((tile, colIndex) => 
+          rowIndex === selectedTile.r && colIndex === selectedTile.c 
+            ? { ...tile, note: noteText, noteTimestamp: new Date().toISOString() } 
+            : tile
+        )
+      ));
+      setShowNoteModal(false);
+      setSelectedTile(null);
+      setNoteText('');
+    }
+  };
+
   const updateSettings = (newSettings: Partial<Settings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
@@ -4943,6 +4643,14 @@ export default function App() {
               }}
               onThemeClick={cycleTheme}
               onUpdateTileNote={updateTileNote}
+              showNoteModal={showNoteModal}
+              setShowNoteModal={setShowNoteModal}
+              selectedTile={selectedTile}
+              setSelectedTile={setSelectedTile}
+              noteText={noteText}
+              setNoteText={setNoteText}
+              handleLongPress={handleLongPress}
+              handleSaveNote={handleSaveNote}
             />
           </motion.div>
         )}
@@ -5045,6 +4753,8 @@ export default function App() {
               gachaState={gachaState}
               onDraw={handleGachaDraw}
               onTabChange={setActiveTab}
+              showHelp={showHelp}
+              setShowHelp={setShowHelp}
             />
           </motion.div>
         )}
@@ -5065,6 +4775,8 @@ export default function App() {
               onDeleteItem={deleteShopItem}
               onTabChange={setActiveTab}
               shopHistory={shopHistory}
+              showHistory={showHistory}
+              setShowHistory={setShowHistory}
             />
           </motion.div>
         )}
@@ -5080,7 +4792,7 @@ export default function App() {
               onUpdateSettings={updateSettings} 
               user={user}
               onLogout={logout}
-              onUpdateUser={updateUser}
+              onEditProfile={handleEditProfile}
             />
           </motion.div>
         )}
@@ -5278,6 +4990,353 @@ export default function App() {
                     className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
                   >
                     保存
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black tracking-tight uppercase">编辑个人信息</h3>
+                <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20">
+                    <img src={editAvatar} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    id="avatar-upload"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setEditAvatar(event.target?.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  <label 
+                    htmlFor="avatar-upload"
+                    className="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
+                  >
+                    选择图片
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">用户名</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">邮箱地址</label>
+                  <input 
+                    type="email" 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">头像 URL (可选)</label>
+                  <input 
+                    type="url" 
+                    placeholder="输入头像图片链接" 
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={editAvatar}
+                    onChange={(e) => setEditAvatar(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={handleSaveProfile}
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  保存
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Shop History Modal */}
+      <AnimatePresence>
+        {showHistory && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistory(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6 max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black tracking-tight uppercase">购买记录</h3>
+                <button onClick={() => setShowHistory(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {shopHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-on-surface-variant font-medium">还没有购买记录</p>
+                </div>
+              ) : (
+                <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-2">
+                  {shopHistory.map((entry) => (
+                    <div 
+                      key={entry.id}
+                      className="bg-surface-container-low border border-outline-variant rounded-2xl p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-surface-container rounded-xl flex items-center justify-center text-primary">
+                          <ShopItemIcon name={entry.itemIcon} className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-sm">{entry.itemName}</span>
+                          <p className="text-[10px] text-on-surface-variant font-medium">
+                            {new Date(entry.timestamp).toLocaleDateString('zh-CN')} · 等级 {entry.level}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-black text-lg text-secondary">
+                          -{entry.cost}
+                        </span>
+                        <span className="text-[10px] text-on-surface-variant font-bold block">
+                          XP
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Gacha Help Modal */}
+      <AnimatePresence>
+        {showHelp && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 pb-24">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setShowHelp(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-surface rounded-3xl shadow-2xl max-h-[70vh] w-full max-w-md flex flex-col"
+            >
+              <div className="p-6 pb-0">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-black">抽奖机制说明</h2>
+                  <button 
+                    onClick={() => setShowHelp(false)}
+                    className="p-2 rounded-full hover:bg-surface-container-low transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 pt-4 space-y-4 overflow-y-auto flex-1">
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-primary" />
+                      新手奖池（1-5级）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 30-60（70%）/ 稀有 60-100（30%）</li>
+                      <li>• 余额 50%：普通 24-48（70%）/ 稀有 48-80（30%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-500" />
+                      进阶奖池（6-15级）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 120-200（65%）/ 稀有 200-350（35%）</li>
+                      <li>• 余额 50%：普通 96-160（65%）/ 稀有 160-280（35%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-purple-500" />
+                      高级奖池（16-29级）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 600-900（65%）/ 稀有 900-1400（35%）</li>
+                      <li>• 余额 50%：普通 480-720（65%）/ 稀有 720-1120（35%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-yellow-500" />
+                      传说奖池（30级+）
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• XP 50%：普通 1200-1800（55%）/ 稀有 1800-3000（45%）</li>
+                      <li>• 余额 50%：普通 960-1440（55%）/ 稀有 1440-2400（45%）</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      抽奖频率
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• 1-15级：每升1级抽1次</li>
+                      <li>• 16-29级：每升2级抽1次</li>
+                      <li>• 30级+：每升2级抽1次</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      保底机制
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• 连续3次普通奖励 → 下次必中稀有奖励</li>
+                      <li>• 连续5次同类型奖励 → 下次必换另一种类型</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-2xl p-4">
+                    <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-primary" />
+                      奖励类型
+                    </h3>
+                    <ul className="text-sm space-y-1 text-on-surface-variant">
+                      <li>• 经验值（XP）：可用于升级</li>
+                      <li>• 余额：可在商店购买奖励</li>
+                    </ul>
+                  </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Note Modal */}
+      <AnimatePresence>
+        {showNoteModal && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNoteModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black tracking-tight uppercase">任务备注</h3>
+                  <button onClick={() => setShowNoteModal(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">任务名称</label>
+                    <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
+                      {selectedTile?.tile.taskName}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">备注信息</label>
+                    <textarea 
+                      placeholder="请输入任务备注..." 
+                      className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none h-32"
+                      value={noteText}
+                      onChange={(e) => setNoteText(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    onClick={() => setShowNoteModal(false)}
+                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    取消
+                  </button>
+                  <button 
+                    onClick={handleSaveNote}
+                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    保存备注
                   </button>
                 </div>
               </div>
