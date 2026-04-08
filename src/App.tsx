@@ -736,13 +736,14 @@ const TasksView = ({
 
   return (
     <div className="space-y-8">
-      {/* Navigation Tabs */}
-      <div className="flex gap-2">
+      <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
         <button 
           onClick={() => setActiveSubTab('tasks')}
           className={cn(
-            "flex-1 py-3 px-2 rounded-2xl font-bold transition-all text-sm",
-            activeSubTab === 'tasks' ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            activeSubTab === 'tasks' 
+              ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
+              : "text-on-surface-variant hover:text-on-surface"
           )}
         >
           任务页
@@ -750,54 +751,63 @@ const TasksView = ({
         <button 
           onClick={() => setActiveSubTab('notes')}
           className={cn(
-            "flex-1 py-3 px-2 rounded-2xl font-bold transition-all text-sm",
-            activeSubTab === 'notes' ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            activeSubTab === 'notes' 
+              ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
+              : "text-on-surface-variant hover:text-on-surface"
           )}
         >
           笔记页
         </button>
       </div>
 
-      {activeSubTab === 'tasks' && (
-        <>
-          <section className="space-y-4">
-            <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">格子大小</h3>
-            <div className="flex gap-2">
-              {[3, 4, 5, 6].map(size => (
+      <AnimatePresence mode="wait">
+        {activeSubTab === 'tasks' ? (
+          <motion.div
+            key="tasks"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+          >
+            <>
+              <section className="space-y-4">
+                <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">格子大小</h3>
+                <div className="flex gap-2">
+                  {[3, 4, 5, 6].map(size => (
+                    <button 
+                      key={size}
+                      onClick={() => onGridSizeChange(size)}
+                      className={cn(
+                        "flex-1 py-3 px-2 rounded-2xl font-bold transition-all",
+                        gridSize === size ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                      )}
+                    >
+                      {size}x{size}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <div className="flex items-center gap-6 py-3 my-3">
                 <button 
-                  key={size}
-                  onClick={() => onGridSizeChange(size)}
-                  className={cn(
-                    "flex-1 py-3 px-2 rounded-2xl font-bold transition-all",
-                    gridSize === size ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                  )}
+                  onClick={onShuffleTasks}
+                  className="text-sm font-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors"
                 >
-                  {size}x{size}
+                  <Shuffle className="w-4 h-4" /> 随机
                 </button>
-              ))}
-            </div>
-          </section>
+                <button 
+                  onClick={onSortTasks}
+                  className="text-sm font-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <SortAsc className="w-4 h-4" /> 排序
+                </button>
+              </div>
 
-          <div className="flex items-center gap-6 py-2">
-            <button 
-              onClick={onShuffleTasks}
-              className="text-sm font-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors"
-            >
-              <Shuffle className="w-4 h-4" /> 随机
-            </button>
-            <button 
-              onClick={onSortTasks}
-              className="text-sm font-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors"
-            >
-              <SortAsc className="w-4 h-4" /> 排序
-            </button>
-          </div>
-
-          <div className="space-y-10">
-        {groups.map(group => {
-          const allSelected = group.tasks.length > 0 && group.tasks.every(t => selectedTaskIds.has(t.id));
-          return (
-            <div key={group.id} className="space-y-4">
+              <div className="space-y-10">
+            {groups.map(group => {
+              const allSelected = group.tasks.length > 0 && group.tasks.every(t => selectedTaskIds.has(t.id));
+              return (
+                <div key={group.id} className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
@@ -1121,61 +1131,67 @@ const TasksView = ({
           </div>
         )}
       </AnimatePresence>
-        </>
-      )}
+            </>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="notes"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <section className="space-y-4">
+              <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">任务备注</h3>
+              <p className="text-on-surface-variant text-sm">查看任务的备注信息</p>
+            </section>
 
-      {activeSubTab === 'notes' && (
-        <div className="space-y-8">
-          <section className="space-y-4">
-            <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">任务备注</h3>
-            <p className="text-on-surface-variant text-sm">查看任务的备注信息</p>
-          </section>
-
-          <div className="space-y-6">
-            {(() => {
-              // 按日期分组任务
-              const notesByDate: Record<string, BingoTile[]> = {};
-              bingoTiles.flat().forEach(tile => {
-                if (tile.note) {
-                  const date = tile.noteTimestamp 
-                    ? new Date(tile.noteTimestamp).toLocaleDateString('zh-CN') 
-                    : new Date().toLocaleDateString('zh-CN');
-                  if (!notesByDate[date]) {
-                    notesByDate[date] = [];
+            <div className="space-y-6">
+              {(() => {
+                // 按日期分组任务
+                const notesByDate: Record<string, BingoTile[]> = {};
+                bingoTiles.flat().forEach(tile => {
+                  if (tile.note) {
+                    const date = tile.noteTimestamp 
+                      ? new Date(tile.noteTimestamp).toLocaleDateString('zh-CN') 
+                      : new Date().toLocaleDateString('zh-CN');
+                    if (!notesByDate[date]) {
+                      notesByDate[date] = [];
+                    }
+                    notesByDate[date].push(tile);
                   }
-                  notesByDate[date].push(tile);
+                });
+
+                // 按日期排序
+                const sortedDates = Object.keys(notesByDate).sort((a, b) => {
+                  return new Date(b).getTime() - new Date(a).getTime();
+                });
+
+                if (sortedDates.length === 0) {
+                  return (
+                    <div className="text-center py-10 text-on-surface-variant/40 font-bold text-sm italic">
+                      暂无任务备注信息
+                    </div>
+                  );
                 }
-              });
 
-              // 按日期排序
-              const sortedDates = Object.keys(notesByDate).sort((a, b) => {
-                return new Date(b).getTime() - new Date(a).getTime();
-              });
-
-              if (sortedDates.length === 0) {
-                return (
-                  <div className="text-center py-10 text-on-surface-variant/40 font-bold text-sm italic">
-                    暂无任务备注信息
-                  </div>
-                );
-              }
-
-              return sortedDates.map(date => (
-                <CollapsibleNotesSection 
-                  key={date}
-                  dateStr={date}
-                  notes={notesByDate[date]}
-                />
-              ));
-            })()}
-          </div>
-        </div>
-      )}
+                return sortedDates.map(date => (
+                  <CollapsibleNotesSection 
+                    key={date}
+                    dateStr={date}
+                    notes={notesByDate[date]}
+                  />
+                ));
+              })()}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-const CollapsibleHistorySection = ({ dateStr, tasks, defaultExpanded = false, onDeleteEntry }: { dateStr: string, tasks: HistoryEntry[], defaultExpanded?: boolean, key?: string, onDeleteEntry?: (id: string) => void }) => {
+const CollapsibleHistorySection = ({ dateStr, tasks, defaultExpanded = false, onDeleteEntry, onEditEntry }: { dateStr: string, tasks: HistoryEntry[], defaultExpanded?: boolean, key?: string, onDeleteEntry?: (id: string) => void, onEditEntry?: (id: string) => void }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -1212,8 +1228,10 @@ const CollapsibleHistorySection = ({ dateStr, tasks, defaultExpanded = false, on
                   key={entry.id} 
                   icon={entry.type === 'pomodoro' ? <Timer className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />} 
                   title={entry.taskName + (entry.xpEarned ? ` (+${entry.xpEarned} XP)` : '')} 
-                  time={new Date(entry.completedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} 
+                  time={new Date(entry.completedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} 
+                  duration={entry.duration}
                   onDelete={() => onDeleteEntry?.(entry.id)}
+                  onEdit={() => onEditEntry?.(entry.id)}
                 />
               ))
             ) : (
@@ -1291,7 +1309,7 @@ const CollapsibleNotesSection = ({ dateStr, notes }: { dateStr: string, notes: B
   );
 };
 
-const CalendarView = ({ history, onBackToToday, onDeleteEntry }: { history: HistoryEntry[], onBackToToday: () => void, onDeleteEntry: (id: string) => void }) => {
+const CalendarView = ({ history, onBackToToday, onDeleteEntry, onEditEntry }: { history: HistoryEntry[], onBackToToday: () => void, onDeleteEntry: (id: string) => void, onEditEntry: (id: string) => void }) => {
   const [subTab, setSubTab] = useState<'calendar' | 'history'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -1357,12 +1375,14 @@ const CalendarView = ({ history, onBackToToday, onDeleteEntry }: { history: Hist
   return (
     <div className="space-y-8">
       {/* Sub-tabs */}
-      <div className="flex bg-surface-container-low p-1 rounded-2xl border border-outline-variant">
+      <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
         <button 
           onClick={() => setSubTab('calendar')}
           className={cn(
-            "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
-            subTab === 'calendar' ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            subTab === 'calendar' 
+              ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
+              : "text-on-surface-variant hover:text-on-surface"
           )}
         >
           日历
@@ -1370,136 +1390,177 @@ const CalendarView = ({ history, onBackToToday, onDeleteEntry }: { history: Hist
         <button 
           onClick={() => setSubTab('history')}
           className={cn(
-            "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
-            subTab === 'history' ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            subTab === 'history' 
+              ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
+              : "text-on-surface-variant hover:text-on-surface"
           )}
         >
           历史
         </button>
       </div>
 
-      {subTab === 'calendar' ? (
-        <div className="space-y-10">
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
-                </h1>
-                <p className="text-on-surface-variant text-sm font-medium">
-                  {history.length > 0 ? '状态火热！' : '开始记录你的第一天吧'}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={prevMonth}
-                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all active:scale-90"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button 
-                  onClick={nextMonth}
-                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all active:scale-90"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-surface-container-lowest rounded-[2.5rem] p-8 border border-outline-variant shadow-sm">
-              <div className="flex items-center gap-2 mb-6 px-2">
-                <Info className="w-5 h-5 text-primary" />
-                <span className="font-bold text-sm">月度概览</span>
-              </div>
-              <div className="grid grid-cols-7 mb-6">
-                {['一', '二', '三', '四', '五', '六', '日'].map(d => (
-                  <span key={d} className="text-center text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{d}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {days.map((day, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => day && setSelectedDate(day)}
-                    className={cn(
-                      "h-12 relative flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-all rounded-xl",
-                      !day && "invisible",
-                      day && isSameDay(day, selectedDate) && "ring-2 ring-primary ring-offset-2 ring-offset-surface-container-lowest",
-                      day && getHeatmapColor(day)
-                    )}
+      <AnimatePresence mode="wait">
+        {subTab === 'calendar' ? (
+          <motion.div
+            key="calendar"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-10"
+          >
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
+                  </h1>
+                  <p className="text-on-surface-variant text-sm font-medium">
+                    {history.length > 0 ? '状态火热！' : '开始记录你的第一天吧'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={prevMonth}
+                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all active:scale-90"
                   >
-                    {day?.getDate().toString().padStart(2, '0')}
-                    {day && isSameDay(day, new Date()) && (
-                      <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full" />
-                    )}
-                  </div>
-                ))}
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={nextMonth}
+                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all active:scale-90"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
-              <div className="mt-8 flex justify-center">
-                <button 
-                  onClick={onBackToToday}
-                  className="bg-surface-container-low text-primary px-6 py-2.5 rounded-full font-bold text-[11px] tracking-wider uppercase active:scale-95 transition-all flex items-center gap-2 border border-outline-variant"
-                >
-                  <CalendarIcon className="w-4 h-4" /> 返回今天
-                </button>
+
+              <div className="bg-surface-container-lowest rounded-[2.5rem] p-8 border border-outline-variant shadow-sm">
+                <div className="flex items-center gap-2 mb-6 px-2">
+                  <Info className="w-5 h-5 text-primary" />
+                  <span className="font-bold text-sm">月度概览</span>
+                </div>
+                <div className="grid grid-cols-7 mb-6">
+                  {['一', '二', '三', '四', '五', '六', '日'].map(d => (
+                    <span key={d} className="text-center text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{d}</span>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {days.map((day, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => day && setSelectedDate(day)}
+                      className={cn(
+                        "h-12 relative flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-all rounded-xl",
+                        !day && "invisible",
+                        day && isSameDay(day, selectedDate) && "ring-2 ring-primary ring-offset-2 ring-offset-surface-container-lowest",
+                        day && getHeatmapColor(day)
+                      )}
+                    >
+                      {day?.getDate().toString().padStart(2, '0')}
+                      {day && isSameDay(day, new Date()) && (
+                        <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-8 flex justify-center">
+                  <button 
+                    onClick={onBackToToday}
+                    className="bg-surface-container-low text-primary px-6 py-2.5 rounded-full font-bold text-[11px] tracking-wider uppercase active:scale-95 transition-all flex items-center gap-2 border border-outline-variant"
+                  >
+                    <CalendarIcon className="w-4 h-4" /> 返回今天
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
             <CollapsibleHistorySection 
               dateStr={selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
               tasks={selectedTasks}
               defaultExpanded={true}
               onDeleteEntry={onDeleteEntry}
+              onEditEntry={onEditEntry}
             />
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {sortedHistoryDates.length > 0 ? (
-            sortedHistoryDates.map(dateStr => (
-              <CollapsibleHistorySection 
-                key={dateStr}
-                dateStr={dateStr}
-                tasks={historyByDate[dateStr]}
-                defaultExpanded={false}
-                onDeleteEntry={onDeleteEntry}
-              />
-            ))
-          ) : (
-            <div className="text-center py-20 space-y-4">
-              <div className="inline-block p-6 rounded-full bg-surface-container-low text-on-surface-variant/20">
-                <CalendarIcon className="w-12 h-12" />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="history"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-10"
+          >
+            {sortedHistoryDates.length > 0 ? (
+              sortedHistoryDates.map(dateStr => (
+                <CollapsibleHistorySection 
+                  key={dateStr}
+                  dateStr={dateStr}
+                  tasks={historyByDate[dateStr]}
+                  defaultExpanded={false}
+                  onDeleteEntry={onDeleteEntry}
+                  onEditEntry={onEditEntry}
+                />
+              ))
+            ) : (
+              <div className="text-center py-20 space-y-4">
+                <div className="inline-block p-6 rounded-full bg-surface-container-low text-on-surface-variant/20">
+                  <CalendarIcon className="w-12 h-12" />
+                </div>
+                <p className="text-on-surface-variant/40 font-bold text-sm">暂无历史记录</p>
               </div>
-              <p className="text-on-surface-variant/40 font-bold text-sm">暂无历史记录</p>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-const HistoryItem = ({ icon, title, time, onDelete }: { icon: React.ReactNode, title: string, time: string, key?: string, onDelete?: () => void }) => (
-  <div className="bg-surface-container-lowest border border-outline-variant p-5 rounded-[1.5rem] flex items-center justify-between shadow-sm active:bg-surface-container-low transition-colors cursor-pointer group">
+const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: React.ReactNode, title: string, time: string, duration?: number, key?: string, onDelete?: () => void, onEdit?: () => void }) => (
+  <div className="bg-surface-container-lowest border border-outline-variant p-5 rounded-[1.5rem] flex items-center justify-between shadow-sm active:bg-surface-container-low transition-colors group relative">
     <div className="flex items-center gap-4">
       <div className="w-12 h-12 bg-surface-container-low text-primary flex items-center justify-center rounded-2xl">
         {icon}
       </div>
       <div>
         <p className="font-bold text-sm">{title}</p>
-        <p className="text-on-surface-variant text-[11px] flex items-center gap-1 font-medium">
-          <AlarmClock className="w-3 h-3" /> {time}
-        </p>
+        <div className="text-on-surface-variant text-[11px] flex items-center gap-3 font-medium">
+          <span className="flex items-center gap-1">
+            <AlarmClock className="w-3 h-3" /> {time}
+          </span>
+          {duration && (
+            <span className="flex items-center gap-1">
+              <Timer className="w-3 h-3" /> {duration}分钟
+            </span>
+          )}
+        </div>
       </div>
     </div>
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 relative z-20">
+      {onEdit && (
+        <button 
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Edit button clicked');
+            if (onEdit) onEdit();
+          }}
+          className="p-2 text-on-surface-variant/80 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer relative z-30"
+        >
+          <Edit2 className="w-5 h-5" />
+        </button>
+      )}
       {onDelete && (
         <button 
+          type="button"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
-            onDelete();
+            if (onDelete) onDelete();
           }}
-          className="p-2 text-on-surface-variant/20 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+          className="p-2 text-on-surface-variant/80 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer relative z-30"
         >
           <Trash2 className="w-5 h-5" />
         </button>
@@ -1784,13 +1845,28 @@ const AchievementsView = ({
   return (
     <div className="space-y-10">
       <section className="space-y-6">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-3xl font-extrabold tracking-tight uppercase">荣誉殿堂</h2>
+        <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
           <button 
-            onClick={() => setViewMode(viewMode === 'achievements' ? 'stats' : 'achievements')}
-            className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 px-3 py-1.5 rounded-full border border-primary/20 transition-all active:scale-95"
+            onClick={() => setViewMode('achievements')}
+            className={cn(
+              "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+              viewMode === 'achievements' 
+                ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
+                : "text-on-surface-variant hover:text-on-surface"
+            )}
           >
-            {viewMode === 'achievements' ? '查看统计' : '查看成就'}
+            成就
+          </button>
+          <button 
+            onClick={() => setViewMode('stats')}
+            className={cn(
+              "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+              viewMode === 'stats' 
+                ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
+                : "text-on-surface-variant hover:text-on-surface"
+            )}
+          >
+            统计信息
           </button>
         </div>
       </section>
@@ -1876,7 +1952,7 @@ const AchievementsView = ({
               
               <div className="bg-surface-container-lowest border border-outline-variant rounded-[2rem] p-10 text-center space-y-8 relative overflow-hidden">
                 <div className="space-y-3">
-                  <h3 className="text-2xl font-extrabold tracking-tight uppercase">定义你的荣耀</h3>
+                  <h3 className="text-2xl font-extrabold tracking-tight uppercase">定义你的成就</h3>
                   <p className="text-on-surface-variant text-sm px-6 font-medium">为你的独特个人胜利创建自定义徽章。</p>
                 </div>
                 {!isAddingCustom ? (
@@ -2105,11 +2181,13 @@ const AchievementsView = ({
 const GachaView = ({ 
   userLevel, 
   gachaState, 
-  onDraw
+  onDraw,
+  onTabChange
 }: { 
   userLevel: number,
   gachaState: GachaState,
-  onDraw: () => void
+  onDraw: () => void,
+  onTabChange: (tab: string) => void
 }) => {
   const [showHelp, setShowHelp] = useState(false);
   
@@ -2139,9 +2217,25 @@ const GachaView = ({
   };
 
   return (
-    <div className="space-y-8 py-4">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">抽奖系统</h2>
+    <div className="space-y-10">
+      <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
+        <button
+          onClick={() => onTabChange('shop')}
+          className={cn(
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            "text-on-surface-variant hover:text-on-surface"
+          )}
+        >
+          商店
+        </button>
+        <button
+          className={cn(
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            "bg-primary text-on-primary shadow-lg shadow-primary/20"
+          )}
+        >
+          抽奖
+        </button>
       </div>
       
       <section className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-[2rem] p-8 relative overflow-hidden shadow-sm">
@@ -2389,16 +2483,21 @@ const ShopView = ({
 
   return (
     <div className="space-y-10">
-      <div className="bg-surface-container-low rounded-2xl p-1 flex gap-1">
+      <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
         <button
-          className="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all"
-          style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}
+          className={cn(
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            "bg-primary text-on-primary shadow-lg shadow-primary/20"
+          )}
         >
           商店
         </button>
         <button
           onClick={() => onTabChange('gacha')}
-          className="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all text-on-surface-variant hover:text-on-surface"
+          className={cn(
+            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
+            "text-on-surface-variant hover:text-on-surface"
+          )}
         >
           抽奖
         </button>
@@ -3703,6 +3802,12 @@ export default function App() {
     return [];
   });
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
+  const [editForm, setEditForm] = useState({
+    time: '',
+    duration: 0
+  });
 
   React.useEffect(() => {
     localStorage.setItem('life-bingo-user', JSON.stringify(user));
@@ -4043,6 +4148,53 @@ export default function App() {
       }
       return tile;
     })));
+  };
+
+  const editHistoryEntry = (id: string) => {
+    const entryToEdit = history.find(h => h.id === id);
+    if (!entryToEdit) return;
+
+    const currentDate = new Date(entryToEdit.completedAt);
+    const currentTime = currentDate.toTimeString().substring(0, 8);
+    const currentDuration = entryToEdit.duration || 0;
+
+    setEditingEntry(entryToEdit);
+    setEditForm({
+      time: currentTime,
+      duration: currentDuration
+    });
+    setIsEditTaskModalOpen(true);
+  };
+
+  const saveEditTask = () => {
+    if (!editingEntry) return;
+
+    const { time, duration } = editForm;
+    const [hours, minutes, seconds] = time.split(':').map(Number);
+    const durationMinutes = parseInt(duration.toString());
+
+    if (isNaN(hours) || isNaN(minutes) || isNaN(seconds) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59 || isNaN(durationMinutes) || durationMinutes < 0) {
+      alert('请输入有效的时间和耗时');
+      return;
+    }
+
+    const currentDate = new Date(editingEntry.completedAt);
+    const updatedDate = new Date(currentDate);
+    updatedDate.setHours(hours, minutes, seconds, 0);
+
+    setHistory(prev => prev.map(h => {
+      if (h.id === editingEntry.id) {
+        return {
+          ...h,
+          completedAt: updatedDate.toISOString(),
+          duration: durationMinutes
+        };
+      }
+      return h;
+    }));
+
+    setIsEditTaskModalOpen(false);
+    setEditingEntry(null);
   };
 
   const addXPWithLevelUp = (xpAmount: number, additionalStatsUpdate?: (prev: Stats) => Partial<Stats>) => {
@@ -4653,6 +4805,7 @@ export default function App() {
               history={history} 
               onBackToToday={() => setActiveTab('today')} 
               onDeleteEntry={deleteHistoryEntry}
+              onEditEntry={editHistoryEntry}
             />
           </motion.div>
         )}
@@ -4678,23 +4831,24 @@ export default function App() {
         {activeTab === 'gacha' && (
           <motion.div 
             key="gacha"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
           >
             <GachaView 
               userLevel={user?.level || 1}
               gachaState={gachaState}
               onDraw={handleGachaDraw}
+              onTabChange={setActiveTab}
             />
           </motion.div>
         )}
         {activeTab === 'shop' && (
           <motion.div 
             key="shop"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
           >
             <ShopView 
               items={shopItems} 
@@ -4771,6 +4925,95 @@ export default function App() {
                     className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
                   >
                     确认重置
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Task Modal */}
+      <AnimatePresence>
+        {isEditTaskModalOpen && editingEntry && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditTaskModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black tracking-tight uppercase">编辑任务</h3>
+                  <button onClick={() => setIsEditTaskModalOpen(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">任务名称</label>
+                    <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
+                      {editingEntry.taskName}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">完成时间</label>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const now = new Date();
+                          const timeStr = now.toTimeString().substring(0, 8);
+                          setEditForm(prev => ({ ...prev, time: timeStr }));
+                        }}
+                        className="text-xs font-bold text-primary hover:underline"
+                      >
+                        现在
+                      </button>
+                    </div>
+                    <input 
+                      type="time" 
+                      step="1"
+                      className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                      value={editForm.time}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">耗时 (分钟)</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                      value={editForm.duration}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    onClick={() => setIsEditTaskModalOpen(false)}
+                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    取消
+                  </button>
+                  <button 
+                    onClick={saveEditTask}
+                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    保存
                   </button>
                 </div>
               </div>
