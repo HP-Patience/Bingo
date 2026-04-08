@@ -1570,8 +1570,12 @@ const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: 
   </div>
 );
 
+type TimeRange = 'today' | 'week' | 'quarter' | 'year' | 'all';
+
 const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }) => {
   const [currentDayOffset, setCurrentDayOffset] = useState(0); // 0 = 当前日, -1 = 昨天, 1 = 明天
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
+  const [isTimeRangeModalOpen, setIsTimeRangeModalOpen] = useState(false);
 
   const getDateRange = (offset: number) => {
     const dates = [...Array(7)].map((_, i) => {
@@ -1583,6 +1587,67 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
   };
 
   const last7Days = getDateRange(currentDayOffset);
+
+  // 根据时间范围过滤历史记录
+  const getFilteredHistory = (range: TimeRange) => {
+    const now = new Date();
+    return history.filter(entry => {
+      const entryDate = new Date(entry.completedAt);
+      
+      switch (range) {
+        case 'today':
+          return entryDate.toDateString() === now.toDateString();
+        case 'week':
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay());
+          return entryDate >= weekStart;
+        case 'quarter':
+          const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+          return entryDate >= quarterStart;
+        case 'year':
+          const yearStart = new Date(now.getFullYear(), 0, 1);
+          return entryDate >= yearStart;
+        case 'all':
+        default:
+          return true;
+      }
+    });
+  };
+
+  // 根据时间范围计算统计数据
+  const getStatsByRange = (range: TimeRange) => {
+    const filteredHistory = getFilteredHistory(range);
+    
+    const totalCompleted = filteredHistory.length;
+    const totalXp = filteredHistory.reduce((acc, h) => acc + (h.xpEarned || 0), 0);
+    
+    // 计算专注时长
+    const totalFocusMinutes = filteredHistory.reduce((total, h) => {
+      if (h.duration) {
+        return total + h.duration;
+      }
+      if (h.type === 'pomodoro') {
+        return total + 25;
+      }
+      return total + 5;
+    }, 0);
+    
+    const hours = Math.floor(totalFocusMinutes / 60);
+    const minutes = totalFocusMinutes % 60;
+    
+    // 计算连击天数（简化版）
+    const currentStreak = stats.currentStreak; // 保持原有逻辑
+    
+    return {
+      totalCompleted,
+      totalXp,
+      hours,
+      minutes,
+      currentStreak
+    };
+  };
+
+  const rangeStats = getStatsByRange(timeRange);
 
   const xpData = last7Days.map(date => {
     const dayHistory = history.filter(h => new Date(h.completedAt).toDateString() === date);
@@ -1658,65 +1723,91 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
   const hours = Math.floor(totalFocusMinutes / 60);
   const minutes = totalFocusMinutes % 60;
 
+  // 获取时间范围的中文显示
+  const getTimeRangeLabel = (range: TimeRange) => {
+    switch (range) {
+      case 'today': return '今日';
+      case 'week': return '本周';
+      case 'quarter': return '本季度';
+      case 'year': return '本年度';
+      case 'all': return '总共';
+      default: return '今日';
+    }
+  };
+
   return (
     <div className="space-y-8 pb-10">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm space-y-2">
-          <div className="flex items-center gap-2 text-primary">
-            <Zap className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">累计经验</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black tracking-tighter">{stats.totalXp}</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">XP</span>
-          </div>
+      <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-black uppercase tracking-widest">{getTimeRangeLabel(timeRange)}数据</h2>
+          <button 
+            onClick={() => setIsTimeRangeModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-outline-variant rounded-full shadow-sm hover:bg-surface-container-high transition-colors"
+          >
+            <SettingsIcon className="w-4 h-4 text-violet-500" />
+            <span className="text-sm font-bold uppercase tracking-widest">时间范围</span>
+          </button>
         </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-surface-container-high border border-outline-variant p-6 rounded-[1.5rem] shadow-sm space-y-2">
+            <div className="flex items-center gap-2 text-primary">
+              <Zap className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">累计经验</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tighter">{rangeStats.totalXp}</span>
+              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">XP</span>
+            </div>
+          </div>
 
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm space-y-2">
-          <div className="flex items-center gap-2 text-amber-500">
-            <Flame className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">当前连击</span>
+          <div className="bg-surface-container-high border border-outline-variant p-6 rounded-[1.5rem] shadow-sm space-y-2">
+            <div className="flex items-center gap-2 text-amber-500">
+              <Flame className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">当前连击</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tighter">{rangeStats.currentStreak}</span>
+              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">天</span>
+            </div>
           </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black tracking-tighter">{stats.currentStreak}</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">天</span>
+
+          <div className="bg-surface-container-high border border-outline-variant p-6 rounded-[1.5rem] shadow-sm space-y-2">
+            <div className="flex items-center gap-2 text-emerald-500">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">已完任务</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tighter">{rangeStats.totalCompleted}</span>
+              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">个</span>
+            </div>
           </div>
+
+          <div className="bg-surface-container-high border border-outline-variant p-6 rounded-[1.5rem] shadow-sm space-y-2">
+            <div className="flex items-center gap-2 text-violet-500">
+              <Timer className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">专注时长</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tighter">{rangeStats.hours}</span>
+              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {rangeStats.minutes}m</span>
+            </div>
+          </div>
+
+          {/* 今日总耗时视图已隐藏 */}
+          {/* <div className="bg-surface-container-high border border-outline-variant p-6 rounded-[1.5rem] shadow-sm space-y-2 col-span-2">
+            <div className="flex items-center gap-2 text-blue-500">
+              <Clock className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">今日总耗时</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tighter">{todayHours}</span>
+              <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {todayMinutes}m</span>
+            </div>
+          </div> */}
         </div>
-
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm space-y-2">
-          <div className="flex items-center gap-2 text-emerald-500">
-            <CheckCircle2 className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">已完任务</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black tracking-tighter">{stats.totalCompleted}</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">个</span>
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm space-y-2">
-          <div className="flex items-center gap-2 text-violet-500">
-            <Timer className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">专注时长</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black tracking-tighter">{hours}</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {minutes}m</span>
-          </div>
-        </div>
-
-        {/* 今日总耗时视图已隐藏 */}
-        {/* <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-[2rem] shadow-sm space-y-2 col-span-2">
-          <div className="flex items-center gap-2 text-blue-500">
-            <Clock className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">今日总耗时</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black tracking-tighter">{todayHours}</span>
-            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {todayMinutes}m</span>
-          </div>
-        </div> */}
       </div>
+
+
 
       <section className="bg-surface-container-lowest border border-outline-variant p-8 rounded-[2.5rem] shadow-sm space-y-6">
         <div className="flex items-center justify-between">
@@ -1726,7 +1817,13 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
           </div>
           <TrendingUp className="w-5 h-5 text-primary" />
         </div>
-        <div className="h-48 w-full">
+        <div className="h-48 w-full relative">
+          <button 
+            onClick={handlePrevDay}
+            className="absolute left-[-30px] top-1/2 -translate-y-1/2 p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors z-10"
+          >
+            <ChevronLeft className="w-4 h-4 text-primary" />
+          </button>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={xpData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -1758,6 +1855,12 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
               />
             </LineChart>
           </ResponsiveContainer>
+          <button 
+            onClick={handleNextDay}
+            className="absolute right-[-30px] top-1/2 -translate-y-1/2 p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors z-10"
+          >
+            <ChevronRight className="w-4 h-4 text-primary" />
+          </button>
         </div>
       </section>
 
@@ -1767,23 +1870,15 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
             <h3 className="text-sm font-black uppercase tracking-widest">专注分布</h3>
             <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">每日专注时长记录</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handlePrevDay}
-              className="p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4 text-violet-500" />
-            </button>
-            <Activity className="w-5 h-5 text-violet-500" />
-            <button 
-              onClick={handleNextDay}
-              className="p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors"
-            >
-              <ChevronRight className="w-4 h-4 text-violet-500" />
-            </button>
-          </div>
+          <Activity className="w-5 h-5 text-violet-500" />
         </div>
-        <div className="h-48 w-full">
+        <div className="h-48 w-full relative">
+          <button 
+            onClick={handlePrevDay}
+            className="absolute left-[-27px] top-1/2 -translate-y-1/2 p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors z-10"
+          >
+            <ChevronLeft className="w-4 h-4 text-violet-500" />
+          </button>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={pomoData}>
               <XAxis 
@@ -1808,6 +1903,12 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
               <Bar dataKey="minutes" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          <button 
+            onClick={handleNextDay}
+            className="absolute right-[-27px] top-1/2 -translate-y-1/2 p-2 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors z-10"
+          >
+            <ChevronRight className="w-4 h-4 text-violet-500" />
+          </button>
         </div>
       </section>
 
@@ -1834,6 +1935,64 @@ const StatsView = ({ stats, history }: { stats: Stats, history: HistoryEntry[] }
           </div>
         </div>
       </div>
+
+      {/* 时间范围选择模态窗口 */}
+      <AnimatePresence>
+        {isTimeRangeModalOpen && (
+          <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm" onClick={() => setIsTimeRangeModalOpen(false)}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black tracking-tight uppercase">选择时间范围</h3>
+                  <button 
+                    onClick={() => setIsTimeRangeModalOpen(false)} 
+                    className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { value: 'today', label: '今日' },
+                    { value: 'week', label: '本周' },
+                    { value: 'quarter', label: '本季度' },
+                    { value: 'year', label: '本年度' },
+                    { value: 'all', label: '总共' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setTimeRange(option.value as TimeRange);
+                        setIsTimeRangeModalOpen(false);
+                      }}
+                      className={`w-full py-3.5 px-6 rounded-2xl text-left font-bold transition-colors ${timeRange === option.value
+                        ? 'bg-violet-100 text-violet-700'
+                        : 'bg-surface-container-low hover:bg-surface-container-high'
+                        }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setIsTimeRangeModalOpen(false)}
+                    className="flex-1 py-3.5 px-6 rounded-2xl font-bold bg-surface-container-low hover:bg-surface-container-high transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -4792,7 +4951,8 @@ export default function App() {
   };
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab} user={user} onLoginClick={() => setActiveTab('login')} theme={settings.theme}>
+    <>
+      <Layout activeTab={activeTab} onTabChange={setActiveTab} user={user} onLoginClick={() => setActiveTab('login')} theme={settings.theme}>
       <AnimatePresence mode="wait">
         {activeTab === 'login' && (
           <motion.div 
@@ -5103,5 +5263,6 @@ export default function App() {
         )}
       </AnimatePresence>
     </Layout>
+    </>
   );
 }
