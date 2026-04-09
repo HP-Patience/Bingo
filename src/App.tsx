@@ -20,15 +20,15 @@ export const calculateXP = (difficulty: TaskDifficulty, priority: TaskPriority):
   
   // 根据优先级调整
   switch (priority) {
-    case 'low': baseXP *= 1;
+    case 'low': baseXP += 0;
       break;
-    case 'medium': baseXP *= 1.2;
+    case 'medium': baseXP += 5;
       break;
-    case 'high': baseXP *= 1.5;
+    case 'high': baseXP += 10;
       break;
   }
   
-  return Math.round(baseXP);
+  return baseXP;
 };
 import { 
   Grid, 
@@ -502,26 +502,24 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                   <Star className={cn("w-3 h-3", tile.completed ? "text-on-primary" : "text-amber-400")} />
                 </div>
               )}
+              {tile.note && (
+                <div className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-blue-300" />
+              )}
               <div className="flex-1 flex items-center justify-center">
                 <span className="z-10">{tile.taskName}</span>
               </div>
               {!tile.completed && (
-                <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap h-4">
-                  <div className="flex gap-0.5 items-center">
+                <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap text-[8px]">
+                  <div className="flex gap-0.5 items-center flex-shrink-0">
                     {[...Array(tile.difficulty === 'hard' ? 3 : tile.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
                       <div key={i} className="w-1 h-1 rounded-full bg-current" />
                     ))}
                   </div>
                   <div className={cn(
-                    "w-1.5 h-1.5 rounded-full",
+                    "w-1.5 h-1.5 rounded-full flex-shrink-0",
                     tile.priority === 'high' ? "bg-red-500" : tile.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
                   )} />
-                  <span className="text-[9px] font-bold flex-shrink-0">+{tile.xpValue || 10} XP</span>
-                </div>
-              )}
-              {tile.note && (
-                <div className="absolute bottom-1 left-1 right-1 text-[8px] text-center text-on-surface/60 truncate">
-                  备注: {tile.note}
+                  <span className="font-bold flex-shrink-0">+{tile.xpValue || 10} XP</span>
                 </div>
               )}
             </button>
@@ -716,7 +714,6 @@ const TasksView = ({
   const [editName, setEditName] = useState('');
   const [editingTask, setEditingTask] = useState<{ groupId: string, task: Task } | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [activeSubTab, setActiveSubTab] = useState<'tasks' | 'notes'>('tasks');
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [deleteMode, setDeleteMode] = useState<Set<string>>(new Set());
@@ -762,40 +759,7 @@ const TasksView = ({
 
   return (
     <div className="space-y-8">
-      <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
-        <button 
-          onClick={() => setActiveSubTab('tasks')}
-          className={cn(
-            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
-            activeSubTab === 'tasks' 
-              ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
-              : "text-on-surface-variant hover:text-on-surface"
-          )}
-        >
-          任务页
-        </button>
-        <button 
-          onClick={() => setActiveSubTab('notes')}
-          className={cn(
-            "flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all",
-            activeSubTab === 'notes' 
-              ? "bg-primary text-on-primary shadow-lg shadow-primary/20" 
-              : "text-on-surface-variant hover:text-on-surface"
-          )}
-        >
-          笔记页
-        </button>
-      </div>
-
-      <AnimatePresence mode="wait">
-        {activeSubTab === 'tasks' ? (
-          <motion.div
-            key="tasks"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-          >
-            <>
+      <div className="space-y-8">
               <section className="space-y-4">
                 <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">格子大小</h3>
                 <div className="flex gap-2">
@@ -1157,67 +1121,22 @@ const TasksView = ({
           </div>
         )}
       </AnimatePresence>
-            </>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="notes"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <section className="space-y-4">
-              <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">任务备注</h3>
-              <p className="text-on-surface-variant text-sm">查看任务的备注信息</p>
-            </section>
 
-            <div className="space-y-6">
-              {(() => {
-                // 按日期分组任务
-                const notesByDate: Record<string, BingoTile[]> = {};
-                bingoTiles.flat().forEach(tile => {
-                  if (tile.note) {
-                    const date = tile.noteTimestamp 
-                      ? new Date(tile.noteTimestamp).toLocaleDateString('zh-CN') 
-                      : new Date().toLocaleDateString('zh-CN');
-                    if (!notesByDate[date]) {
-                      notesByDate[date] = [];
-                    }
-                    notesByDate[date].push(tile);
-                  }
-                });
-
-                // 按日期排序
-                const sortedDates = Object.keys(notesByDate).sort((a, b) => {
-                  return new Date(b).getTime() - new Date(a).getTime();
-                });
-
-                if (sortedDates.length === 0) {
-                  return (
-                    <div className="text-center py-10 text-on-surface-variant/40 font-bold text-sm italic">
-                      暂无任务备注信息
-                    </div>
-                  );
-                }
-
-                return sortedDates.map(date => (
-                  <CollapsibleNotesSection 
-                    key={date}
-                    dateStr={date}
-                    notes={notesByDate[date]}
-                  />
-                ));
-              })()}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    </div>
     </div>
   );
 };
 
-const CollapsibleHistorySection = ({ dateStr, tasks, defaultExpanded = false, onDeleteEntry, onEditEntry }: { dateStr: string, tasks: HistoryEntry[], defaultExpanded?: boolean, key?: string, onDeleteEntry?: (id: string) => void, onEditEntry?: (id: string) => void }) => {
+type CollapsibleHistorySectionProps = {
+  dateStr: string;
+  tasks: HistoryEntry[];
+  defaultExpanded?: boolean;
+  onDeleteEntry?: (id: string) => void;
+  onEditEntry?: (id: string) => void;
+  key?: string;
+};
+
+const CollapsibleHistorySection = ({ dateStr, tasks, defaultExpanded = false, onDeleteEntry, onEditEntry, key }: CollapsibleHistorySectionProps) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -1272,68 +1191,7 @@ const CollapsibleHistorySection = ({ dateStr, tasks, defaultExpanded = false, on
   );
 };
 
-const CollapsibleNotesSection = ({ dateStr, notes }: { dateStr: string, notes: BingoTile[] }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
 
-  return (
-    <section className="space-y-4">
-      <button 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between group active:opacity-70 transition-all"
-      >
-        <div className="flex items-baseline gap-3">
-          <h2 className="text-xl font-bold">{dateStr}</h2>
-          <span className="text-on-surface-variant text-[10px] font-bold tracking-widest uppercase opacity-60">
-            {notes.length} 条备注
-          </span>
-        </div>
-        <div className={cn(
-          "w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant transition-transform duration-300",
-          isExpanded ? "rotate-180" : "rotate-0"
-        )}>
-          <ChevronDown className="w-5 h-5" />
-        </div>
-      </button>
-      
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden space-y-4"
-          >
-            {notes.length > 0 ? (
-              notes.map(note => (
-                <div key={note.id} className="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant">
-                  <div className="flex items-start justify-between space-y-2">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-on-surface">{note.taskName}</h4>
-                      <p className="text-on-surface-variant text-sm mt-2">{note.note}</p>
-                      {note.noteTimestamp && (
-                        <p className="text-on-surface-variant/60 text-[10px] mt-2">
-                          备注时间: {new Date(note.noteTimestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      )}
-                    </div>
-                    <div className={cn(
-                      "w-3 h-3 rounded-full mt-1",
-                      note.completed ? "bg-primary" : "bg-surface-container-high"
-                    )} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-10 text-on-surface-variant/40 font-bold text-sm italic">
-                这一天没有备注信息
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
-  );
-};
 
 const CalendarView = ({ history, onBackToToday, onDeleteEntry, onEditEntry }: { history: HistoryEntry[], onBackToToday: () => void, onDeleteEntry: (id: string) => void, onEditEntry: (id: string) => void }) => {
   const [subTab, setSubTab] = useState<'calendar' | 'history'>('calendar');
@@ -1543,7 +1401,7 @@ const CalendarView = ({ history, onBackToToday, onDeleteEntry, onEditEntry }: { 
   );
 };
 
-const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: React.ReactNode, title: string, time: string, duration?: number, key?: string, onDelete?: () => void, onEdit?: () => void }) => (
+const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit, key }: { icon: React.ReactNode, title: string, time: string, duration?: number, onDelete?: () => void, onEdit?: () => void, key?: string }) => (
   <div className="bg-surface-container-lowest border border-outline-variant p-5 rounded-[1.5rem] flex items-center justify-between shadow-sm active:bg-surface-container-low transition-colors group relative">
     <div className="flex items-center gap-4">
       <div className="w-12 h-12 bg-surface-container-low text-primary flex items-center justify-center rounded-2xl">
@@ -1555,7 +1413,7 @@ const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: 
           <span className="flex items-center gap-1">
             <AlarmClock className="w-3 h-3" /> {time}
           </span>
-          {duration && (
+          {duration && duration > 0 && (
             <span className="flex items-center gap-1">
               <Timer className="w-3 h-3" /> {duration}分钟
             </span>
@@ -1573,7 +1431,7 @@ const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: 
             console.log('Edit button clicked');
             if (onEdit) onEdit();
           }}
-          className="p-2 text-on-surface-variant/80 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer relative z-30"
+          className="p-2 text-on-surface-variant/80 hover:text-blue-500 transition-colors cursor-pointer relative z-30"
         >
           <Edit2 className="w-5 h-5" />
         </button>
@@ -1586,7 +1444,7 @@ const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: 
             e.stopPropagation();
             if (onDelete) onDelete();
           }}
-          className="p-2 text-on-surface-variant/80 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer relative z-30"
+          className="p-2 text-on-surface-variant/80 hover:text-red-500 transition-colors cursor-pointer relative z-30"
         >
           <Trash2 className="w-5 h-5" />
         </button>
@@ -2628,7 +2486,7 @@ const ShopView = ({
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">当前余额</p>
             <h3 className="text-5xl font-extrabold tracking-tighter text-primary">{userBalance.toLocaleString()}</h3>
-            <p className="text-on-surface-variant font-bold text-sm mt-1">Spendable XP</p>
+            <p className="text-on-surface-variant font-bold text-sm mt-1">可使用余额</p>
           </div>
           <div className="flex gap-2">
             <button 
@@ -2714,7 +2572,7 @@ const ShopView = ({
                         : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed"
                     )}
                   >
-                    {item.cost} XP
+                    {item.cost} 余额
                   </button>
                 )}
               </div>
@@ -2766,7 +2624,7 @@ const ShopView = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">价格 (XP)</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">价格 (余额)</label>
                     <input 
                       type="number" 
                       className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -3704,9 +3562,34 @@ export default function App() {
           
           if (userError) {
             console.warn('Error loading user data:', userError);
+            // 如果加载用户数据失败，创建新的用户记录
+            const newUser: User = {
+              id: authUser.id,
+              username: authUser.email?.split('@')[0] || '用户',
+              email: authUser.email || 'user@example.com',
+              avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
+              joinedAt: authUser.created_at || new Date().toISOString(),
+              level: 1,
+              xp: 0,
+              nextLevelXp: 100,
+              balance: 0
+            };
+            
+            const { error: createError } = await supabase
+              .from('users')
+              .insert(newUser);
+            
+            if (createError) {
+              console.error('Error creating user:', createError);
+            } else {
+              setUser(newUser);
+            }
           } else if (userData) {
             setUser(userData);
           }
+        } else {
+          // 用户未登录，设置user为null
+          setUser(null);
         }
 
         // 加载任务组
@@ -3832,19 +3715,72 @@ export default function App() {
         } else if (shopHistoryData) {
           setShopHistory(shopHistoryData);
         }
+
       } catch (error) {
         console.error('Error loading data from Supabase:', error);
       }
     };
 
     loadData();
-  }, []);
+
+    // 添加认证状态监听器
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          // 用户登录或会话恢复
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (userError) {
+            console.warn('Error loading user data on auth change:', userError);
+            // 如果加载用户数据失败，创建新的用户记录
+            const newUser: User = {
+              id: session.user.id,
+              username: session.user.email?.split('@')[0] || '用户',
+              email: session.user.email || 'user@example.com',
+              avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
+              joinedAt: session.user.created_at || new Date().toISOString(),
+              level: 1,
+              xp: 0,
+              nextLevelXp: 100,
+              balance: 0
+            };
+            
+            const { error: createError } = await supabase
+              .from('users')
+              .insert(newUser);
+            
+            if (createError) {
+              console.error('Error creating user:', createError);
+            } else {
+              setUser(newUser);
+            }
+          } else if (userData) {
+            setUser(userData);
+          }
+        } else {
+          // 用户登出
+          setUser(null);
+        }
+      });
+
+      // 清理订阅
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [supabase]);
+
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-    const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
-    const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [editForm, setEditForm] = useState({
     time: '',
-    duration: 0
+    duration: 0,
+    note: ''
   });
 
   React.useEffect(() => {
@@ -4044,9 +3980,9 @@ export default function App() {
   const playSound = (type: 'complete' | 'bingo' | 'levelUp') => {
     try {
       const sounds = {
-        complete: '../2000-preview.mp3',
-        bingo: '../2018-preview.mp3',
-        levelUp: '../2019-preview.mp3'
+        complete: '/2000-preview.mp3',
+        bingo: '/2018-preview.mp3',
+        levelUp: '/2019-preview.mp3'
       };
       const audio = new Audio(sounds[type]);
       audio.volume = 0.4;
@@ -4106,7 +4042,9 @@ export default function App() {
         taskName: tile.taskName,
         completedAt: now,
         type: 'task',
-        xpEarned: xpChange
+        xpEarned: xpChange,
+        note: tile.note,
+        noteTimestamp: tile.noteTimestamp
       };
       setHistory(prev => [...prev, newEntry]);
       
@@ -4310,11 +4248,13 @@ export default function App() {
     const currentDate = new Date(entryToEdit.completedAt);
     const currentTime = currentDate.toTimeString().substring(0, 8);
     const currentDuration = entryToEdit.duration || 0;
+    const currentNote = entryToEdit.note || '';
 
     setEditingEntry(entryToEdit);
     setEditForm({
       time: currentTime,
-      duration: currentDuration
+      duration: currentDuration,
+      note: currentNote
     });
     setIsEditTaskModalOpen(true);
   };
@@ -4322,7 +4262,7 @@ export default function App() {
   const saveEditTask = () => {
     if (!editingEntry) return;
 
-    const { time, duration } = editForm;
+    const { time, duration, note } = editForm;
     const [hours, minutes, seconds] = time.split(':').map(Number);
     const durationMinutes = parseInt(duration.toString());
 
@@ -4335,16 +4275,33 @@ export default function App() {
     const updatedDate = new Date(currentDate);
     updatedDate.setHours(hours, minutes, seconds, 0);
 
+    const updatedEntry = {
+      ...editingEntry,
+      completedAt: updatedDate.toISOString(),
+      duration: durationMinutes > 0 ? durationMinutes : undefined,
+      note: note,
+      noteTimestamp: note ? new Date().toISOString() : undefined
+    };
+    
+    // 更新历史记录
     setHistory(prev => prev.map(h => {
       if (h.id === editingEntry.id) {
-        return {
-          ...h,
-          completedAt: updatedDate.toISOString(),
-          duration: durationMinutes
-        };
+        return updatedEntry;
       }
       return h;
     }));
+    
+    // 同时更新今日视图中对应任务的备注
+    setBingoTiles(prevTiles => prevTiles.map(row => row.map(tile => {
+      if (tile.taskName === updatedEntry.taskName) {
+        return {
+          ...tile,
+          note: updatedEntry.note,
+          noteTimestamp: updatedEntry.noteTimestamp
+        };
+      }
+      return tile;
+    })));
 
     setIsEditTaskModalOpen(false);
     setEditingEntry(null);
@@ -4835,13 +4792,35 @@ export default function App() {
   };
 
   const updateTileNote = (r: number, c: number, note: string) => {
-    setBingoTiles(prev => prev.map((row, rowIndex) => 
-      row.map((tile, colIndex) => 
-        rowIndex === r && colIndex === c 
-          ? { ...tile, note, noteTimestamp: new Date().toISOString() } 
-          : tile
-      )
-    ));
+    const updatedNoteTimestamp = new Date().toISOString();
+    const updatedTile = bingoTiles[r][c];
+    
+    if (updatedTile) {
+      // 更新今日视图中的任务备注
+      setBingoTiles(prev => prev.map((row, rowIndex) => 
+        row.map((tile, colIndex) => 
+          rowIndex === r && colIndex === c 
+            ? { ...tile, note, noteTimestamp: updatedNoteTimestamp } 
+            : tile
+        )
+      ));
+      
+      // 同时更新历史记录中对应任务的备注
+      setHistory(prev => {
+        const updatedHistory = prev.map(entry => {
+          if (entry.taskName === updatedTile.taskName) {
+            return {
+              ...entry,
+              note: note,
+              noteTimestamp: note ? updatedNoteTimestamp : undefined
+            };
+          }
+          return entry;
+        });
+        console.log('Updated history:', updatedHistory);
+        return updatedHistory;
+      });
+    }
   };
 
   const handleGridSizeChange = (size: number) => {
@@ -4892,13 +4871,7 @@ export default function App() {
 
   const handleSaveNote = () => {
     if (selectedTile) {
-      setBingoTiles(prev => prev.map((row, rowIndex) => 
-        row.map((tile, colIndex) => 
-          rowIndex === selectedTile.r && colIndex === selectedTile.c 
-            ? { ...tile, note: noteText, noteTimestamp: new Date().toISOString() } 
-            : tile
-        )
-      ));
+      updateTileNote(selectedTile.r, selectedTile.c, noteText);
       setShowNoteModal(false);
       setSelectedTile(null);
       setNoteText('');
@@ -5282,6 +5255,16 @@ export default function App() {
                       onChange={(e) => setEditForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">备注</label>
+                    <textarea 
+                      className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                      rows={3}
+                      value={editForm.note}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, note: e.target.value }))}
+                      placeholder="添加任务备注..."
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex gap-3 pt-2">
@@ -5462,7 +5445,7 @@ export default function App() {
                           -{entry.cost}
                         </span>
                         <span className="text-[10px] text-on-surface-variant font-bold block">
-                          XP
+                          余额
                         </span>
                       </div>
                     </div>
