@@ -254,11 +254,13 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       if (isLogin) {
@@ -269,10 +271,13 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
         });
 
         if (error) {
-          throw error;
-        }
-
-        if (data.user) {
+          // 处理未验证邮箱的错误
+          if (error.message.includes('Email not confirmed')) {
+            setError('请先验证您的邮箱地址，然后再登录');
+          } else {
+            throw error;
+          }
+        } else if (data.user) {
           // 登录成功，创建用户对象
           onLogin({
             id: data.user.id,
@@ -290,31 +295,53 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
         // 注册
         const { data, error } = await supabase.auth.signUp({
           email: email,
-          password: password
+          password: password,
+          options: {
+            redirectTo: import.meta.env.VITE_SITE_URL || 'https://www.life-bingo.xyz'
+          }
         });
 
         if (error) {
           throw error;
         }
 
-        if (data.user) {
-          // 注册成功，创建用户对象
-          onLogin({
-            id: data.user.id,
-            username: data.user.email?.split('@')[0] || '用户',
-            email: data.user.email || 'user@example.com',
-            avatar: data.user.user_metadata?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
-            joinedAt: data.user.created_at || new Date().toISOString(),
-            level: 1,
-            xp: 0,
-            nextLevelXp: 100,
-            balance: 0
-          });
-        }
+        // 注册成功，显示验证提示，不自动登录
+        setSuccessMessage('注册成功！请检查您的邮箱并点击验证链接以完成注册。');
+        setEmail('');
+        setPassword('');
+        setIsLogin(true);
       }
     } catch (error: any) {
-      setError(error.message || '登录失败，请重试');
+      setError(error.message || '操作失败，请重试');
       console.error('Login/Register error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 重新发送验证邮件
+  const resendVerificationEmail = async () => {
+    if (!email) {
+      setError('请输入邮箱地址');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setSuccessMessage('验证邮件已重新发送，请检查您的邮箱');
+    } catch (error: any) {
+      setError(error.message || '发送邮件失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -361,6 +388,12 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
             </div>
           )}
 
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 text-sm font-bold text-green-600">
+              {successMessage}
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-4 py-3 flex items-center gap-3">
               <Mail className="w-5 h-5 text-on-surface-variant" />
@@ -397,10 +430,23 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
           {loading ? '处理中...' : (isLogin ? '立即登录' : '创建账号')}
         </button>
 
-        <div className="text-center">
+        <div className="text-center space-y-3">
           <button type="button" className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">
             忘记密码？
           </button>
+          
+          {isLogin && error && error.includes('验证') && (
+            <div>
+              <button 
+                type="button"
+                onClick={resendVerificationEmail}
+                disabled={loading}
+                className="text-[10px] font-bold text-primary uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                {loading ? '发送中...' : '重新发送验证邮件'}
+              </button>
+            </div>
+          )}
         </div>
       </form>
     </div>
