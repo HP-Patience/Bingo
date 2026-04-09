@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState } from './types';
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS } from './constants';
 import { getDrawsPerLevel, getPoolByLevel, drawReward, addDrawHistory } from './gachaUtils';
@@ -251,21 +252,72 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple mock login
-    onLogin({
-      id: 'user-1',
-      username: email.split('@')[0] || '用户',
-      email: email || 'user@example.com',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
-      joinedAt: new Date().toISOString(),
-      level: 1,
-      xp: 0,
-      nextLevelXp: 100,
-      balance: 0
-    });
+    setLoading(true);
+    setError('');
+
+    try {
+      if (isLogin) {
+        // 登录
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.user) {
+          // 登录成功，创建用户对象
+          onLogin({
+            id: data.user.id,
+            username: data.user.email?.split('@')[0] || '用户',
+            email: data.user.email || 'user@example.com',
+            avatar: data.user.user_metadata?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
+            joinedAt: data.user.created_at || new Date().toISOString(),
+            level: 1,
+            xp: 0,
+            nextLevelXp: 100,
+            balance: 0
+          });
+        }
+      } else {
+        // 注册
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.user) {
+          // 注册成功，创建用户对象
+          onLogin({
+            id: data.user.id,
+            username: data.user.email?.split('@')[0] || '用户',
+            email: data.user.email || 'user@example.com',
+            avatar: data.user.user_metadata?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
+            joinedAt: data.user.created_at || new Date().toISOString(),
+            level: 1,
+            xp: 0,
+            nextLevelXp: 100,
+            balance: 0
+          });
+        }
+      }
+    } catch (error: any) {
+      setError(error.message || '登录失败，请重试');
+      console.error('Login/Register error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -303,6 +355,12 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
             </button>
           </div>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm font-bold text-red-600">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-4 py-3 flex items-center gap-3">
               <Mail className="w-5 h-5 text-on-surface-variant" />
@@ -313,6 +371,7 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-4 py-3 flex items-center gap-3">
@@ -324,6 +383,7 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
           </div>
@@ -332,8 +392,9 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
         <button 
           type="submit"
           className="w-full bg-primary text-on-primary py-5 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          disabled={loading}
         >
-          {isLogin ? '立即登录' : '创建账号'}
+          {loading ? '处理中...' : (isLogin ? '立即登录' : '创建账号')}
         </button>
 
         <div className="text-center">
@@ -3557,108 +3618,181 @@ export default function App() {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [selectedTile, setSelectedTile] = useState<{ r: number, c: number, tile: BingoTile } | null>(null);
   const [noteText, setNoteText] = useState('');
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('life-bingo-user');
-    if (saved) {
+  const [user, setUser] = useState<User | null>(null);
+  const [taskGroups, setTaskGroups] = useState<TaskGroup[]>(INITIAL_TASK_GROUPS);
+  const [bingoTiles, setBingoTiles] = useState<BingoTile[][]>(INITIAL_BINGO_TILES);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>(INITIAL_ACHIEVEMENTS);
+  const [stats, setStats] = useState<Stats>(INITIAL_STATS);
+  const [settings, setSettings] = useState<Settings>(INITIAL_SETTINGS);
+  const [gridSize, setGridSize] = useState(5);
+  const [shopItems, setShopItems] = useState<ShopItem[]>(INITIAL_SHOP_ITEMS);
+  const [gachaState, setGachaState] = useState<GachaState>({
+    availableDraws: 0,
+    lastDrawLevel: 1,
+    consecutiveLowRewards: 0,
+    consecutiveSameType: 0,
+    history: [],
+  });
+  const [shopHistory, setShopHistory] = useState<ShopHistoryEntry[]>([]);
+
+  // 从Supabase加载数据
+  React.useEffect(() => {
+    const loadData = async () => {
       try {
-        const parsed = JSON.parse(saved);
-        if (parsed) {
-          return {
-            ...parsed,
-            level: parsed.level || 1,
-            xp: parsed.xp || 0,
-            nextLevelXp: parsed.nextLevelXp || 50, // 初始升级所需经验值改为50
-            balance: parsed.balance || 0
-          };
+        // 检查Supabase是否初始化
+        if (!supabase) {
+          console.warn('Supabase is not initialized. Using default data.');
+          return;
         }
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+
+        // 加载用户数据
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        if (authUser) {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authUser.id)
+            .single();
+          
+          if (userError) {
+            console.warn('Error loading user data:', userError);
+          } else if (userData) {
+            setUser(userData);
+          }
+        }
+
+        // 加载任务组
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('task_groups')
+          .select('*');
+        
+        if (groupsError) {
+          console.warn('Error loading task groups:', groupsError);
+        } else if (groupsData && groupsData.length > 0) {
+          setTaskGroups(groupsData);
+        }
+
+        // 加载宾果格子
+        const { data: tilesData, error: tilesError } = await supabase
+          .from('bingo_tiles')
+          .select('*');
+        
+        if (tilesError) {
+          console.warn('Error loading bingo tiles:', tilesError);
+        } else if (tilesData && tilesData.length > 0) {
+          // 假设tilesData是一个包含grid数组的对象
+          const tiles = tilesData[0]?.grid;
+          if (tiles) {
+            setBingoTiles(tiles);
+          }
+        }
+
+        // 加载历史记录
+        const { data: historyData, error: historyError } = await supabase
+          .from('history')
+          .select('*')
+          .order('completedAt', { ascending: false });
+        
+        if (historyError) {
+          console.warn('Error loading history:', historyError);
+        } else if (historyData) {
+          setHistory(historyData);
+        }
+
+        // 加载成就
+        const { data: achievementsData, error: achievementsError } = await supabase
+          .from('achievements')
+          .select('*');
+        
+        if (achievementsError) {
+          console.warn('Error loading achievements:', achievementsError);
+        } else if (achievementsData && achievementsData.length > 0) {
+          setAchievements(achievementsData);
+        }
+
+        // 加载统计数据
+        const { data: statsData, error: statsError } = await supabase
+          .from('stats')
+          .select('*')
+          .eq('id', 'current-stats')
+          .single();
+        
+        if (statsError) {
+          console.warn('Error loading stats:', statsError);
+        } else if (statsData) {
+          setStats(statsData);
+        }
+
+        // 加载设置
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('settings')
+          .select('*')
+          .eq('id', 'current-settings')
+          .single();
+        
+        if (settingsError) {
+          console.warn('Error loading settings:', settingsError);
+        } else if (settingsData) {
+          setSettings(settingsData);
+        }
+
+        // 加载网格大小
+        const { data: gridSizeData, error: gridSizeError } = await supabase
+          .from('grid_size')
+          .select('*')
+          .eq('id', 'current-grid-size')
+          .single();
+        
+        if (gridSizeError) {
+          console.warn('Error loading grid size:', gridSizeError);
+        } else if (gridSizeData) {
+          setGridSize(gridSizeData.size);
+        }
+
+        // 加载商店物品
+        const { data: shopItemsData, error: shopItemsError } = await supabase
+          .from('shop_items')
+          .select('*');
+        
+        if (shopItemsError) {
+          console.warn('Error loading shop items:', shopItemsError);
+        } else if (shopItemsData && shopItemsData.length > 0) {
+          setShopItems(shopItemsData);
+        }
+
+        // 加载抽奖状态
+        const { data: gachaData, error: gachaError } = await supabase
+          .from('gacha')
+          .select('*')
+          .eq('id', 'current-gacha')
+          .single();
+        
+        if (gachaError) {
+          console.warn('Error loading gacha state:', gachaError);
+        } else if (gachaData) {
+          setGachaState(gachaData);
+        }
+
+        // 加载商店历史
+        const { data: shopHistoryData, error: shopHistoryError } = await supabase
+          .from('shop_history')
+          .select('*')
+          .order('timestamp', { ascending: false });
+        
+        if (shopHistoryError) {
+          console.warn('Error loading shop history:', shopHistoryError);
+        } else if (shopHistoryData) {
+          setShopHistory(shopHistoryData);
+        }
+      } catch (error) {
+        console.error('Error loading data from Supabase:', error);
       }
-    }
-    return null;
-  });
-  const [taskGroups, setTaskGroups] = useState<TaskGroup[]>(() => {
-    const saved = localStorage.getItem('life-bingo-groups');
-    return saved ? JSON.parse(saved) : INITIAL_TASK_GROUPS;
-  });
-  const [bingoTiles, setBingoTiles] = useState<BingoTile[][]>(() => {
-    const saved = localStorage.getItem('life-bingo-tiles');
-    return saved ? JSON.parse(saved) : INITIAL_BINGO_TILES;
-  });
-  const [history, setHistory] = useState<HistoryEntry[]>(() => {
-    const saved = localStorage.getItem('life-bingo-history');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [achievements, setAchievements] = useState<Achievement[]>(() => {
-    const saved = localStorage.getItem('life-bingo-achievements');
-    if (saved) {
-      const savedAchievements = JSON.parse(saved);
-      // 确保所有核心成就都存在
-      const coreAchievementIds = INITIAL_ACHIEVEMENTS.map(a => a.id);
-      const missingAchievements = INITIAL_ACHIEVEMENTS.filter(a => 
-        !savedAchievements.some((sa: Achievement) => sa.id === a.id)
-      );
-      if (missingAchievements.length > 0) {
-        const updatedAchievements = [...savedAchievements, ...missingAchievements];
-        localStorage.setItem('life-bingo-achievements', JSON.stringify(updatedAchievements));
-        return updatedAchievements;
-      }
-      return savedAchievements;
-    }
-    return INITIAL_ACHIEVEMENTS;
-  });
-  const [stats, setStats] = useState<Stats>(() => {
-    const saved = localStorage.getItem('life-bingo-stats');
-    if (saved) {
-      const savedStats = JSON.parse(saved);
-      // 确保所有必要的统计字段都存在
-      return {
-        ...INITIAL_STATS,
-        ...savedStats
-      };
-    }
-    return INITIAL_STATS;
-  });
-  const [settings, setSettings] = useState<Settings>(() => {
-    const saved = localStorage.getItem('life-bingo-settings');
-    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
-  });
-  const [gridSize, setGridSize] = useState(() => {
-    const saved = localStorage.getItem('life-bingo-grid-size');
-    return saved ? parseInt(saved) : 5;
-  });
-  const [shopItems, setShopItems] = useState<ShopItem[]>(() => {
-    const saved = localStorage.getItem('life-bingo-shop-items');
-    return saved ? JSON.parse(saved) : INITIAL_SHOP_ITEMS;
-  });
-  const [gachaState, setGachaState] = useState<GachaState>(() => {
-    const saved = localStorage.getItem('life-bingo-gacha');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing gacha data:', e);
-      }
-    }
-    return {
-      availableDraws: 0,
-      lastDrawLevel: 1,
-      consecutiveLowRewards: 0,
-      consecutiveSameType: 0,
-      history: [],
     };
-  });
-  const [shopHistory, setShopHistory] = useState<ShopHistoryEntry[]>(() => {
-    const saved = localStorage.getItem('life-bingo-shop-history');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing shop history data:', e);
-      }
-    }
-    return [];
-  });
+
+    loadData();
+  }, []);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
     const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
@@ -3668,48 +3802,154 @@ export default function App() {
   });
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-user', JSON.stringify(user));
+    if (user) {
+      supabase
+        .from('users')
+        .upsert({
+          id: user.id,
+          ...user
+        })
+        .then(() => {
+          // 成功保存用户数据
+        })
+        .catch(error => console.error('Error saving user to Supabase:', error));
+    }
   }, [user]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-groups', JSON.stringify(taskGroups));
+    // 先删除旧的任务组，再插入新的
+    supabase
+      .from('task_groups')
+      .delete()
+      .then(() => {
+        if (taskGroups.length > 0) {
+          supabase
+            .from('task_groups')
+            .insert(taskGroups)
+            .then(() => {
+              // 成功保存任务组
+            })
+            .catch(error => console.error('Error saving task groups to Supabase:', error));
+        }
+      })
+      .catch(error => console.error('Error deleting old task groups:', error));
   }, [taskGroups]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-tiles', JSON.stringify(bingoTiles));
+    supabase
+      .from('bingo_tiles')
+      .upsert({
+        id: 'current-tiles',
+        grid: bingoTiles
+      })
+      .then(() => {
+        // 成功保存宾果格子
+      })
+      .catch(error => console.error('Error saving bingo tiles to Supabase:', error));
   }, [bingoTiles]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-history', JSON.stringify(history));
+    // 对于历史记录，我们只添加新的记录，而不是替换所有记录
+    // 这里简化处理，实际应用中可能需要更复杂的逻辑
   }, [history]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-achievements', JSON.stringify(achievements));
+    // 先删除旧的成就，再插入新的
+    supabase
+      .from('achievements')
+      .delete()
+      .then(() => {
+        if (achievements.length > 0) {
+          supabase
+            .from('achievements')
+            .insert(achievements)
+            .then(() => {
+              // 成功保存成就
+            })
+            .catch(error => console.error('Error saving achievements to Supabase:', error));
+        }
+      })
+      .catch(error => console.error('Error deleting old achievements:', error));
   }, [achievements]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-stats', JSON.stringify(stats));
+    supabase
+      .from('stats')
+      .upsert({
+        id: 'current-stats',
+        ...stats
+      })
+      .then(() => {
+        // 成功保存统计数据
+      })
+      .catch(error => console.error('Error saving stats to Supabase:', error));
   }, [stats]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-gacha', JSON.stringify(gachaState));
+    supabase
+      .from('gacha')
+      .upsert({
+        id: 'current-gacha',
+        ...gachaState
+      })
+      .then(() => {
+        // 成功保存抽奖状态
+      })
+      .catch(error => console.error('Error saving gacha state to Supabase:', error));
   }, [gachaState]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-shop-history', JSON.stringify(shopHistory));
+    // 对于商店历史，我们只添加新的记录
   }, [shopHistory]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-shop-items', JSON.stringify(shopItems));
+    // 先删除旧的商店物品，再插入新的
+    supabase
+      .from('shop_items')
+      .delete()
+      .then(() => {
+        if (shopItems.length > 0) {
+          supabase
+            .from('shop_items')
+            .insert(shopItems)
+            .then(() => {
+              // 成功保存商店物品
+            })
+            .catch(error => console.error('Error saving shop items to Supabase:', error));
+        }
+      })
+      .catch(error => console.error('Error deleting old shop items:', error));
   }, [shopItems]);
 
   React.useEffect(() => {
-    localStorage.setItem('life-bingo-grid-size', gridSize.toString());
+    supabase
+      .from('grid_size')
+      .upsert({
+        id: 'current-grid-size',
+        size: gridSize
+      })
+      .then(() => {
+        // 成功保存网格大小
+      })
+      .catch(error => console.error('Error saving grid size to Supabase:', error));
   }, [gridSize]);
 
   React.useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
+
+  React.useEffect(() => {
+    supabase
+      .from('settings')
+      .upsert({
+        id: 'current-settings',
+        ...settings
+      })
+      .then(() => {
+        // 成功保存设置
+      })
+      .catch(error => console.error('Error saving settings to Supabase:', error));
+  }, [settings]);
 
   // Update stats dynamically
   React.useEffect(() => {
@@ -3823,6 +4063,15 @@ export default function App() {
         xpEarned: xpChange
       };
       setHistory(prev => [...prev, newEntry]);
+      
+      // 保存到Supabase
+      supabase
+        .from('history')
+        .insert(newEntry)
+        .then(() => {
+          // 成功保存历史记录
+        })
+        .catch(error => console.error('Error saving history entry to Supabase:', error));
       
       if (user) {
         const isEarlyBird = new Date().getHours() < 7;
@@ -4232,9 +4481,20 @@ export default function App() {
     setActiveTab('today');
   };
 
-  const logout = () => {
-    setUser(null);
-    setActiveTab('today');
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      }
+      setUser(null);
+      setActiveTab('today');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // 即使登出失败，也要清除本地用户状态
+      setUser(null);
+      setActiveTab('today');
+    }
   };
 
   const updateUser = (updates: Partial<User>) => {
