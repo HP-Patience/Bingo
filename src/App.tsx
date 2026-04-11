@@ -1335,7 +1335,7 @@ const CalendarView = ({ history, onBackToToday, onDeleteEntry, onEditEntry }: { 
                       key={idx} 
                       onClick={() => day && setSelectedDate(day)}
                       className={cn(
-                        "h-12 relative flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-all rounded-xl",
+                        "aspect-square relative flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-all rounded-xl",
                         !day && "invisible",
                         day && isSameDay(day, selectedDate) && "ring-2 ring-primary ring-offset-2 ring-offset-surface-container-lowest",
                         day && getHeatmapColor(day)
