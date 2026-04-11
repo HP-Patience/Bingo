@@ -519,7 +519,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                     "w-1.5 h-1.5 rounded-full flex-shrink-0",
                     tile.priority === 'high' ? "bg-red-500" : tile.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
                   )} />
-                  <span className="font-bold flex-shrink-0">+{tile.xpValue || 10} XP</span>
+                  <span className="font-bold flex-shrink-0">+{tile.xpValue || 10}</span>
                 </div>
               )}
             </button>
