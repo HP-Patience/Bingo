@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState } from './types';
+import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState, ShopHistoryEntry } from './types';
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS } from './constants';
 import { getDrawsPerLevel, getPoolByLevel, drawReward, addDrawHistory } from './gachaUtils';
 
@@ -297,7 +297,7 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
           email: email,
           password: password,
           options: {
-            redirectTo: import.meta.env.VITE_SITE_URL || 'https://www.life-bingo.xyz'
+            emailRedirectTo: import.meta.env.VITE_SITE_URL || 'https://www.life-bingo.xyz'
           }
         });
 
@@ -3357,7 +3357,7 @@ const PomodoroView = ({
   );
 };
 
-const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfile }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onEditProfile: () => void }) => {
+const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfile, isEditModalOpen, setIsEditModalOpen, editUsername, setEditUsername, editEmail, setEditEmail, editAvatar, setEditAvatar, onUpdateUser }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onEditProfile: () => void, isEditModalOpen: boolean, setIsEditModalOpen: (open: boolean) => void, editUsername: string, setEditUsername: (username: string) => void, editEmail: string, setEditEmail: (email: string) => void, editAvatar: string, setEditAvatar: (avatar: string) => void, onUpdateUser: (updates: Partial<User>) => void }) => {
   
   const themes: { name: Theme, color: string }[] = [
     { name: 'zinc', color: '#6f797a' },
@@ -3595,7 +3595,8 @@ export default function App() {
         // 加载任务组
         const { data: groupsData, error: groupsError } = await supabase
           .from('task_groups')
-          .select('*');
+          .select('*')
+          .eq('user_id', authUser.id);
         
         if (groupsError) {
           console.warn('Error loading task groups:', groupsError);
@@ -3606,7 +3607,8 @@ export default function App() {
         // 加载宾果格子
         const { data: tilesData, error: tilesError } = await supabase
           .from('bingo_tiles')
-          .select('*');
+          .select('*')
+          .eq('user_id', authUser.id);
         
         if (tilesError) {
           console.warn('Error loading bingo tiles:', tilesError);
@@ -3622,6 +3624,7 @@ export default function App() {
         const { data: historyData, error: historyError } = await supabase
           .from('history')
           .select('*')
+          .eq('user_id', authUser.id)
           .order('completedAt', { ascending: false });
         
         if (historyError) {
@@ -3633,7 +3636,8 @@ export default function App() {
         // 加载成就
         const { data: achievementsData, error: achievementsError } = await supabase
           .from('achievements')
-          .select('*');
+          .select('*')
+          .eq('user_id', authUser.id);
         
         if (achievementsError) {
           console.warn('Error loading achievements:', achievementsError);
@@ -3645,7 +3649,7 @@ export default function App() {
         const { data: statsData, error: statsError } = await supabase
           .from('stats')
           .select('*')
-          .eq('id', 'current-stats')
+          .eq('user_id', authUser.id)
           .single();
         
         if (statsError) {
@@ -3658,7 +3662,7 @@ export default function App() {
         const { data: settingsData, error: settingsError } = await supabase
           .from('settings')
           .select('*')
-          .eq('id', 'current-settings')
+          .eq('user_id', authUser.id)
           .single();
         
         if (settingsError) {
@@ -3671,7 +3675,7 @@ export default function App() {
         const { data: gridSizeData, error: gridSizeError } = await supabase
           .from('grid_size')
           .select('*')
-          .eq('id', 'current-grid-size')
+          .eq('user_id', authUser.id)
           .single();
         
         if (gridSizeError) {
@@ -3683,7 +3687,8 @@ export default function App() {
         // 加载商店物品
         const { data: shopItemsData, error: shopItemsError } = await supabase
           .from('shop_items')
-          .select('*');
+          .select('*')
+          .eq('user_id', authUser.id);
         
         if (shopItemsError) {
           console.warn('Error loading shop items:', shopItemsError);
@@ -3695,7 +3700,7 @@ export default function App() {
         const { data: gachaData, error: gachaError } = await supabase
           .from('gacha')
           .select('*')
-          .eq('id', 'current-gacha')
+          .eq('user_id', authUser.id)
           .single();
         
         if (gachaError) {
@@ -3708,6 +3713,7 @@ export default function App() {
         const { data: shopHistoryData, error: shopHistoryError } = await supabase
           .from('shop_history')
           .select('*')
+          .eq('user_id', authUser.id)
           .order('timestamp', { ascending: false });
         
         if (shopHistoryError) {
@@ -3794,41 +3800,51 @@ export default function App() {
         .then(() => {
           // 成功保存用户数据
         })
-        .catch(error => console.error('Error saving user to Supabase:', error));
+        .then(null, error => console.error('Error saving user to Supabase:', error));
     }
   }, [user]);
 
   React.useEffect(() => {
     // 先删除旧的任务组，再插入新的
-    supabase
-      .from('task_groups')
-      .delete()
-      .then(() => {
-        if (taskGroups.length > 0) {
-          supabase
-            .from('task_groups')
-            .insert(taskGroups)
-            .then(() => {
-              // 成功保存任务组
-            })
-            .catch(error => console.error('Error saving task groups to Supabase:', error));
-        }
-      })
-      .catch(error => console.error('Error deleting old task groups:', error));
-  }, [taskGroups]);
+    if (user) {
+      supabase
+        .from('task_groups')
+        .delete()
+        .eq('user_id', user.id)
+        .then(() => {
+          if (taskGroups.length > 0) {
+            const groupsWithUserId = taskGroups.map(group => ({
+              ...group,
+              user_id: user.id
+            }));
+            supabase
+              .from('task_groups')
+              .insert(groupsWithUserId)
+              .then(() => {
+                // 成功保存任务组
+              })
+              .then(null, error => console.error('Error saving task groups to Supabase:', error));
+          }
+        })
+        .then(null, error => console.error('Error deleting old task groups:', error));
+    }
+  }, [taskGroups, user]);
 
   React.useEffect(() => {
-    supabase
-      .from('bingo_tiles')
-      .upsert({
-        id: 'current-tiles',
-        grid: bingoTiles
-      })
-      .then(() => {
-        // 成功保存宾果格子
-      })
-      .catch(error => console.error('Error saving bingo tiles to Supabase:', error));
-  }, [bingoTiles]);
+    if (user) {
+      supabase
+        .from('bingo_tiles')
+        .upsert({
+          id: 'current-tiles',
+          user_id: user.id,
+          grid: bingoTiles
+        })
+        .then(() => {
+          // 成功保存宾果格子
+        })
+        .then(null, error => console.error('Error saving bingo tiles to Supabase:', error));
+    }
+  }, [bingoTiles, user]);
 
   React.useEffect(() => {
     // 对于历史记录，我们只添加新的记录，而不是替换所有记录
@@ -3837,48 +3853,61 @@ export default function App() {
 
   React.useEffect(() => {
     // 先删除旧的成就，再插入新的
-    supabase
-      .from('achievements')
-      .delete()
-      .then(() => {
-        if (achievements.length > 0) {
-          supabase
-            .from('achievements')
-            .insert(achievements)
-            .then(() => {
-              // 成功保存成就
-            })
-            .catch(error => console.error('Error saving achievements to Supabase:', error));
-        }
-      })
-      .catch(error => console.error('Error deleting old achievements:', error));
-  }, [achievements]);
+    if (user) {
+      supabase
+        .from('achievements')
+        .delete()
+        .eq('user_id', user.id)
+        .then(() => {
+          if (achievements.length > 0) {
+            const achievementsWithUserId = achievements.map(achievement => ({
+              ...achievement,
+              user_id: user.id
+            }));
+            supabase
+              .from('achievements')
+              .insert(achievementsWithUserId)
+              .then(() => {
+                // 成功保存成就
+              })
+              .then(null, error => console.error('Error saving achievements to Supabase:', error));
+          }
+        })
+        .then(null, error => console.error('Error deleting old achievements:', error));
+    }
+  }, [achievements, user]);
 
   React.useEffect(() => {
-    supabase
-      .from('stats')
-      .upsert({
-        id: 'current-stats',
-        ...stats
-      })
-      .then(() => {
-        // 成功保存统计数据
-      })
-      .catch(error => console.error('Error saving stats to Supabase:', error));
-  }, [stats]);
+    if (user) {
+      supabase
+        .from('stats')
+        .upsert({
+          id: 'current-stats',
+          user_id: user.id,
+          ...stats
+        })
+        .then(() => {
+          // 成功保存统计数据
+        })
+        .then(null, error => console.error('Error saving stats to Supabase:', error));
+    }
+  }, [stats, user]);
 
   React.useEffect(() => {
-    supabase
-      .from('gacha')
-      .upsert({
-        id: 'current-gacha',
-        ...gachaState
-      })
-      .then(() => {
-        // 成功保存抽奖状态
-      })
-      .catch(error => console.error('Error saving gacha state to Supabase:', error));
-  }, [gachaState]);
+    if (user) {
+      supabase
+        .from('gacha')
+        .upsert({
+          id: 'current-gacha',
+          user_id: user.id,
+          ...gachaState
+        })
+        .then(() => {
+          // 成功保存抽奖状态
+        })
+        .then(null, error => console.error('Error saving gacha state to Supabase:', error));
+    }
+  }, [gachaState, user]);
 
   React.useEffect(() => {
     // 对于商店历史，我们只添加新的记录
@@ -3886,52 +3915,65 @@ export default function App() {
 
   React.useEffect(() => {
     // 先删除旧的商店物品，再插入新的
-    supabase
-      .from('shop_items')
-      .delete()
-      .then(() => {
-        if (shopItems.length > 0) {
-          supabase
-            .from('shop_items')
-            .insert(shopItems)
-            .then(() => {
-              // 成功保存商店物品
-            })
-            .catch(error => console.error('Error saving shop items to Supabase:', error));
-        }
-      })
-      .catch(error => console.error('Error deleting old shop items:', error));
-  }, [shopItems]);
+    if (user) {
+      supabase
+        .from('shop_items')
+        .delete()
+        .eq('user_id', user.id)
+        .then(() => {
+          if (shopItems.length > 0) {
+            const shopItemsWithUserId = shopItems.map(item => ({
+              ...item,
+              user_id: user.id
+            }));
+            supabase
+              .from('shop_items')
+              .insert(shopItemsWithUserId)
+              .then(() => {
+                // 成功保存商店物品
+              })
+              .then(null, error => console.error('Error saving shop items to Supabase:', error));
+          }
+        })
+        .then(null, error => console.error('Error deleting old shop items:', error));
+    }
+  }, [shopItems, user]);
 
   React.useEffect(() => {
-    supabase
-      .from('grid_size')
-      .upsert({
-        id: 'current-grid-size',
-        size: gridSize
-      })
-      .then(() => {
-        // 成功保存网格大小
-      })
-      .catch(error => console.error('Error saving grid size to Supabase:', error));
-  }, [gridSize]);
+    if (user) {
+      supabase
+        .from('grid_size')
+        .upsert({
+          id: 'current-grid-size',
+          user_id: user.id,
+          size: gridSize
+        })
+        .then(() => {
+          // 成功保存网格大小
+        })
+        .then(null, error => console.error('Error saving grid size to Supabase:', error));
+    }
+  }, [gridSize, user]);
 
   React.useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
 
   React.useEffect(() => {
-    supabase
-      .from('settings')
-      .upsert({
-        id: 'current-settings',
-        ...settings
-      })
-      .then(() => {
-        // 成功保存设置
-      })
-      .catch(error => console.error('Error saving settings to Supabase:', error));
-  }, [settings]);
+    if (user) {
+      supabase
+        .from('settings')
+        .upsert({
+          id: 'current-settings',
+          user_id: user.id,
+          ...settings
+        })
+        .then(() => {
+          // 成功保存设置
+        })
+        .then(null, error => console.error('Error saving settings to Supabase:', error));
+    }
+  }, [settings, user]);
 
   // Update stats dynamically
   React.useEffect(() => {
@@ -4049,13 +4091,15 @@ export default function App() {
       setHistory(prev => [...prev, newEntry]);
       
       // 保存到Supabase
-      supabase
-        .from('history')
-        .insert(newEntry)
-        .then(() => {
-          // 成功保存历史记录
-        })
-        .catch(error => console.error('Error saving history entry to Supabase:', error));
+      if (user) {
+        supabase
+          .from('history')
+          .insert({ ...newEntry, user_id: user.id })
+          .then(() => {
+            // 成功保存历史记录
+          })
+          .then(null, error => console.error('Error saving history entry to Supabase:', error));
+      }
       
       if (user) {
         const isEarlyBird = new Date().getHours() < 7;
@@ -4502,6 +4546,13 @@ export default function App() {
 
   const updateUser = (updates: Partial<User>) => {
     setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const onUpdateUser = (updates: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+    }
   };
 
   const toggleTask = (groupId: string, taskId: string) => {
@@ -5072,6 +5123,15 @@ export default function App() {
               user={user}
               onLogout={logout}
               onEditProfile={handleEditProfile}
+              isEditModalOpen={isEditModalOpen}
+              setIsEditModalOpen={setIsEditModalOpen}
+              editUsername={editUsername}
+              setEditUsername={setEditUsername}
+              editEmail={editEmail}
+              setEditEmail={setEditEmail}
+              editAvatar={editAvatar}
+              setEditAvatar={setEditAvatar}
+              onUpdateUser={onUpdateUser}
             />
           </motion.div>
         )}

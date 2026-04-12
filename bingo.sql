@@ -15,40 +15,49 @@ CREATE TABLE users (
 -- 创建任务组表
 CREATE TABLE task_groups (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   color TEXT NOT NULL,
   icon TEXT NOT NULL,
-  tasks JSONB NOT NULL DEFAULT '[]'
+  tasks JSONB NOT NULL DEFAULT '[]',
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建宾果格子表
 CREATE TABLE bingo_tiles (
   id TEXT PRIMARY KEY,
-  grid JSONB NOT NULL DEFAULT '[]'
+  user_id TEXT NOT NULL,
+  grid JSONB NOT NULL DEFAULT '[]',
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建历史记录表
 CREATE TABLE history (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   taskName TEXT NOT NULL,
   completedAt TIMESTAMP NOT NULL DEFAULT NOW(),
   type TEXT NOT NULL DEFAULT 'task',
-  xpEarned INTEGER NOT NULL DEFAULT 0
+  xpEarned INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建成就表
 CREATE TABLE achievements (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   icon TEXT NOT NULL,
   unlocked BOOLEAN NOT NULL DEFAULT false,
-  unlockedAt TIMESTAMP DEFAULT NULL
+  unlockedAt TIMESTAMP DEFAULT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建统计表
 CREATE TABLE stats (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   totalCompleted INTEGER NOT NULL DEFAULT 0,
   currentStreak INTEGER NOT NULL DEFAULT 0,
   bingosCount INTEGER NOT NULL DEFAULT 0,
@@ -56,24 +65,30 @@ CREATE TABLE stats (
   totalXp INTEGER NOT NULL DEFAULT 0,
   earlyBirdCount INTEGER NOT NULL DEFAULT 0,
   goldenTilesCompleted INTEGER NOT NULL DEFAULT 0,
-  nightOwlCount INTEGER NOT NULL DEFAULT 0
+  nightOwlCount INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建设置表
 CREATE TABLE settings (
   id TEXT PRIMARY KEY,
-  theme TEXT NOT NULL DEFAULT 'zinc'
+  user_id TEXT NOT NULL,
+  theme TEXT NOT NULL DEFAULT 'zinc',
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建网格大小表
 CREATE TABLE grid_size (
   id TEXT PRIMARY KEY,
-  size INTEGER NOT NULL DEFAULT 5
+  user_id TEXT NOT NULL,
+  size INTEGER NOT NULL DEFAULT 5,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建商店物品表
 CREATE TABLE shop_items (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   price INTEGER NOT NULL DEFAULT 0,
@@ -81,24 +96,29 @@ CREATE TABLE shop_items (
   effect TEXT DEFAULT NULL,
   icon TEXT NOT NULL,
   rarity TEXT NOT NULL DEFAULT 'common',
-  unlocked BOOLEAN NOT NULL DEFAULT false
+  unlocked BOOLEAN NOT NULL DEFAULT false,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建抽奖状态表
 CREATE TABLE gacha (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   availableDraws INTEGER NOT NULL DEFAULT 0,
   lastDrawLevel INTEGER NOT NULL DEFAULT 1,
   consecutiveLowRewards INTEGER NOT NULL DEFAULT 0,
   consecutiveSameType INTEGER NOT NULL DEFAULT 0,
-  history JSONB NOT NULL DEFAULT '[]'
+  history JSONB NOT NULL DEFAULT '[]',
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 创建商店历史表
 CREATE TABLE shop_history (
   id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
   itemId TEXT NOT NULL,
   itemName TEXT NOT NULL,
   price INTEGER NOT NULL DEFAULT 0,
-  timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+  timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
