@@ -145,16 +145,16 @@ ALTER TABLE gacha ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shop_history ENABLE ROW LEVEL SECURITY;
 
 -- users 表：id 就是 auth.uid()
-CREATE POLICY "users_manage_own" ON users FOR ALL USING (auth.uid() = id);
+CREATE POLICY "users_manage_own" ON users FOR ALL USING (auth.uid()::text =id);
 
 -- 其余表：通过 user_id 关联
-CREATE POLICY "task_groups_own" ON task_groups FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "history_own" ON history FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "achievements_own" ON achievements FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "stats_own" ON stats FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "settings_own" ON settings FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "grid_size_own" ON grid_size FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "shop_items_own" ON shop_items FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "gacha_own" ON gacha FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "shop_history_own" ON shop_history FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "task_groups_own" ON task_groups FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "history_own" ON history FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "achievements_own" ON achievements FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "stats_own" ON stats FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "settings_own" ON settings FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "grid_size_own" ON grid_size FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "shop_items_own" ON shop_items FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "gacha_own" ON gacha FOR ALL USING (auth.uid()::text =user_id);
+CREATE POLICY "shop_history_own" ON shop_history FOR ALL USING (auth.uid()::text =user_id);
