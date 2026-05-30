@@ -129,3 +129,32 @@ CREATE TABLE IF NOT EXISTS shop_history (
   cost INTEGER DEFAULT NULL,
   timestamp TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- ========== RLS Policies: 用户只能访问自己的数据 ==========
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE task_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bingo_tiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grid_size ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shop_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gacha ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shop_history ENABLE ROW LEVEL SECURITY;
+
+-- users 表：id 就是 auth.uid()
+CREATE POLICY "users_manage_own" ON users FOR ALL USING (auth.uid() = id);
+
+-- 其余表：通过 user_id 关联
+CREATE POLICY "task_groups_own" ON task_groups FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "history_own" ON history FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "achievements_own" ON achievements FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "stats_own" ON stats FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "settings_own" ON settings FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "grid_size_own" ON grid_size FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "shop_items_own" ON shop_items FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "gacha_own" ON gacha FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "shop_history_own" ON shop_history FOR ALL USING (auth.uid() = user_id);
