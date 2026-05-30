@@ -23,7 +23,7 @@ npm run clean            # 删除 dist 目录
 
 - `VITE_SUPABASE_URL` — Supabase 项目 URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase 匿名密钥
-- `GEMINI_API_KEY` — Google Gemini API 密钥（通过 Vite `define` 注入为 `process.env.GEMINI_API_KEY`）
+
 - `VITE_SITE_URL` — 生产环境 URL，用于邮箱验证重定向
 
 ## 架构
@@ -74,7 +74,7 @@ Supabase 存储：用户、任务组、宾果棋盘、历史记录、成就、�
 
 ### 技术栈
 
-React 19, Vite 6, TypeScript 5.8, Tailwind CSS 3.4, Supabase, Lucide React (图标), Motion (动画), Recharts (图表), Google GenAI
+React 19, Vite 6, TypeScript 5.8, Tailwind CSS 3.4, Supabase, Lucide React (图标), Motion (动画), Recharts (图表)
 
 ## 注意事项
 

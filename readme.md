@@ -23,7 +23,7 @@
 - **图标库**：Lucide React 0.546.0
 - **动画库**：Motion 12.23.24
 - **图表库**：Recharts 3.8.1
-- **AI 集成**：Google GenAI 1.29.0
+
 - **后端服务**：Supabase
 
 ## 快速开始
