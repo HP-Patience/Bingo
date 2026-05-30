@@ -1,5 +1,5 @@
 -- 创建用户表
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL DEFAULT '用户',
   email TEXT NOT NULL DEFAULT 'user@example.com',
@@ -13,51 +13,57 @@ CREATE TABLE users (
 );
 
 -- 创建任务组表
-CREATE TABLE task_groups (
+CREATE TABLE IF NOT EXISTS task_groups (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   color TEXT NOT NULL,
   icon TEXT NOT NULL,
-  tasks JSONB NOT NULL DEFAULT '[]',
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  tasks JSONB NOT NULL DEFAULT '[]'
 );
 
 -- 创建宾果格子表
-CREATE TABLE bingo_tiles (
+CREATE TABLE IF NOT EXISTS bingo_tiles (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  grid JSONB NOT NULL DEFAULT '[]',
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  user_id TEXT NOT NULL REFERENCES users(id),
+  grid JSONB NOT NULL DEFAULT '[]'
 );
 
 -- 创建历史记录表
-CREATE TABLE history (
+CREATE TABLE IF NOT EXISTS history (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   taskName TEXT NOT NULL,
   completedAt TIMESTAMP NOT NULL DEFAULT NOW(),
   type TEXT NOT NULL DEFAULT 'task',
   xpEarned INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  duration INTEGER DEFAULT NULL,
+  note TEXT DEFAULT NULL,
+  noteTimestamp TIMESTAMP DEFAULT NULL
 );
 
 -- 创建成就表
-CREATE TABLE achievements (
+CREATE TABLE IF NOT EXISTS achievements (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   icon TEXT NOT NULL,
   unlocked BOOLEAN NOT NULL DEFAULT false,
   unlockedAt TIMESTAMP DEFAULT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  title TEXT DEFAULT NULL,
+  level INTEGER DEFAULT NULL,
+  progress INTEGER DEFAULT NULL,
+  maxProgress INTEGER DEFAULT NULL,
+  category TEXT DEFAULT NULL,
+  isCustom BOOLEAN DEFAULT false,
+  requirement TEXT DEFAULT NULL
 );
 
 -- 创建统计表
-CREATE TABLE stats (
+CREATE TABLE IF NOT EXISTS stats (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   totalCompleted INTEGER NOT NULL DEFAULT 0,
   currentStreak INTEGER NOT NULL DEFAULT 0,
   bingosCount INTEGER NOT NULL DEFAULT 0,
@@ -66,29 +72,29 @@ CREATE TABLE stats (
   earlyBirdCount INTEGER NOT NULL DEFAULT 0,
   goldenTilesCompleted INTEGER NOT NULL DEFAULT 0,
   nightOwlCount INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  onTimeRate INTEGER DEFAULT 100,
+  mostProductiveDay TEXT DEFAULT NULL,
+  totalSpent INTEGER DEFAULT 0
 );
 
 -- 创建设置表
-CREATE TABLE settings (
+CREATE TABLE IF NOT EXISTS settings (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  theme TEXT NOT NULL DEFAULT 'zinc',
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  user_id TEXT NOT NULL REFERENCES users(id),
+  theme TEXT NOT NULL DEFAULT 'zinc'
 );
 
 -- 创建网格大小表
-CREATE TABLE grid_size (
+CREATE TABLE IF NOT EXISTS grid_size (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  size INTEGER NOT NULL DEFAULT 5,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  user_id TEXT NOT NULL REFERENCES users(id),
+  size INTEGER NOT NULL DEFAULT 5
 );
 
 -- 创建商店物品表
-CREATE TABLE shop_items (
+CREATE TABLE IF NOT EXISTS shop_items (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   price INTEGER NOT NULL DEFAULT 0,
@@ -96,58 +102,30 @@ CREATE TABLE shop_items (
   effect TEXT DEFAULT NULL,
   icon TEXT NOT NULL,
   rarity TEXT NOT NULL DEFAULT 'common',
-  unlocked BOOLEAN NOT NULL DEFAULT false,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  unlocked BOOLEAN NOT NULL DEFAULT false
 );
 
 -- 创建抽奖状态表
-CREATE TABLE gacha (
+CREATE TABLE IF NOT EXISTS gacha (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   availableDraws INTEGER NOT NULL DEFAULT 0,
   lastDrawLevel INTEGER NOT NULL DEFAULT 1,
   consecutiveLowRewards INTEGER NOT NULL DEFAULT 0,
   consecutiveSameType INTEGER NOT NULL DEFAULT 0,
-  history JSONB NOT NULL DEFAULT '[]',
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  lastRewardType TEXT DEFAULT NULL,
+  history JSONB NOT NULL DEFAULT '[]'
 );
 
 -- 创建商店历史表
-CREATE TABLE shop_history (
+CREATE TABLE IF NOT EXISTS shop_history (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
   itemId TEXT NOT NULL,
   itemName TEXT NOT NULL,
   price INTEGER NOT NULL DEFAULT 0,
-  timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  itemIcon TEXT DEFAULT NULL,
+  level INTEGER DEFAULT NULL,
+  cost INTEGER DEFAULT NULL,
+  timestamp TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
--- ========== Schema migration: add missing columns ==========
-
--- history 表补充字段
-ALTER TABLE history ADD COLUMN IF NOT EXISTS duration INTEGER DEFAULT NULL;
-ALTER TABLE history ADD COLUMN IF NOT EXISTS note TEXT DEFAULT NULL;
-ALTER TABLE history ADD COLUMN IF NOT EXISTS noteTimestamp TIMESTAMP DEFAULT NULL;
-
--- shop_history 表补充字段
-ALTER TABLE shop_history ADD COLUMN IF NOT EXISTS itemIcon TEXT DEFAULT NULL;
-ALTER TABLE shop_history ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT NULL;
-ALTER TABLE shop_history ADD COLUMN IF NOT EXISTS cost INTEGER DEFAULT NULL;
-
--- achievements 表补充字段
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS title TEXT DEFAULT NULL;
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT NULL;
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT NULL;
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS maxProgress INTEGER DEFAULT NULL;
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS category TEXT DEFAULT NULL;
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS isCustom BOOLEAN DEFAULT false;
-ALTER TABLE achievements ADD COLUMN IF NOT EXISTS requirement TEXT DEFAULT NULL;
-
--- gacha 表补充字段
-ALTER TABLE gacha ADD COLUMN IF NOT EXISTS lastRewardType TEXT DEFAULT NULL;
-
--- stats 表补充字段
-ALTER TABLE stats ADD COLUMN IF NOT EXISTS onTimeRate INTEGER DEFAULT 100;
-ALTER TABLE stats ADD COLUMN IF NOT EXISTS mostProductiveDay TEXT DEFAULT NULL;
-ALTER TABLE stats ADD COLUMN IF NOT EXISTS totalSpent INTEGER DEFAULT 0;
