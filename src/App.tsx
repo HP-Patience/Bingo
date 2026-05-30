@@ -4632,16 +4632,31 @@ export default function App() {
 
   const logout = async () => {
     try {
+      setUser(null);
+      setTaskGroups(INITIAL_TASK_GROUPS);
+      setBingoTiles(INITIAL_BINGO_TILES);
+      setHistory([]);
+      setAchievements(INITIAL_ACHIEVEMENTS);
+      setStats(INITIAL_STATS);
+      setSettings(INITIAL_SETTINGS);
+      setGridSize(5);
+      setShopItems(INITIAL_SHOP_ITEMS);
+      setGachaState({
+        availableDraws: 0,
+        lastDrawLevel: 1,
+        consecutiveLowRewards: 0,
+        consecutiveSameType: 0,
+        history: [],
+      });
+      setShopHistory([]);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Logout error:', error);
       }
-      setUser(null);
-      setActiveTab('today');
     } catch (error) {
       console.error('Logout error:', error);
-      setUser(null);
-      setActiveTab('today');
+    } finally {
+      window.location.reload();
     }
   };
 
