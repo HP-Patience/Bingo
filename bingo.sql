@@ -145,16 +145,36 @@ ALTER TABLE gacha ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shop_history ENABLE ROW LEVEL SECURITY;
 
 -- users 表：id 就是 auth.uid()
-CREATE POLICY "users_manage_own" ON users FOR ALL USING (auth.uid()::text =id);
+DROP POLICY IF EXISTS "users_manage_own" ON users;
+CREATE POLICY "users_manage_own" ON users FOR ALL USING (auth.uid()::text = id);
 
 -- 其余表：通过 user_id 关联
-CREATE POLICY "task_groups_own" ON task_groups FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "history_own" ON history FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "achievements_own" ON achievements FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "stats_own" ON stats FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "settings_own" ON settings FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "grid_size_own" ON grid_size FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "shop_items_own" ON shop_items FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "gacha_own" ON gacha FOR ALL USING (auth.uid()::text =user_id);
-CREATE POLICY "shop_history_own" ON shop_history FOR ALL USING (auth.uid()::text =user_id);
+DROP POLICY IF EXISTS "task_groups_own" ON task_groups;
+CREATE POLICY "task_groups_own" ON task_groups FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "bingo_tiles_own" ON bingo_tiles;
+CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "history_own" ON history;
+CREATE POLICY "history_own" ON history FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "achievements_own" ON achievements;
+CREATE POLICY "achievements_own" ON achievements FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "stats_own" ON stats;
+CREATE POLICY "stats_own" ON stats FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "settings_own" ON settings;
+CREATE POLICY "settings_own" ON settings FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "grid_size_own" ON grid_size;
+CREATE POLICY "grid_size_own" ON grid_size FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "shop_items_own" ON shop_items;
+CREATE POLICY "shop_items_own" ON shop_items FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "gacha_own" ON gacha;
+CREATE POLICY "gacha_own" ON gacha FOR ALL USING (auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "shop_history_own" ON shop_history;
+CREATE POLICY "shop_history_own" ON shop_history FOR ALL USING (auth.uid()::text = user_id);
