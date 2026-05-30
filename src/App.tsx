@@ -3590,6 +3590,7 @@ export default function App() {
         } else {
           // 用户未登录，设置user为null
           setUser(null);
+          return;
         }
 
         // 加载任务组
@@ -3985,7 +3986,6 @@ export default function App() {
       ...prev,
       totalCompleted,
       currentStreak,
-      bingosCount: Math.floor(totalCompleted / 5) // Mock bingo count
     }));
   }, [history]);
 
@@ -4132,14 +4132,24 @@ export default function App() {
       }
     } else {
       // Remove from history (latest one for this task)
-      setHistory(prev => {
-        const lastIdx = [...prev].reverse().findIndex(h => h.taskName === tile.taskName);
-        if (lastIdx !== -1) {
-          const actualIdx = prev.length - 1 - lastIdx;
-          return prev.filter((_, i) => i !== actualIdx);
+      let removedEntryId: string | null = null;
+      const lastIdx = [...history].reverse().findIndex(h => h.taskName === tile.taskName);
+      if (lastIdx !== -1) {
+        const actualIdx = history.length - 1 - lastIdx;
+        removedEntryId = history[actualIdx].id;
+      }
+
+      if (removedEntryId) {
+        setHistory(prev => prev.filter(h => h.id !== removedEntryId));
+        if (user) {
+          supabase
+            .from('history')
+            .delete()
+            .eq('id', removedEntryId)
+            .then(() => {})
+            .then(null, error => console.error('Error deleting history entry from Supabase:', error));
         }
-        return prev;
-      });
+      }
 
       // Deduct XP and Balance
       if (user) {
@@ -4179,30 +4189,49 @@ export default function App() {
         }
 
         // 降级时回退抽奖次数
+        let gachaUpdate: Partial<GachaState> = {};
         if (newLevel < user.level) {
           let drawsToRemove = 0;
           for (let level = newLevel + 1; level <= user.level; level++) {
             drawsToRemove += getDrawsPerLevel(level);
           }
+          gachaUpdate = {
+            availableDraws: Math.max(0, gachaState.availableDraws - drawsToRemove),
+            lastDrawLevel: Math.min(gachaState.lastDrawLevel, newLevel),
+          };
           setGachaState(prev => ({
             ...prev,
-            availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
-            lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel)
+            ...gachaUpdate,
           }));
         }
 
-        setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle });
-        
+        const updatedUser = { ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle };
+        setUser(updatedUser);
+
         const isEarlyBird = tile.completedAt ? new Date(tile.completedAt).getHours() < 7 : false;
         const isNightOwl = tile.completedAt ? new Date(tile.completedAt).getHours() >= 23 : false;
-        setStats(prev => ({ 
-          ...prev, 
-          totalXp: Math.max(0, prev.totalXp - xpChange),
-          totalCompleted: Math.max(0, prev.totalCompleted - 1),
-          goldenTilesCompleted: Math.max(0, prev.goldenTilesCompleted - (tile.isGolden ? 1 : 0)),
-          earlyBirdCount: Math.max(0, prev.earlyBirdCount - (isEarlyBird ? 1 : 0)),
-          nightOwlCount: Math.max(0, prev.nightOwlCount - (isNightOwl ? 1 : 0))
-        }));
+        setStats(prev => {
+          const updatedStats = {
+            ...prev,
+            totalXp: Math.max(0, prev.totalXp - xpChange),
+            totalCompleted: Math.max(0, prev.totalCompleted - 1),
+            goldenTilesCompleted: Math.max(0, prev.goldenTilesCompleted - (tile.isGolden ? 1 : 0)),
+            earlyBirdCount: Math.max(0, prev.earlyBirdCount - (isEarlyBird ? 1 : 0)),
+            nightOwlCount: Math.max(0, prev.nightOwlCount - (isNightOwl ? 1 : 0))
+          };
+          // Persist immediately to Supabase to avoid data loss
+          supabase.from('stats').upsert({ id: 'current-stats', user_id: user.id, ...updatedStats })
+            .then(() => {}).then(null, error => console.error('Error upserting stats:', error));
+          return updatedStats;
+        });
+
+        // Persist user and gacha immediately
+        supabase.from('users').upsert({ id: updatedUser.id, ...updatedUser })
+          .then(() => {}).then(null, error => console.error('Error upserting user:', error));
+        if (Object.keys(gachaUpdate).length > 0) {
+          supabase.from('gacha').upsert({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate })
+            .then(() => {}).then(null, error => console.error('Error upserting gacha:', error));
+        }
       }
     }
   };
@@ -4212,6 +4241,16 @@ export default function App() {
     if (!entryToDelete) return;
 
     setHistory(prev => prev.filter(h => h.id !== id));
+
+    // Delete from Supabase
+    if (user) {
+      supabase
+        .from('history')
+        .delete()
+        .eq('id', id)
+        .then(() => {})
+        .then(null, error => console.error('Error deleting history entry from Supabase:', error));
+    }
 
     // Find the tile to get its XP value
     let xpToDeduct = 10;
@@ -4260,20 +4299,38 @@ export default function App() {
         }
 
         // 降级时回退抽奖次数
+        let gachaUpdate: Partial<GachaState> = {};
         if (newLevel < user.level) {
           let drawsToRemove = 0;
           for (let level = newLevel + 1; level <= user.level; level++) {
             drawsToRemove += getDrawsPerLevel(level);
           }
+          gachaUpdate = {
+            availableDraws: Math.max(0, gachaState.availableDraws - drawsToRemove),
+            lastDrawLevel: Math.min(gachaState.lastDrawLevel, newLevel),
+          };
           setGachaState(prev => ({
             ...prev,
-            availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
-            lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel)
+            ...gachaUpdate,
           }));
         }
 
-      setUser({ ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle });
-      setStats(prev => ({ ...prev, totalXp: Math.max(0, prev.totalXp - xpToDeduct) }));
+      const updatedUser = { ...user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle };
+      setUser(updatedUser);
+      setStats(prev => {
+        const updatedStats = { ...prev, totalXp: Math.max(0, prev.totalXp - xpToDeduct) };
+        supabase.from('stats').upsert({ id: 'current-stats', user_id: user.id, ...updatedStats })
+          .then(() => {}).then(null, error => console.error('Error upserting stats:', error));
+        return updatedStats;
+      });
+
+      // Persist user and gacha immediately
+      supabase.from('users').upsert({ id: updatedUser.id, ...updatedUser })
+        .then(() => {}).then(null, error => console.error('Error upserting user:', error));
+      if (Object.keys(gachaUpdate).length > 0) {
+        supabase.from('gacha').upsert({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate })
+          .then(() => {}).then(null, error => console.error('Error upserting gacha:', error));
+      }
     }
 
     // If it's a task from today, uncheck it
@@ -4346,6 +4403,25 @@ export default function App() {
       }
       return tile;
     })));
+
+    // Persist edit to Supabase
+    if (user) {
+      supabase
+        .from('history')
+        .update({
+          user_id: user.id,
+          taskName: updatedEntry.taskName,
+          completedAt: updatedEntry.completedAt,
+          type: updatedEntry.type,
+          xpEarned: updatedEntry.xpEarned,
+          duration: updatedEntry.duration,
+          note: updatedEntry.note,
+          noteTimestamp: updatedEntry.noteTimestamp,
+        })
+        .eq('id', updatedEntry.id)
+        .then(() => {})
+        .then(null, error => console.error('Error updating history entry in Supabase:', error));
+    }
 
     setIsEditTaskModalOpen(false);
     setEditingEntry(null);
@@ -4429,7 +4505,7 @@ export default function App() {
       timestamp: new Date().toISOString(),
     });
 
-    newGachaState.availableDraws -= 1;
+    newGachaState.availableDraws = newGachaState.availableDraws - 1;
 
     setGachaState(newGachaState);
 
@@ -4467,7 +4543,14 @@ export default function App() {
       timestamp: new Date().toISOString(),
     };
     setShopHistory(prev => [historyEntry, ...prev]);
-    
+
+    // Persist to Supabase
+    supabase
+      .from('shop_history')
+      .insert({ ...historyEntry, user_id: user.id })
+      .then(() => {})
+      .then(null, error => console.error('Error saving shop history to Supabase:', error));
+
     alert(`成功购买: ${item.name}！快去享受吧~`);
   };
 
