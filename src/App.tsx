@@ -2693,6 +2693,14 @@ const AchievementIcon = ({ name, className }: { name: string, className?: string
     case 'moon': return <Moon className={className} />;
     case 'focus': return <Focus className={className} />;
     case 'sun': return <Sun className={className} />;
+    case 'star': return <Star className={className} />;
+    case 'trophy': return <Trophy className={className} />;
+    case 'heart': return <Heart className={className} />;
+    case 'sparkles': return <Sparkles className={className} />;
+    case 'cookie': return <Cookie className={className} />;
+    case 'film': return <Film className={className} />;
+    case 'gamepad-2': return <Gamepad2 className={className} />;
+    case 'book-open': return <BookOpen className={className} />;
     default: return <Trophy className={className} />;
   }
 };
@@ -2827,9 +2835,17 @@ const PomodoroView = ({
         taskName: selectedTask || '专注会话',
         completedAt: new Date().toISOString(),
         xpEarned: xpReward,
-        type: 'pomodoro'
+        type: 'pomodoro',
+        duration: durations.work / 60
       };
       setHistory(prev => [newEntry, ...prev]);
+      if (user) {
+        supabase
+          .from('history')
+          .insert({ ...newEntry, user_id: user.id })
+          .then(() => {})
+          .then(null, error => console.error('Error saving pomodoro history:', error));
+      }
 
       // Switch to break
       setMode('shortBreak');
@@ -3357,7 +3373,7 @@ const PomodoroView = ({
   );
 };
 
-const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfile, isEditModalOpen, setIsEditModalOpen, editUsername, setEditUsername, editEmail, setEditEmail, editAvatar, setEditAvatar, onUpdateUser }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onEditProfile: () => void, isEditModalOpen: boolean, setIsEditModalOpen: (open: boolean) => void, editUsername: string, setEditUsername: (username: string) => void, editEmail: string, setEditEmail: (email: string) => void, editAvatar: string, setEditAvatar: (avatar: string) => void, onUpdateUser: (updates: Partial<User>) => void }) => {
+const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfile, isEditModalOpen, setIsEditModalOpen, editUsername, setEditUsername, editEmail, setEditEmail, editAvatar, setEditAvatar, onUpdateUser, onExportData, onImportData, onClearAllData }: { settings: Settings, onUpdateSettings: (s: Partial<Settings>) => void, user: User | null, onLogout: () => void, onEditProfile: () => void, isEditModalOpen: boolean, setIsEditModalOpen: (open: boolean) => void, editUsername: string, setEditUsername: (username: string) => void, editEmail: string, setEditEmail: (email: string) => void, editAvatar: string, setEditAvatar: (avatar: string) => void, onUpdateUser: (updates: Partial<User>) => void, onExportData: () => void, onImportData: () => void, onClearAllData: () => void }) => {
   
   const themes: { name: Theme, color: string }[] = [
     { name: 'zinc', color: '#6f797a' },
@@ -3462,12 +3478,13 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfil
           <h2 className="font-headline font-bold text-sm uppercase tracking-widest text-on-surface-variant">数据管理 (Data)</h2>
         </div>
         <div className="space-y-3">
-          <SettingsButton icon={<FileUp className="w-4 h-4" />} label="导出数据" />
-          <SettingsButton icon={<FileDown className="w-4 h-4" />} label="导入数据" />
-          <SettingsButton 
-            icon={<Trash2 className="w-4 h-4" />} 
-            label="清除所有数据" 
-            variant="danger" 
+          <SettingsButton icon={<FileUp className="w-4 h-4" />} label="导出数据" onClick={onExportData} />
+          <SettingsButton icon={<FileDown className="w-4 h-4" />} label="导入数据" onClick={onImportData} />
+          <SettingsButton
+            icon={<Trash2 className="w-4 h-4" />}
+            label="清除所有数据"
+            variant="danger"
+            onClick={onClearAllData}
           />
         </div>
       </section>
@@ -3491,11 +3508,13 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfil
   );
 };
 
-const SettingsButton = ({ icon, label, variant = 'default' }: { icon: React.ReactNode, label: string, variant?: 'default' | 'danger' }) => (
-  <button className={cn(
+const SettingsButton = ({ icon, label, variant = 'default', onClick }: { icon: React.ReactNode, label: string, variant?: 'default' | 'danger', onClick?: () => void }) => (
+  <button
+    onClick={onClick}
+    className={cn(
     "w-full p-4 rounded-xl flex items-center justify-between transition-all active:scale-[0.98] border shadow-sm",
-    variant === 'danger' 
-      ? "bg-surface-container-lowest border-red-100 text-red-500 hover:bg-red-50" 
+    variant === 'danger'
+      ? "bg-surface-container-lowest border-red-100 text-red-500 hover:bg-red-50"
       : "bg-surface-container-lowest border-outline-variant text-on-surface hover:bg-surface-container-low"
   )}>
     <span className="font-bold text-sm">{label}</span>
@@ -4547,7 +4566,7 @@ export default function App() {
     // Persist to Supabase
     supabase
       .from('shop_history')
-      .insert({ ...historyEntry, user_id: user.id })
+      .insert({ ...historyEntry, price: item.cost, user_id: user.id })
       .then(() => {})
       .then(null, error => console.error('Error saving shop history to Supabase:', error));
 
@@ -4621,10 +4640,91 @@ export default function App() {
       setActiveTab('today');
     } catch (error) {
       console.error('Logout error:', error);
-      // 即使登出失败，也要清除本地用户状态
       setUser(null);
       setActiveTab('today');
     }
+  };
+
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+
+  const handleExportData = () => {
+    const data = {
+      version: '2.4.0',
+      exportedAt: new Date().toISOString(),
+      taskGroups,
+      bingoTiles,
+      history,
+      achievements,
+      stats,
+      settings,
+      gridSize,
+      shopItems,
+      gachaState,
+      shopHistory,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `life-bingo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (data.taskGroups) setTaskGroups(data.taskGroups);
+        if (data.bingoTiles) setBingoTiles(data.bingoTiles);
+        if (data.history) setHistory(data.history);
+        if (data.achievements) setAchievements(data.achievements);
+        if (data.stats) setStats(data.stats);
+        if (data.settings) setSettings(data.settings);
+        if (data.gridSize) setGridSize(data.gridSize);
+        if (data.shopItems) setShopItems(data.shopItems);
+        if (data.gachaState) setGachaState(data.gachaState);
+        if (data.shopHistory) setShopHistory(data.shopHistory);
+        alert('数据导入成功！');
+      } catch (err) {
+        console.error('Import error:', err);
+        alert('导入失败，请检查文件格式');
+      }
+    };
+    input.click();
+  };
+
+  const handleClearAllData = async () => {
+    setTaskGroups(INITIAL_TASK_GROUPS);
+    setBingoTiles(INITIAL_BINGO_TILES);
+    setHistory([]);
+    setAchievements(INITIAL_ACHIEVEMENTS);
+    setStats(INITIAL_STATS);
+    setSettings(INITIAL_SETTINGS);
+    setGridSize(5);
+    setShopItems(INITIAL_SHOP_ITEMS);
+    setGachaState({
+      availableDraws: 0,
+      lastDrawLevel: 1,
+      consecutiveLowRewards: 0,
+      consecutiveSameType: 0,
+      history: [],
+    });
+    setShopHistory([]);
+    if (user) {
+      const tables = ['task_groups', 'bingo_tiles', 'history', 'achievements', 'stats', 'settings', 'grid_size', 'shop_items', 'gacha', 'shop_history'];
+      for (const table of tables) {
+        supabase.from(table).delete().eq('user_id', user.id)
+          .then(() => {}).then(null, error => console.error(`Error clearing ${table}:`, error));
+      }
+    }
+    setIsClearConfirmOpen(false);
   };
 
   const updateUser = (updates: Partial<User>) => {
@@ -5200,9 +5300,9 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <SettingsView 
-              settings={settings} 
-              onUpdateSettings={updateSettings} 
+            <SettingsView
+              settings={settings}
+              onUpdateSettings={updateSettings}
               user={user}
               onLogout={logout}
               onEditProfile={handleEditProfile}
@@ -5215,6 +5315,9 @@ export default function App() {
               editAvatar={editAvatar}
               setEditAvatar={setEditAvatar}
               onUpdateUser={onUpdateUser}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+              onClearAllData={() => setIsClearConfirmOpen(true)}
             />
           </motion.div>
         )}
@@ -5706,6 +5809,50 @@ export default function App() {
                       <li>• 余额：可在商店购买奖励</li>
                     </ul>
                   </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Clear All Data Confirmation Modal */}
+      <AnimatePresence>
+        {isClearConfirmOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsClearConfirmOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                  <Trash2 className="w-8 h-8 text-red-500" />
+                </div>
+                <h3 className="text-xl font-black tracking-tight uppercase">清除所有数据</h3>
+                <p className="text-on-surface-variant text-sm font-bold">此操作将永久删除你所有的任务、记录和设置，无法撤销。确定要继续吗？</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsClearConfirmOpen(false)}
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleClearAllData}
+                  className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  确认清除
+                </button>
               </div>
             </motion.div>
           </div>
