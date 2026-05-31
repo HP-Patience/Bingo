@@ -98,7 +98,7 @@ export type Stats = {
   totalSpent: number;
 };
 
-export type Theme = 'zinc' | 'slate' | 'gray' | 'blue' | 'rose' | 'amber' | 'emerald' | 'violet' | 'dark';
+export type Theme = 'zinc' | 'dark';
 
 export type Settings = {
   theme: Theme;

@@ -3359,13 +3359,6 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfil
   
   const themes: { name: Theme, color: string }[] = [
     { name: 'zinc', color: '#6f797a' },
-    { name: 'slate', color: '#475569' },
-    { name: 'gray', color: '#4b5563' },
-    { name: 'blue', color: '#2563eb' },
-    { name: 'rose', color: '#e11d48' },
-    { name: 'amber', color: '#d97706' },
-    { name: 'emerald', color: '#059669' },
-    { name: 'violet', color: '#7c3aed' },
     { name: 'dark', color: '#1a1a1a' },
   ];
 
@@ -5038,7 +5031,7 @@ export default function App() {
   };
 
   const cycleTheme = () => {
-    const themes: Theme[] = ['zinc', 'slate', 'gray', 'blue', 'rose', 'amber', 'emerald', 'violet', 'dark'];
+    const themes: Theme[] = ['zinc', 'dark'];
     const currentIndex = themes.indexOf(settings.theme);
     const nextIndex = (currentIndex + 1) % themes.length;
     setSettings(prev => ({ ...prev, theme: themes[nextIndex] }));
