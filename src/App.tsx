@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState, ShopHistoryEntry } from './types';
-import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS } from './constants';
+import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS, DEFAULT_AVATAR } from './constants';
 import { getDrawsPerLevel, getPoolByLevel, drawReward, addDrawHistory } from './gachaUtils';
+import { toDB, fromDB } from './lib/utils';
 
 // 计算任务经验值
 export const calculateXP = (difficulty: TaskDifficulty, priority: TaskPriority): number => {
@@ -143,12 +144,10 @@ const Layout = ({ children, activeTab, onTabChange, user, onLoginClick, theme }:
                 </div>
                 <span className="text-[8px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{user.xp} / {user.nextLevelXp} XP</span>
               </div>
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1 text-primary">
-                  <Zap className="w-3 h-3 fill-primary" />
-                  <span className="text-[10px] font-black tracking-tighter">{user.balance}</span>
-                </div>
-                <span className="text-[8px] font-bold text-on-surface-variant/60 uppercase tracking-widest">余额</span>
+              <div className="flex items-center gap-1">
+                <Zap className="w-3 h-3 fill-primary" />
+                <span className="text-[10px] font-black tracking-tighter">{user.balance}</span>
+                <span className="text-[8px] font-bold text-on-surface-variant/60 uppercase tracking-widest">金币</span>
               </div>
               <button 
                 onClick={() => onTabChange('settings')}
@@ -283,11 +282,11 @@ const LoginView = ({ onLogin }: { onLogin: (user: User) => void }) => {
             id: data.user.id,
             username: data.user.email?.split('@')[0] || '用户',
             email: data.user.email || 'user@example.com',
-            avatar: data.user.user_metadata?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
+            avatar: data.user.user_metadata?.avatar || DEFAULT_AVATAR,
             joinedAt: data.user.created_at || new Date().toISOString(),
             level: 1,
             xp: 0,
-            nextLevelXp: 100,
+            nextLevelXp: 200,
             balance: 0
           });
         }
@@ -1401,7 +1400,7 @@ const CalendarView = ({ history, onBackToToday, onDeleteEntry, onEditEntry }: { 
   );
 };
 
-const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit, key }: { icon: React.ReactNode, title: string, time: string, duration?: number, onDelete?: () => void, onEdit?: () => void, key?: string }) => (
+const HistoryItem = ({ icon, title, time, duration, onDelete, onEdit }: { icon: React.ReactNode, title: string, time: string, duration?: number, onDelete?: () => void, onEdit?: () => void; key?: React.Key }) => (
   <div className="bg-surface-container-lowest border border-outline-variant p-5 rounded-[1.5rem] flex items-center justify-between shadow-sm active:bg-surface-container-low transition-colors group relative">
     <div className="flex items-center gap-4">
       <div className="w-12 h-12 bg-surface-container-low text-primary flex items-center justify-center rounded-2xl">
@@ -2276,13 +2275,6 @@ const GachaView = ({
   setShowHelp: (show: boolean) => void
 }) => {
   
-  const getPoolName = (level: number) => {
-    if (level >= 30) return '传说奖池';
-    if (level >= 16) return '高级奖池';
-    if (level >= 6) return '进阶奖池';
-    return '新手奖池';
-  };
-
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case 'legendary': return 'text-yellow-500';
@@ -2327,9 +2319,8 @@ const GachaView = ({
         <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
         <div className="relative z-10">
           <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">当前奖池</p>
-            <h3 className="text-3xl font-extrabold tracking-tighter text-primary mb-2">{getPoolName(userLevel)}</h3>
-            <p className="text-on-surface-variant font-bold text-sm">等级 {userLevel}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">抽奖奖池</p>
+            <h3 className="text-3xl font-extrabold tracking-tighter text-primary mb-2">等级 {userLevel}</h3>
           </div>
           
           <div className="mt-8 flex flex-col items-center gap-4">
@@ -2338,8 +2329,13 @@ const GachaView = ({
               <div className="text-6xl font-extrabold tracking-tighter text-primary">
                 {gachaState.availableDraws}
               </div>
+              {gachaState.lastFreeDrawDate === new Date().toISOString().split('T')[0] && gachaState.availableDraws > 0 && (
+                <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full">
+                  含今日免费
+                </span>
+              )}
             </div>
-            
+
             <button
               onClick={onDraw}
               disabled={gachaState.availableDraws <= 0}
@@ -2378,23 +2374,20 @@ const GachaView = ({
                     {entry.reward.type === 'xp' ? <Zap className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm">{entry.poolName}</span>
-                      <span className={cn("text-[10px] font-bold uppercase", getRarityColor(entry.reward.rarity))}>
-                        {getRarityName(entry.reward.rarity)}
-                      </span>
-                    </div>
+                    <span className={cn("text-[10px] font-bold uppercase", getRarityColor(entry.reward.rarity))}>
+                      {getRarityName(entry.reward.rarity)}
+                    </span>
                     <p className="text-[10px] text-on-surface-variant font-medium">
                       {new Date(entry.timestamp).toLocaleDateString('zh-CN')}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className={cn("font-black text-lg", entry.reward.type === 'xp' ? 'text-primary' : 'text-secondary')}>
+                <div className="flex items-center gap-1">
+                  <span className="font-black text-lg text-primary w-12 text-right tabular-nums">
                     +{entry.actualValue}
                   </span>
-                  <span className="text-[10px] text-on-surface-variant font-bold block">
-                    {entry.reward.type === 'xp' ? 'XP' : '余额'}
+                  <span className="text-[10px] text-on-surface-variant font-bold w-7">
+                    {entry.reward.type === 'xp' ? 'XP' : '金币'}
                   </span>
                 </div>
               </div>
@@ -2484,9 +2477,9 @@ const ShopView = ({
       <section className="bg-surface-container-lowest border border-outline-variant rounded-[2rem] p-8 relative overflow-hidden shadow-sm">
         <div className="relative z-10 flex justify-between items-center">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">当前余额</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">当前金币</p>
             <h3 className="text-5xl font-extrabold tracking-tighter text-primary">{userBalance.toLocaleString()}</h3>
-            <p className="text-on-surface-variant font-bold text-sm mt-1">可使用余额</p>
+            <p className="text-on-surface-variant font-bold text-sm mt-1">可使用金币</p>
           </div>
           <div className="flex gap-2">
             <button 
@@ -2572,7 +2565,7 @@ const ShopView = ({
                         : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed"
                     )}
                   >
-                    {item.cost} 余额
+                    {item.cost} 金币
                   </button>
                 )}
               </div>
@@ -2624,7 +2617,7 @@ const ShopView = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">价格 (余额)</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">价格 (金币)</label>
                     <input 
                       type="number" 
                       className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -2794,18 +2787,7 @@ const PomodoroView = ({
           if (newXp >= nextLevelXp) {
             newXp -= nextLevelXp;
             newLevel += 1;
-            // 调整升级曲线
-            if (newLevel <= 5) {
-              // 1-5级：固定值
-              const levelThresholds = [0, 50, 70, 90, 110, 130];
-              nextLevelXp = levelThresholds[newLevel];
-            } else if (newLevel <= 24) {
-              // 6-24级：每级递增15%
-              nextLevelXp = Math.floor(nextLevelXp * 1.15);
-            } else {
-              // 25级及以上：固定值
-              nextLevelXp = 2000;
-            }
+            nextLevelXp = 200;
             // 更新等级头衔
             if (newLevel % 10 === 0) {
               if (newLevel === 10) newTitle = '资深玩家';
@@ -2842,7 +2824,7 @@ const PomodoroView = ({
       if (user) {
         supabase
           .from('history')
-          .insert({ ...newEntry, user_id: user.id })
+          .insert(toDB({ ...newEntry, user_id: user.id }))
           .then(() => {})
           .then(null, error => console.error('Error saving pomodoro history:', error));
       }
@@ -3533,9 +3515,11 @@ export default function App() {
   const [isTimeRangeModalOpen, setIsTimeRangeModalOpen] = useState(false);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'quarter' | 'year' | 'all'>('today');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -3556,247 +3540,174 @@ export default function App() {
     consecutiveLowRewards: 0,
     consecutiveSameType: 0,
     history: [],
+    lastFreeDrawDate: undefined,
   });
   const [shopHistory, setShopHistory] = useState<ShopHistoryEntry[]>([]);
+  const [showGachaResult, setShowGachaResult] = useState(false);
+  const [lastDrawResult, setLastDrawResult] = useState<{
+    reward: import('./types').GachaReward;
+    actualValue: number;
+    poolName: string;
+  } | null>(null);
 
   // 从Supabase加载数据
   React.useEffect(() => {
+    // 用原始 fetch 绕过 Supabase JS 客户端的初始化死锁问题
+    const apiFetch = (path: string, method = 'GET', body?: unknown) => {
+      const stored = window.localStorage.getItem('sb-ifqhbubjkgbfognvmonr-auth-token');
+      const token = (() => { try { return stored ? JSON.parse(stored).access_token || '' : ''; } catch { return ''; } })();
+      const headers: Record<string, string> = {
+        'apikey': 'sb_publishable_4cvCbNm_2y7gxwOFxjlAMA_63DzT4Sy',
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const init: RequestInit = { method, headers };
+      if (body && method !== 'GET') init.body = JSON.stringify(body);
+      return fetch(`https://ifqhbubjkgbfognvmonr.supabase.co/rest/v1${path}`, init).then(r => {
+        if (r.status === 201 || r.status === 204) return [];
+        return r.json();
+      });
+    };
+
     const loadData = async () => {
       try {
-        // 检查Supabase是否初始化
-        if (!supabase) {
-          console.warn('Supabase is not initialized. Using default data.');
-          return;
-        }
-
-        // 加载用户数据
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        
-        if (authUser) {
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
-          
-          if (userError) {
-            console.warn('Error loading user data:', userError);
-            // 如果加载用户数据失败，创建新的用户记录
-            const newUser: User = {
-              id: authUser.id,
-              username: authUser.email?.split('@')[0] || '用户',
-              email: authUser.email || 'user@example.com',
-              avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
-              joinedAt: authUser.created_at || new Date().toISOString(),
-              level: 1,
-              xp: 0,
-              nextLevelXp: 100,
-              balance: 0
-            };
-            
-            const { error: createError } = await supabase
-              .from('users')
-              .insert(newUser);
-            
-            if (createError) {
-              console.error('Error creating user:', createError);
-            } else {
-              setUser(newUser);
-            }
-          } else if (userData) {
-            setUser(userData);
+        // 从 localStorage 读取 user
+        let authUser: { id: string; email?: string; created_at?: string } | null = null;
+        try {
+          const stored = window.localStorage.getItem('sb-ifqhbubjkgbfognvmonr-auth-token');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            authUser = parsed?.user ?? null;
           }
-        } else {
-          // 用户未登录，设置user为null
+        } catch (e) { /* ignore */ }
+
+        if (!authUser) {
           setUser(null);
+          setIsAuthLoading(false);
           return;
         }
 
-        // 加载任务组
-        const { data: groupsData, error: groupsError } = await supabase
-          .from('task_groups')
-          .select('*')
-          .eq('user_id', authUser.id);
-        
-        if (groupsError) {
-          console.warn('Error loading task groups:', groupsError);
-        } else if (groupsData && groupsData.length > 0) {
-          setTaskGroups(groupsData);
+        // 先并行加载所有数据
+        const userDataArr = await apiFetch(`/users?id=eq.${authUser.id}&select=*`);
+        const userData = userDataArr?.[0];
+        let loadedUser: User;
+        if (!userData) {
+          loadedUser = {
+            id: authUser.id,
+            username: authUser.email?.split('@')[0] || '用户',
+            email: authUser.email || 'user@example.com',
+            avatar: DEFAULT_AVATAR,
+            joinedAt: authUser.created_at || new Date().toISOString(),
+            level: 1,
+            xp: 0,
+            nextLevelXp: 200,
+            balance: 0
+          };
+          await apiFetch('/users', 'POST', toDB(loadedUser));
+        } else {
+          loadedUser = fromDB<User>(userData);
+          if (loadedUser.avatar?.includes('googleusercontent')) loadedUser.avatar = DEFAULT_AVATAR;
         }
 
-        // 加载宾果格子
-        const { data: tilesData, error: tilesError } = await supabase
-          .from('bingo_tiles')
-          .select('*')
-          .eq('user_id', authUser.id);
-        
-        if (tilesError) {
-          console.warn('Error loading bingo tiles:', tilesError);
-        } else if (tilesData && tilesData.length > 0) {
-          // 假设tilesData是一个包含grid数组的对象
-          const tiles = tilesData[0]?.grid;
-          if (tiles) {
-            setBingoTiles(tiles);
+        // 并行加载其余数据（用 Promise.allSettled 避免单个失败阻塞全部）
+        const [
+          groupsRes, tilesRes, historyRes, achievementsRes,
+          statsRes, settingsRes, gridSizeRes, shopItemsRes,
+          gachaRes, shopHistoryRes
+        ] = await Promise.allSettled([
+          apiFetch(`/task_groups?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/bingo_tiles?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/history?user_id=eq.${authUser.id}&select=*&order=completedat.desc`),
+          apiFetch(`/achievements?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/stats?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/settings?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/grid_size?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/shop_items?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/gacha?user_id=eq.${authUser.id}&select=*`),
+          apiFetch(`/shop_history?user_id=eq.${authUser.id}&select=*&order=timestamp.desc`),
+        ]);
+
+        const val = <T,>(r: PromiseSettledResult<T>): T | undefined =>
+          r.status === 'fulfilled' ? r.value : undefined;
+
+        const groupsData = val(groupsRes);
+        const tilesData = val(tilesRes);
+        const historyData = val(historyRes);
+        const achievementsData = val(achievementsRes);
+        const statsData = val(statsRes);
+        const settingsData = val(settingsRes);
+        const gridSizeData = val(gridSizeRes);
+        const shopItemsData = val(shopItemsRes);
+        const gachaData = val(gachaRes);
+        const shopHistoryData = val(shopHistoryRes);
+
+        // 所有数据准备好后，一次性同步设置（React 18 自动批量处理）
+        setUser(loadedUser);
+        if (groupsData?.length > 0) setTaskGroups(groupsData.map((g: Record<string, unknown>) => fromDB<TaskGroup>(g)));
+        if (tilesData?.[0]?.grid) setBingoTiles(tilesData[0].grid);
+        if (historyData?.length) setHistory(historyData.map((h: Record<string, unknown>) => fromDB<HistoryEntry>(h)));
+        if (achievementsData?.length) setAchievements(achievementsData.map((a: Record<string, unknown>) => fromDB<Achievement>(a)));
+        if (statsData?.[0]) setStats(fromDB<Stats>(statsData[0]));
+        if (settingsData?.[0]) setSettings(fromDB<Settings>(settingsData[0]));
+        if (gridSizeData?.[0]) setGridSize(gridSizeData[0].size);
+        if (shopItemsData?.length) setShopItems(shopItemsData.map((s: Record<string, unknown>) => fromDB<ShopItem>(s)));
+        if (gachaData?.[0]) {
+          const gs = fromDB<GachaState>(gachaData[0]);
+          const today = new Date().toISOString().split('T')[0];
+          if (gs.lastFreeDrawDate !== today) {
+            gs.availableDraws = (gs.availableDraws || 0) + 1;
+            gs.lastFreeDrawDate = today;
+            supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(() => {}, e => console.error('Error saving daily free draw:', e));
           }
+          setGachaState(gs);
         }
+        if (shopHistoryData?.length) setShopHistory(shopHistoryData.map((s: Record<string, unknown>) => fromDB<ShopHistoryEntry>(s)));
 
-        // 加载历史记录
-        const { data: historyData, error: historyError } = await supabase
-          .from('history')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .order('completedAt', { ascending: false });
-        
-        if (historyError) {
-          console.warn('Error loading history:', historyError);
-        } else if (historyData) {
-          setHistory(historyData);
-        }
-
-        // 加载成就
-        const { data: achievementsData, error: achievementsError } = await supabase
-          .from('achievements')
-          .select('*')
-          .eq('user_id', authUser.id);
-        
-        if (achievementsError) {
-          console.warn('Error loading achievements:', achievementsError);
-        } else if (achievementsData && achievementsData.length > 0) {
-          setAchievements(achievementsData);
-        }
-
-        // 加载统计数据
-        const { data: statsData, error: statsError } = await supabase
-          .from('stats')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .single();
-        
-        if (statsError) {
-          console.warn('Error loading stats:', statsError);
-        } else if (statsData) {
-          setStats(statsData);
-        }
-
-        // 加载设置
-        const { data: settingsData, error: settingsError } = await supabase
-          .from('settings')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .single();
-        
-        if (settingsError) {
-          console.warn('Error loading settings:', settingsError);
-        } else if (settingsData) {
-          setSettings(settingsData);
-        }
-
-        // 加载网格大小
-        const { data: gridSizeData, error: gridSizeError } = await supabase
-          .from('grid_size')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .single();
-        
-        if (gridSizeError) {
-          console.warn('Error loading grid size:', gridSizeError);
-        } else if (gridSizeData) {
-          setGridSize(gridSizeData.size);
-        }
-
-        // 加载商店物品
-        const { data: shopItemsData, error: shopItemsError } = await supabase
-          .from('shop_items')
-          .select('*')
-          .eq('user_id', authUser.id);
-        
-        if (shopItemsError) {
-          console.warn('Error loading shop items:', shopItemsError);
-        } else if (shopItemsData && shopItemsData.length > 0) {
-          setShopItems(shopItemsData);
-        }
-
-        // 加载抽奖状态
-        const { data: gachaData, error: gachaError } = await supabase
-          .from('gacha')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .single();
-        
-        if (gachaError) {
-          console.warn('Error loading gacha state:', gachaError);
-        } else if (gachaData) {
-          setGachaState(gachaData);
-        }
-
-        // 加载商店历史
-        const { data: shopHistoryData, error: shopHistoryError } = await supabase
-          .from('shop_history')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .order('timestamp', { ascending: false });
-        
-        if (shopHistoryError) {
-          console.warn('Error loading shop history:', shopHistoryError);
-        } else if (shopHistoryData) {
-          setShopHistory(shopHistoryData);
-        }
+        setIsAuthLoading(false);
 
       } catch (error) {
         console.error('Error loading data from Supabase:', error);
+        setIsAuthLoading(false);
       }
     };
 
     loadData();
 
-    // 添加认证状态监听器
+    // 添加认证状态监听器（仅用于登录/登出事件，初次加载由 loadData 处理）
+    let initialLoadDone = false;
     if (supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user) {
-          // 用户登录或会话恢复
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (userError) {
-            console.warn('Error loading user data on auth change:', userError);
-            // 如果加载用户数据失败，创建新的用户记录
-            const newUser: User = {
-              id: session.user.id,
-              username: session.user.email?.split('@')[0] || '用户',
-              email: session.user.email || 'user@example.com',
-              avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
-              joinedAt: session.user.created_at || new Date().toISOString(),
-              level: 1,
-              xp: 0,
-              nextLevelXp: 100,
-              balance: 0
-            };
-            
-            const { error: createError } = await supabase
-              .from('users')
-              .insert(newUser);
-            
-            if (createError) {
-              console.error('Error creating user:', createError);
-            } else {
+        // 跳过初始会话检测（loadData 已经处理了）
+        if (!initialLoadDone) { initialLoadDone = true; return; }
+        // 只处理登录和登出事件
+        if (event === 'SIGNED_IN' && session?.user) {
+          // 用户刚登录，用 apiFetch 加载用户数据
+          try {
+            const userDataArr = await apiFetch(`/users?id=eq.${session.user.id}&select=*`);
+            const userData = userDataArr?.[0];
+            if (!userData) {
+              const newUser = {
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || '用户',
+                email: session.user.email || 'user@example.com',
+                avatar: DEFAULT_AVATAR,
+                joinedAt: session.user.created_at || new Date().toISOString(),
+                level: 1, xp: 0, nextLevelXp: 200, balance: 0
+              };
+              await apiFetch('/users', 'POST', toDB(newUser));
               setUser(newUser);
+            } else {
+              const u = fromDB<User>(userData);
+              if (u.avatar?.includes('googleusercontent')) u.avatar = DEFAULT_AVATAR;
+              setUser(u);
             }
-          } else if (userData) {
-            setUser(userData);
-          }
-        } else {
-          // 用户登出
+          } catch (e) { console.error('Error in auth change:', e); }
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
       });
 
-      // 清理订阅
-      return () => {
-        subscription.unsubscribe();
-      };
+      return () => { subscription.unsubscribe(); };
     }
   }, [supabase]);
 
@@ -3813,40 +3724,31 @@ export default function App() {
     if (user) {
       supabase
         .from('users')
-        .upsert({
+        .upsert(toDB({
           id: user.id,
           ...user
-        })
-        .then(() => {
-          // 成功保存用户数据
-        })
+        }))
         .then(null, error => console.error('Error saving user to Supabase:', error));
     }
   }, [user]);
 
   React.useEffect(() => {
-    // 先删除旧的任务组，再插入新的
     if (user) {
+      const groupsWithUserId = taskGroups.map(group => ({
+        ...group,
+        user_id: user.id
+      }));
+      const dbGroups = groupsWithUserId.map(g => toDB(g));
       supabase
         .from('task_groups')
-        .delete()
-        .eq('user_id', user.id)
+        .upsert(dbGroups)
         .then(() => {
-          if (taskGroups.length > 0) {
-            const groupsWithUserId = taskGroups.map(group => ({
-              ...group,
-              user_id: user.id
-            }));
-            supabase
-              .from('task_groups')
-              .insert(groupsWithUserId)
-              .then(() => {
-                // 成功保存任务组
-              })
-              .then(null, error => console.error('Error saving task groups to Supabase:', error));
-          }
+          const currentIds = taskGroups.map(g => g.id);
+          const del = supabase.from('task_groups').delete().eq('user_id', user.id);
+          (currentIds.length > 0 ? del.not('id', 'in', `(${currentIds.join(',')})`) : del)
+            .then(null, error => console.error('Error cleaning up old task groups:', error));
         })
-        .then(null, error => console.error('Error deleting old task groups:', error));
+        .then(null, error => console.error('Error saving task groups to Supabase:', error));
     }
   }, [taskGroups, user]);
 
@@ -3854,11 +3756,11 @@ export default function App() {
     if (user) {
       supabase
         .from('bingo_tiles')
-        .upsert({
+        .upsert(toDB({
           id: 'current-tiles',
           user_id: user.id,
           grid: bingoTiles
-        })
+        }))
         .then(() => {
           // 成功保存宾果格子
         })
@@ -3872,28 +3774,22 @@ export default function App() {
   }, [history]);
 
   React.useEffect(() => {
-    // 先删除旧的成就，再插入新的
     if (user) {
+      const achievementsWithUserId = achievements.map(achievement => ({
+        ...achievement,
+        user_id: user.id
+      }));
+      const dbAchievements = achievementsWithUserId.map(a => toDB(a));
       supabase
         .from('achievements')
-        .delete()
-        .eq('user_id', user.id)
+        .upsert(dbAchievements)
         .then(() => {
-          if (achievements.length > 0) {
-            const achievementsWithUserId = achievements.map(achievement => ({
-              ...achievement,
-              user_id: user.id
-            }));
-            supabase
-              .from('achievements')
-              .insert(achievementsWithUserId)
-              .then(() => {
-                // 成功保存成就
-              })
-              .then(null, error => console.error('Error saving achievements to Supabase:', error));
-          }
+          const currentIds = achievements.map(a => a.id);
+          const del = supabase.from('achievements').delete().eq('user_id', user.id);
+          (currentIds.length > 0 ? del.not('id', 'in', `(${currentIds.join(',')})`) : del)
+            .then(null, error => console.error('Error cleaning up old achievements:', error));
         })
-        .then(null, error => console.error('Error deleting old achievements:', error));
+        .then(null, error => console.error('Error saving achievements to Supabase:', error));
     }
   }, [achievements, user]);
 
@@ -3901,11 +3797,11 @@ export default function App() {
     if (user) {
       supabase
         .from('stats')
-        .upsert({
+        .upsert(toDB({
           id: 'current-stats',
           user_id: user.id,
           ...stats
-        })
+        }))
         .then(() => {
           // 成功保存统计数据
         })
@@ -3917,11 +3813,11 @@ export default function App() {
     if (user) {
       supabase
         .from('gacha')
-        .upsert({
+        .upsert(toDB({
           id: 'current-gacha',
           user_id: user.id,
           ...gachaState
-        })
+        }))
         .then(() => {
           // 成功保存抽奖状态
         })
@@ -3934,28 +3830,22 @@ export default function App() {
   }, [shopHistory]);
 
   React.useEffect(() => {
-    // 先删除旧的商店物品，再插入新的
     if (user) {
+      const shopItemsWithUserId = shopItems.map(item => ({
+        ...item,
+        user_id: user.id
+      }));
+      const dbShopItems = shopItemsWithUserId.map(s => toDB(s));
       supabase
         .from('shop_items')
-        .delete()
-        .eq('user_id', user.id)
+        .upsert(dbShopItems)
         .then(() => {
-          if (shopItems.length > 0) {
-            const shopItemsWithUserId = shopItems.map(item => ({
-              ...item,
-              user_id: user.id
-            }));
-            supabase
-              .from('shop_items')
-              .insert(shopItemsWithUserId)
-              .then(() => {
-                // 成功保存商店物品
-              })
-              .then(null, error => console.error('Error saving shop items to Supabase:', error));
-          }
+          const currentIds = shopItems.map(s => s.id);
+          const del = supabase.from('shop_items').delete().eq('user_id', user.id);
+          (currentIds.length > 0 ? del.not('id', 'in', `(${currentIds.join(',')})`) : del)
+            .then(null, error => console.error('Error cleaning up old shop items:', error));
         })
-        .then(null, error => console.error('Error deleting old shop items:', error));
+        .then(null, error => console.error('Error saving shop items to Supabase:', error));
     }
   }, [shopItems, user]);
 
@@ -3963,11 +3853,11 @@ export default function App() {
     if (user) {
       supabase
         .from('grid_size')
-        .upsert({
+        .upsert(toDB({
           id: 'current-grid-size',
           user_id: user.id,
           size: gridSize
-        })
+        }))
         .then(() => {
           // 成功保存网格大小
         })
@@ -3983,11 +3873,11 @@ export default function App() {
     if (user) {
       supabase
         .from('settings')
-        .upsert({
+        .upsert(toDB({
           id: 'current-settings',
           user_id: user.id,
           ...settings
-        })
+        }))
         .then(() => {
           // 成功保存设置
         })
@@ -4113,7 +4003,7 @@ export default function App() {
       if (user) {
         supabase
           .from('history')
-          .insert({ ...newEntry, user_id: user.id })
+          .insert(toDB({ ...newEntry, user_id: user.id }))
           .then(() => {
             // 成功保存历史记录
           })
@@ -4239,16 +4129,16 @@ export default function App() {
             nightOwlCount: Math.max(0, prev.nightOwlCount - (isNightOwl ? 1 : 0))
           };
           // Persist immediately to Supabase to avoid data loss
-          supabase.from('stats').upsert({ id: 'current-stats', user_id: user.id, ...updatedStats })
+          supabase.from('stats').upsert(toDB({ id: 'current-stats', user_id: user.id, ...updatedStats }))
             .then(() => {}).then(null, error => console.error('Error upserting stats:', error));
           return updatedStats;
         });
 
         // Persist user and gacha immediately
-        supabase.from('users').upsert({ id: updatedUser.id, ...updatedUser })
+        supabase.from('users').upsert(toDB({ id: updatedUser.id, ...updatedUser }))
           .then(() => {}).then(null, error => console.error('Error upserting user:', error));
         if (Object.keys(gachaUpdate).length > 0) {
-          supabase.from('gacha').upsert({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate })
+          supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate }))
             .then(() => {}).then(null, error => console.error('Error upserting gacha:', error));
         }
       }
@@ -4338,16 +4228,16 @@ export default function App() {
       setUser(updatedUser);
       setStats(prev => {
         const updatedStats = { ...prev, totalXp: Math.max(0, prev.totalXp - xpToDeduct) };
-        supabase.from('stats').upsert({ id: 'current-stats', user_id: user.id, ...updatedStats })
+        supabase.from('stats').upsert(toDB({ id: 'current-stats', user_id: user.id, ...updatedStats }))
           .then(() => {}).then(null, error => console.error('Error upserting stats:', error));
         return updatedStats;
       });
 
       // Persist user and gacha immediately
-      supabase.from('users').upsert({ id: updatedUser.id, ...updatedUser })
+      supabase.from('users').upsert(toDB({ id: updatedUser.id, ...updatedUser }))
         .then(() => {}).then(null, error => console.error('Error upserting user:', error));
       if (Object.keys(gachaUpdate).length > 0) {
-        supabase.from('gacha').upsert({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate })
+        supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate }))
           .then(() => {}).then(null, error => console.error('Error upserting gacha:', error));
       }
     }
@@ -4427,7 +4317,7 @@ export default function App() {
     if (user) {
       supabase
         .from('history')
-        .update({
+        .update(toDB({
           user_id: user.id,
           taskName: updatedEntry.taskName,
           completedAt: updatedEntry.completedAt,
@@ -4436,7 +4326,7 @@ export default function App() {
           duration: updatedEntry.duration,
           note: updatedEntry.note,
           noteTimestamp: updatedEntry.noteTimestamp,
-        })
+        }))
         .eq('id', updatedEntry.id)
         .then(() => {})
         .then(null, error => console.error('Error updating history entry in Supabase:', error));
@@ -4459,18 +4349,7 @@ export default function App() {
     while (newXp >= newNextLevelXp) {
       newXp -= newNextLevelXp;
       newLevel += 1;
-      // 调整升级曲线
-      if (newLevel <= 5) {
-        // 1-5级：固定值
-        const levelThresholds = [0, 50, 70, 90, 110, 130];
-        newNextLevelXp = levelThresholds[newLevel];
-      } else if (newLevel <= 24) {
-        // 6-24级：每级递增15%
-        newNextLevelXp = Math.floor(newNextLevelXp * 1.15);
-      } else {
-        // 25级及以上：固定值
-        newNextLevelXp = 2000;
-      }
+      newNextLevelXp = 200;
       // 更新等级头衔
       if (newLevel % 10 === 0) {
         if (newLevel === 10) newTitle = '资深玩家';
@@ -4537,8 +4416,8 @@ export default function App() {
     playSound('levelUp');
     triggerHaptic('medium');
 
-    const rewardType = reward.type === 'xp' ? '经验值' : '余额';
-    alert(`🎉 恭喜获得 ${actualValue} ${rewardType}！`);
+    setLastDrawResult({ reward, actualValue, poolName: pool.name });
+    setShowGachaResult(true);
   };
 
   const buyItem = (item: ShopItem) => {
@@ -4566,7 +4445,7 @@ export default function App() {
     // Persist to Supabase
     supabase
       .from('shop_history')
-      .insert({ ...historyEntry, price: item.cost, user_id: user.id })
+      .insert(toDB({ ...historyEntry, price: item.cost, user_id: user.id }))
       .then(() => {})
       .then(null, error => console.error('Error saving shop history to Supabase:', error));
 
@@ -4698,14 +4577,26 @@ export default function App() {
         const data = JSON.parse(text);
         if (data.taskGroups) setTaskGroups(data.taskGroups);
         if (data.bingoTiles) setBingoTiles(data.bingoTiles);
-        if (data.history) setHistory(data.history);
+        if (data.history) {
+          setHistory(data.history);
+          if (user) {
+            const hWithUserId = data.history.map((h: HistoryEntry) => toDB({ ...h, user_id: user.id }));
+            supabase.from('history').upsert(hWithUserId).then(null, e => console.error('Import history error:', e));
+          }
+        }
         if (data.achievements) setAchievements(data.achievements);
         if (data.stats) setStats(data.stats);
         if (data.settings) setSettings(data.settings);
         if (data.gridSize) setGridSize(data.gridSize);
         if (data.shopItems) setShopItems(data.shopItems);
         if (data.gachaState) setGachaState(data.gachaState);
-        if (data.shopHistory) setShopHistory(data.shopHistory);
+        if (data.shopHistory) {
+          setShopHistory(data.shopHistory);
+          if (user) {
+            const shWithUserId = data.shopHistory.map((h: ShopHistoryEntry) => toDB({ ...h, user_id: user.id }));
+            supabase.from('shop_history').upsert(shWithUserId).then(null, e => console.error('Import shop history error:', e));
+          }
+        }
         alert('数据导入成功！');
       } catch (err) {
         console.error('Import error:', err);
@@ -4730,6 +4621,7 @@ export default function App() {
       consecutiveLowRewards: 0,
       consecutiveSameType: 0,
       history: [],
+      lastFreeDrawDate: undefined,
     });
     setShopHistory([]);
     if (user) {
@@ -5100,15 +4992,28 @@ export default function App() {
     }
   };
 
-  const handleSaveProfile = () => {
-    if (user) {
-      setUser({
+  const handleSaveProfile = async () => {
+    if (user && !isSaving) {
+      setIsSaving(true);
+      const updatedUser = {
         ...user,
         username: editUsername.trim(),
         email: editEmail.trim(),
         avatar: editAvatar.trim()
-      });
-      setIsEditModalOpen(false);
+      };
+      setUser(updatedUser);
+      // 先写数据库，完成后再关弹窗
+      try {
+        await supabase
+          .from('users')
+          .upsert(toDB({ id: updatedUser.id, ...updatedUser }));
+        setIsEditModalOpen(false);
+      } catch (error) {
+        console.error('Error saving profile to Supabase:', error);
+        alert('保存失败，请重试');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -5137,6 +5042,28 @@ export default function App() {
     const nextIndex = (currentIndex + 1) % themes.length;
     setSettings(prev => ({ ...prev, theme: themes[nextIndex] }));
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="inline-block p-6 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-sm">
+            <svg className="w-12 h-12 text-primary animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="21" x2="9" y2="9" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-black text-primary tracking-[0.2em]">LIFE BINGO</h2>
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -5578,11 +5505,11 @@ export default function App() {
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20">
                     <img src={editAvatar} alt="Preview" className="w-full h-full object-cover" />
                   </div>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
+                  <input
                     id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -5594,9 +5521,9 @@ export default function App() {
                       }
                     }}
                   />
-                  <label 
+                  <label
                     htmlFor="avatar-upload"
-                    className="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
+                    className="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors cursor-pointer inline-block"
                   >
                     选择图片
                   </label>
@@ -5642,11 +5569,12 @@ export default function App() {
                 >
                   取消
                 </button>
-                <button 
+                <button
                   onClick={handleSaveProfile}
-                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  disabled={isSaving}
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] disabled:opacity-50"
                 >
-                  保存
+                  {isSaving ? '保存中...' : '保存'}
                 </button>
               </div>
             </motion.div>
@@ -5706,13 +5634,77 @@ export default function App() {
                           -{entry.cost}
                         </span>
                         <span className="text-[10px] text-on-surface-variant font-bold block">
-                          余额
+                          金币
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Gacha Result Modal */}
+      <AnimatePresence>
+        {showGachaResult && lastDrawResult && (
+          <div className="fixed inset-0 z-[1001] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGachaResult(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-5">
+                <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-[2rem] flex items-center justify-center">
+                  {lastDrawResult.reward.type === 'xp' ? (
+                    <Zap className="w-10 h-10 text-primary" />
+                  ) : (
+                    <Star className="w-10 h-10 text-amber-500" />
+                  )}
+                </div>
+                <div>
+                  <span className={cn(
+                    "inline-block text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3",
+                    lastDrawResult.reward.rarity === 'legendary' && "bg-yellow-500/15 text-yellow-500",
+                    lastDrawResult.reward.rarity === 'epic' && "bg-purple-500/15 text-purple-500",
+                    lastDrawResult.reward.rarity === 'rare' && "bg-blue-500/15 text-blue-500",
+                    lastDrawResult.reward.rarity === 'common' && "bg-gray-500/15 text-gray-500"
+                  )}>
+                    {lastDrawResult.reward.rarity === 'legendary' ? '传说' :
+                     lastDrawResult.reward.rarity === 'epic' ? '史诗' :
+                     lastDrawResult.reward.rarity === 'rare' ? '稀有' : '普通'}
+                  </span>
+                  <h3 className="text-xl font-black tracking-tight">恭喜获得</h3>
+                  <p className="text-[11px] text-on-surface-variant font-medium mt-1">{lastDrawResult.poolName}</p>
+                </div>
+                <div className="bg-surface-container-low rounded-[2rem] p-5 flex items-center justify-center gap-2">
+                  <div className={cn(
+                    "text-6xl font-extrabold tracking-tighter",
+                    lastDrawResult.reward.type === 'xp' ? 'text-primary' : 'text-amber-500'
+                  )}>
+                    +{lastDrawResult.actualValue}
+                  </div>
+                  <span className="text-xs text-on-surface-variant font-bold uppercase tracking-wider">
+                    {lastDrawResult.reward.type === 'xp' ? '经验值' : '金币'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowGachaResult(false)}
+                  className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest bg-primary text-on-primary hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20"
+                >
+                  确定
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
@@ -5750,56 +5742,25 @@ export default function App() {
                   <div className="bg-surface-container-low rounded-2xl p-4">
                     <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
                       <Gift className="w-4 h-4 text-primary" />
-                      新手奖池（1-5级）
+                      抽奖奖池（全等级通用）
                     </h3>
                     <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 30-60（70%）/ 稀有 60-100（30%）</li>
-                      <li>• 余额 50%：普通 24-48（70%）/ 稀有 48-80（30%）</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-blue-500" />
-                      进阶奖池（6-15级）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 120-200（65%）/ 稀有 200-350（35%）</li>
-                      <li>• 余额 50%：普通 96-160（65%）/ 稀有 160-280（35%）</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-purple-500" />
-                      高级奖池（16-29级）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 600-900（65%）/ 稀有 900-1400（35%）</li>
-                      <li>• 余额 50%：普通 480-720（65%）/ 稀有 720-1120（35%）</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-surface-container-low rounded-2xl p-4">
-                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                      <Flame className="w-4 h-4 text-yellow-500" />
-                      传说奖池（30级+）
-                    </h3>
-                    <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• XP 50%：普通 1200-1800（55%）/ 稀有 1800-3000（45%）</li>
-                      <li>• 余额 50%：普通 960-1440（55%）/ 稀有 1440-2400（45%）</li>
+                      <li className="text-xs text-on-surface-variant/70 mb-2">普通60% / 稀有25% / 史诗10% / 传说5%</li>
+                      <li className="text-xs">🟢 普通：XP 30-50 / 金币 20-40</li>
+                      <li className="text-xs">🔵 稀有：XP 80-120 / 金币 65-100</li>
+                      <li className="text-xs">🟣 史诗：XP 200-300 / 金币 160-240</li>
+                      <li className="text-xs">🟡 传说：XP 500-800 / 金币 400-650</li>
                     </ul>
                   </div>
 
                   <div className="bg-surface-container-low rounded-2xl p-4">
                     <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-primary" />
-                      抽奖频率
+                      获取方式
                     </h3>
                     <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• 1-15级：每升1级抽1次</li>
-                      <li>• 16-29级：每升2级抽1次</li>
-                      <li>• 30级+：每升2级抽1次</li>
+                      <li>• 每升1级获得1次抽奖</li>
+                      <li>• 每日登录赠送1次免费抽奖</li>
                     </ul>
                   </div>
 
@@ -5809,7 +5770,7 @@ export default function App() {
                       保底机制
                     </h3>
                     <ul className="text-sm space-y-1 text-on-surface-variant">
-                      <li>• 连续3次普通奖励 → 下次必中稀有奖励</li>
+                      <li>• 连续3次普通奖励 → 下次必中稀有及以上</li>
                       <li>• 连续5次同类型奖励 → 下次必换另一种类型</li>
                     </ul>
                   </div>
@@ -5821,7 +5782,7 @@ export default function App() {
                     </h3>
                     <ul className="text-sm space-y-1 text-on-surface-variant">
                       <li>• 经验值（XP）：可用于升级</li>
-                      <li>• 余额：可在商店购买奖励</li>
+                      <li>• 金币：可在商店购买奖励</li>
                     </ul>
                   </div>
               </div>

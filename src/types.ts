@@ -150,4 +150,5 @@ export type GachaState = {
   consecutiveSameType: number;
   lastRewardType?: 'xp' | 'balance';
   history: GachaHistoryEntry[];
+  lastFreeDrawDate?: string;
 };

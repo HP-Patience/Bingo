@@ -1,9 +1,8 @@
 import { GachaPool, GachaReward, GachaState, GachaRarity, GachaHistoryEntry } from './types';
 import { ALL_GACHA_POOLS, GACHA_FREQUENCY, GACHA_GUARANTEE } from './constants';
 
-export const getPoolByLevel = (level: number): GachaPool => {
-  const eligiblePools = ALL_GACHA_POOLS.filter(pool => level >= pool.levelRequirement);
-  return eligiblePools[eligiblePools.length - 1] || ALL_GACHA_POOLS[0];
+export const getPoolByLevel = (_level: number): GachaPool => {
+  return ALL_GACHA_POOLS[0];
 };
 
 export const getDrawsPerLevel = (level: number): number => {

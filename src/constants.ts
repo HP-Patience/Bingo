@@ -1,5 +1,7 @@
 import { TaskGroup, BingoTile, Achievement, Stats, Settings, ShopItem, GachaReward, GachaPool } from './types';
 
+export const DEFAULT_AVATAR = 'data:image/svg+xml,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%236f797a'/><text x='50' y='68' text-anchor='middle' font-size='48'>👤</text></svg>");
+
 export const INITIAL_TASK_GROUPS: TaskGroup[] = [
   {
     id: 'default',
@@ -140,72 +142,32 @@ export const INITIAL_SETTINGS: Settings = {
   theme: 'zinc',
 };
 
-// 初级奖池（1-5级）
-export const GACHA_POOL_BEGINNER: GachaPool = {
-  id: 'beginner',
-  name: '新手奖池',
+// 固定奖池（全等级通用） 比例 普通60% 稀有25% 史诗10% 传说5%
+export const GACHA_POOL: GachaPool = {
+  id: 'fixed',
+  name: '抽奖奖池',
   levelRequirement: 1,
   rewards: [
-    { id: 'b1', type: 'xp', value: 0, valueMin: 30, valueMax: 60, rarity: 'common', probability: 35 },
-    { id: 'b2', type: 'xp', value: 0, valueMin: 60, valueMax: 100, rarity: 'rare', probability: 15 },
-    { id: 'b3', type: 'balance', value: 0, valueMin: 24, valueMax: 48, rarity: 'common', probability: 35 },
-    { id: 'b4', type: 'balance', value: 0, valueMin: 48, valueMax: 80, rarity: 'rare', probability: 15 },
-  ],
-};
-
-// 中级奖池（6-15级）
-export const GACHA_POOL_INTERMEDIATE: GachaPool = {
-  id: 'intermediate',
-  name: '进阶奖池',
-  levelRequirement: 6,
-  rewards: [
-    { id: 'i1', type: 'xp', value: 0, valueMin: 120, valueMax: 200, rarity: 'common', probability: 32.5 },
-    { id: 'i2', type: 'xp', value: 0, valueMin: 200, valueMax: 350, rarity: 'rare', probability: 17.5 },
-    { id: 'i3', type: 'balance', value: 0, valueMin: 96, valueMax: 160, rarity: 'common', probability: 32.5 },
-    { id: 'i4', type: 'balance', value: 0, valueMin: 160, valueMax: 280, rarity: 'rare', probability: 17.5 },
-  ],
-};
-
-// 高级奖池（16-29级）
-export const GACHA_POOL_ADVANCED: GachaPool = {
-  id: 'advanced',
-  name: '高级奖池',
-  levelRequirement: 16,
-  rewards: [
-    { id: 'a1', type: 'xp', value: 0, valueMin: 600, valueMax: 900, rarity: 'common', probability: 32.5 },
-    { id: 'a2', type: 'xp', value: 0, valueMin: 900, valueMax: 1400, rarity: 'rare', probability: 17.5 },
-    { id: 'a3', type: 'balance', value: 0, valueMin: 480, valueMax: 720, rarity: 'common', probability: 32.5 },
-    { id: 'a4', type: 'balance', value: 0, valueMin: 720, valueMax: 1120, rarity: 'rare', probability: 17.5 },
-  ],
-};
-
-// 传说奖池（30级及以上）
-export const GACHA_POOL_LEGENDARY: GachaPool = {
-  id: 'legendary',
-  name: '传说奖池',
-  levelRequirement: 30,
-  rewards: [
-    { id: 'l1', type: 'xp', value: 0, valueMin: 1200, valueMax: 1800, rarity: 'common', probability: 27.5 },
-    { id: 'l2', type: 'xp', value: 0, valueMin: 1800, valueMax: 3000, rarity: 'rare', probability: 22.5 },
-    { id: 'l3', type: 'balance', value: 0, valueMin: 960, valueMax: 1440, rarity: 'common', probability: 27.5 },
-    { id: 'l4', type: 'balance', value: 0, valueMin: 1440, valueMax: 2400, rarity: 'rare', probability: 22.5 },
+    { id: 'f1', type: 'xp', value: 0, valueMin: 30, valueMax: 50, rarity: 'common', probability: 30 },
+    { id: 'f2', type: 'xp', value: 0, valueMin: 80, valueMax: 120, rarity: 'rare', probability: 12.5 },
+    { id: 'f3', type: 'xp', value: 0, valueMin: 200, valueMax: 300, rarity: 'epic', probability: 5 },
+    { id: 'f4', type: 'xp', value: 0, valueMin: 500, valueMax: 800, rarity: 'legendary', probability: 2.5 },
+    { id: 'f5', type: 'balance', value: 0, valueMin: 20, valueMax: 40, rarity: 'common', probability: 30 },
+    { id: 'f6', type: 'balance', value: 0, valueMin: 65, valueMax: 100, rarity: 'rare', probability: 12.5 },
+    { id: 'f7', type: 'balance', value: 0, valueMin: 160, valueMax: 240, rarity: 'epic', probability: 5 },
+    { id: 'f8', type: 'balance', value: 0, valueMin: 400, valueMax: 650, rarity: 'legendary', probability: 2.5 },
   ],
 };
 
 // 所有奖池
-export const ALL_GACHA_POOLS: GachaPool[] = [
-  GACHA_POOL_BEGINNER,
-  GACHA_POOL_INTERMEDIATE,
-  GACHA_POOL_ADVANCED,
-  GACHA_POOL_LEGENDARY,
-];
+export const ALL_GACHA_POOLS: GachaPool[] = [GACHA_POOL];
 
 // 抽奖频率规则
 export const GACHA_FREQUENCY = {
-  '1-5': 1, // 每1级抽1次
-  '6-15': 1, // 每1级抽1次
-  '16-29': 2, // 每2级抽1次
-  '30+': 2, // 每2级抽1次
+  '1-5': 1,
+  '6-15': 1,
+  '16-29': 1,
+  '30+': 1,
 };
 
 // 保底机制
