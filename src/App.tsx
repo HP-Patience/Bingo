@@ -3521,6 +3521,7 @@ export default function App() {
   const [editAvatar, setEditAvatar] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+  const [purchasedItem, setPurchasedItem] = useState<ShopItem | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [selectedTile, setSelectedTile] = useState<{ r: number, c: number, tile: BingoTile } | null>(null);
@@ -4449,7 +4450,7 @@ export default function App() {
       .then(() => {})
       .then(null, error => console.error('Error saving shop history to Supabase:', error));
 
-    alert(`成功购买: ${item.name}！快去享受吧~`);
+    setPurchasedItem(item);
   };
 
   const addCustomAchievement = (title: string, requirement: string, icon: string) => {
@@ -5641,6 +5642,47 @@ export default function App() {
                   ))}
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Purchase Success Modal */}
+      <AnimatePresence>
+        {purchasedItem && (
+          <div className="fixed inset-0 z-[1001] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPurchasedItem(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-8 border border-outline-variant shadow-2xl text-center space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-[2rem] flex items-center justify-center">
+                <ShopItemIcon name={purchasedItem.icon} className="w-12 h-12 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black tracking-tight">{purchasedItem.name}</h3>
+                <p className="text-sm text-on-surface-variant font-medium">{purchasedItem.description}</p>
+              </div>
+              <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant">
+                <p className="text-on-surface-variant font-bold text-xs uppercase tracking-widest">购买成功!</p>
+                <p className="text-secondary font-black text-3xl mt-1">-{purchasedItem.cost}</p>
+                <p className="text-on-surface-variant font-bold text-xs mt-1">金币</p>
+              </div>
+              <button
+                onClick={() => setPurchasedItem(null)}
+                className="w-full py-4 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest text-sm active:scale-95 transition-all"
+              >
+                太棒了
+              </button>
             </motion.div>
           </div>
         )}
