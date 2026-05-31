@@ -3565,15 +3565,9 @@ export default function App() {
 
     const loadData = async () => {
       try {
-        // 从 localStorage 读取 user
-        let authUser: { id: string; email?: string; created_at?: string } | null = null;
-        try {
-          const stored = window.localStorage.getItem('sb-ifqhbubjkgbfognvmonr-auth-token');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            authUser = parsed?.user ?? null;
-          }
-        } catch (e) { /* ignore */ }
+        // 调用 getSession 初始化 Supabase 客户端的内部会话状态
+        const { data: { session } } = await supabase.auth.getSession();
+        const authUser = session?.user ?? null;
 
         if (!authUser) {
           setUser(null);
@@ -3600,7 +3594,7 @@ export default function App() {
           await apiFetch('/users', 'POST', toDB(loadedUser));
         } else {
           loadedUser = fromDB<User>(userData);
-          if (loadedUser.avatar?.includes('googleusercontent')) loadedUser.avatar = DEFAULT_AVATAR;
+          if (!loadedUser.avatar || loadedUser.avatar.includes('googleusercontent')) loadedUser.avatar = DEFAULT_AVATAR;
         }
 
         // 并行加载其余数据（用 Promise.allSettled 避免单个失败阻塞全部）
@@ -3673,7 +3667,6 @@ export default function App() {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         // 跳过初始会话检测（loadData 已经处理了）
         if (!initialLoadDone) { initialLoadDone = true; return; }
-        // 只处理登录和登出事件
         if (event === 'SIGNED_IN' && session?.user) {
           // 用户刚登录，用 apiFetch 加载用户数据
           try {
@@ -3692,7 +3685,7 @@ export default function App() {
               setUser(newUser);
             } else {
               const u = fromDB<User>(userData);
-              if (u.avatar?.includes('googleusercontent')) u.avatar = DEFAULT_AVATAR;
+              if (!u.avatar || u.avatar.includes('googleusercontent')) u.avatar = DEFAULT_AVATAR;
               setUser(u);
             }
           } catch (e) { console.error('Error in auth change:', e); }
@@ -4122,19 +4115,8 @@ export default function App() {
             earlyBirdCount: Math.max(0, prev.earlyBirdCount - (isEarlyBird ? 1 : 0)),
             nightOwlCount: Math.max(0, prev.nightOwlCount - (isNightOwl ? 1 : 0))
           };
-          // Persist immediately to Supabase to avoid data loss
-          supabase.from('stats').upsert(toDB({ id: 'current-stats', user_id: user.id, ...updatedStats }))
-            .then(() => {}).then(null, error => console.error('Error upserting stats:', error));
           return updatedStats;
         });
-
-        // Persist user and gacha immediately
-        supabase.from('users').upsert(toDB({ id: updatedUser.id, ...updatedUser }))
-          .then(() => {}).then(null, error => console.error('Error upserting user:', error));
-        if (Object.keys(gachaUpdate).length > 0) {
-          supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: user.id, ...gachaState, ...gachaUpdate }))
-            .then(() => {}).then(null, error => console.error('Error upserting gacha:', error));
-        }
       }
     }
   };

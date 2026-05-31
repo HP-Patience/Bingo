@@ -1,9 +1,17 @@
+-- 数据迁移：重命名旧列名以匹配新 schema（幂等，已重命名的会被跳过）
+DO $$ BEGIN
+  ALTER TABLE achievements RENAME COLUMN name TO title;
+EXCEPTION WHEN others THEN END $$;
+DO $$ BEGIN
+  ALTER TABLE shop_items RENAME COLUMN price TO cost;
+EXCEPTION WHEN others THEN END $$;
+
 -- 创建用户表
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL DEFAULT '用户',
   email TEXT NOT NULL DEFAULT 'user@example.com',
-  avatar TEXT NOT NULL DEFAULT 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8z5ltSb7aT8aRGkjwccNY_49vMFNUXiUt1hzVSdx-4j9zQuJeIThqhE-6cdEB42iPpabeiGihMyI7k6-k-SHOvMyPxCTT37ctTLd9ylfCUBWjmiwF06ZQ3r_uuSf1HDo2XIyN3wTA0sq6AsSYT-JYazsKPSyOdhXO4I8PBwEYhBjXVEbJoiSk3cTaxl7aye97QnblO-97kV_hnuu6aaRgGeZsMHa3-wXFzgZrpyZczKEcEbLazmwgZO0K3MarE25AJC7ZgguR4GLU',
+  avatar TEXT NOT NULL DEFAULT '',
   joinedAt TIMESTAMP NOT NULL DEFAULT NOW(),
   level INTEGER NOT NULL DEFAULT 1,
   xp INTEGER NOT NULL DEFAULT 0,
@@ -17,8 +25,8 @@ CREATE TABLE IF NOT EXISTS task_groups (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
-  color TEXT NOT NULL,
-  icon TEXT NOT NULL,
+  color TEXT DEFAULT '#6366f1',
+  icon TEXT DEFAULT 'folder',
   tasks JSONB NOT NULL DEFAULT '[]'
 );
 
@@ -46,12 +54,11 @@ CREATE TABLE IF NOT EXISTS history (
 CREATE TABLE IF NOT EXISTS achievements (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id),
-  name TEXT NOT NULL,
+  title TEXT NOT NULL,
   description TEXT NOT NULL,
   icon TEXT NOT NULL,
   unlocked BOOLEAN NOT NULL DEFAULT false,
   unlockedAt TIMESTAMP DEFAULT NULL,
-  title TEXT DEFAULT NULL,
   level INTEGER DEFAULT NULL,
   progress INTEGER DEFAULT NULL,
   maxProgress INTEGER DEFAULT NULL,
@@ -97,8 +104,10 @@ CREATE TABLE IF NOT EXISTS shop_items (
   user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   description TEXT NOT NULL,
-  price INTEGER NOT NULL DEFAULT 0,
+  cost INTEGER NOT NULL DEFAULT 0,
   type TEXT NOT NULL DEFAULT 'consumable',
+  category TEXT DEFAULT 'other',
+  levelRequirement INTEGER DEFAULT 1,
   effect TEXT DEFAULT NULL,
   icon TEXT NOT NULL,
   rarity TEXT NOT NULL DEFAULT 'common',
