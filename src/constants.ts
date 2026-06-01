@@ -115,15 +115,6 @@ export const INITIAL_SHOP_ITEMS: ShopItem[] = [
   { id: 's11', name: 'VIP体验', description: '享受VIP服务', cost: 10000, icon: 'crown', category: 'other', levelRequirement: 30 },
 ];
 
-// 30级专属奖励池
-export const VIP_SHOP_ITEMS: ShopItem[] = [
-  { id: 'v1', name: '豪华度假', description: '享受一次豪华度假', cost: 5000, icon: 'airplane', category: 'entertainment' },
-  { id: 'v2', name: '高级装备', description: '购买高级健身装备', cost: 3000, icon: 'dumbbell', category: 'fitness' },
-  { id: 'v3', name: '私人教练', description: '聘请私人教练', cost: 8000, icon: 'user', category: 'fitness' },
-  { id: 'v4', name: '豪华晚餐', description: '享用豪华晚餐', cost: 2000, icon: 'utensils', category: 'snack' },
-  { id: 'v5', name: 'VIP体验', description: '享受VIP服务', cost: 10000, icon: 'crown', category: 'other' },
-];
-
 export const INITIAL_STATS: Stats = {
   totalCompleted: 0,
   currentStreak: 0,
@@ -159,16 +150,7 @@ export const GACHA_POOL: GachaPool = {
   ],
 };
 
-// 所有奖池
-export const ALL_GACHA_POOLS: GachaPool[] = [GACHA_POOL];
-
-// 抽奖频率规则
-export const GACHA_FREQUENCY = {
-  '1-5': 1,
-  '6-15': 1,
-  '16-29': 1,
-  '30+': 1,
-};
+export const GACHA_DRAWS_PER_LEVEL = 1;
 
 // 保底机制
 export const GACHA_GUARANTEE = {

@@ -1,15 +1,8 @@
 import { GachaPool, GachaReward, GachaState, GachaRarity, GachaHistoryEntry } from './types';
-import { ALL_GACHA_POOLS, GACHA_FREQUENCY, GACHA_GUARANTEE } from './constants';
+import { GACHA_POOL, GACHA_DRAWS_PER_LEVEL, GACHA_GUARANTEE } from './constants';
 
-export const getPoolByLevel = (_level: number): GachaPool => {
-  return ALL_GACHA_POOLS[0];
-};
-
-export const getDrawsPerLevel = (level: number): number => {
-  if (level <= 5) return GACHA_FREQUENCY['1-5'];
-  if (level <= 15) return GACHA_FREQUENCY['6-15'];
-  if (level <= 29) return GACHA_FREQUENCY['16-29'];
-  return GACHA_FREQUENCY['30+'];
+export const getDrawsPerLevel = (_level: number): number => {
+  return GACHA_DRAWS_PER_LEVEL;
 };
 
 export const drawReward = (pool: GachaPool, gachaState: GachaState): { reward: GachaReward; actualValue: number; newState: GachaState } => {

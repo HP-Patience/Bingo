@@ -11,9 +11,13 @@ type ModalProps = {
   footer?: React.ReactNode;
   /** 点击遮罩是否关闭，默认 true */
   closeOnBackdrop?: boolean;
+  /** 根容器额外 class */
+  className?: string;
+  /** 内容卡片额外 class */
+  contentClassName?: string;
 };
 
-export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdrop = true }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdrop = true, className = '', contentClassName = '' }: ModalProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -44,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdro
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+        <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-6 ${className}`}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -58,7 +62,7 @@ export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdro
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+            className={`relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8 ${contentClassName}`}
             role="dialog"
             aria-modal="true"
             aria-label={title}
@@ -142,9 +146,10 @@ type BottomSheetProps = {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  className?: string;
 };
 
-export function BottomSheet({ isOpen, onClose, children }: BottomSheetProps) {
+export function BottomSheet({ isOpen, onClose, children, className = '' }: BottomSheetProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -155,7 +160,7 @@ export function BottomSheet({ isOpen, onClose, children }: BottomSheetProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-end justify-center">
+        <div className={`fixed inset-0 z-[1000] flex items-end justify-center ${className}`}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
