@@ -46,9 +46,16 @@ export function useSupabaseSync<T>(
         .then(() => {
           if (options.idField) {
             const allIds = [...(options.currentIds || []), ...(options.extraIds || [])];
-            const del = supabase.from(tableName).delete().eq('user_id', options.userId);
-            (allIds.length > 0 ? del.not(options.idField, 'in', `(${allIds.join(',')})`) : del)
-              .then(null, logError(`cleaning up ${tableName}`));
+            let del = supabase.from(tableName).delete().eq('user_id', options.userId);
+            // 将 ID 数组安全地传给 Supabase（数值型 ID 直接拼接，文本型需引号包裹）
+            if (allIds.length > 0) {
+              const isNumericIds = allIds.every(id => /^\d+$/.test(String(id)));
+              const idList = isNumericIds
+                ? `(${allIds.join(',')})`
+                : `(${allIds.map(id => `"${String(id).replace(/"/g, '""')}"`).join(',')})`;
+              del = del.not(options.idField, 'in', idList);
+            }
+            del.then(null, logError(`cleaning up ${tableName}`));
           }
         })
         .then(null, logError(`saving ${tableName}`));

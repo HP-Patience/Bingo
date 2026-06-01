@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 import { ConfirmDialog } from './Modal';
 import { PomodoroSettingsModal } from './PomodoroSettingsModal';
 import { TaskSelectorBottomSheet } from './TaskSelectorBottomSheet';
-import { XP_PER_LEVEL } from '../lib/gameLogic';
+import { XP_PER_LEVEL, getTitleForLevel } from '../lib/gameLogic';
 import type { User, Stats, HistoryEntry, BingoTile } from '../types';
 
 export function PomodoroView({
@@ -64,15 +64,12 @@ export function PomodoroView({
           let newLevel = prev.level;
           let nextLevelXp = prev.nextLevelXp;
           let newTitle = prev.title;
-          if (newXp >= nextLevelXp) {
-            newXp -= nextLevelXp; newLevel += 1; nextLevelXp = XP_PER_LEVEL;
+          while (newXp >= nextLevelXp) {
+            newXp -= nextLevelXp;
+            newLevel += 1;
+            nextLevelXp = XP_PER_LEVEL;
             if (newLevel % 10 === 0) {
-              if (newLevel === 10) newTitle = '资深玩家';
-              else if (newLevel === 20) newTitle = '大师级';
-              else if (newLevel === 30) newTitle = '传说级';
-              else if (newLevel === 40) newTitle = '神话级';
-              else if (newLevel === 50) newTitle = '不朽级';
-              else if (newLevel > 50) newTitle = '超越不朽';
+              newTitle = getTitleForLevel(newLevel) || newTitle;
             }
             playSound('levelUp');
           }
@@ -107,9 +104,13 @@ export function PomodoroView({
 
   const sessionsToday = history.filter(h => h.type === 'pomodoro' && new Date(h.completedAt).toDateString() === new Date().toDateString()).length;
   const totalSessionsGoal = 4;
-  const focusTimeToday = (sessionsToday * 25) / 60;
+  const focusTimeToday = history
+    .filter(h => h.type === 'pomodoro' && new Date(h.completedAt).toDateString() === new Date().toDateString())
+    .reduce((total, h) => total + (h.duration || 25), 0) / 60;
   const weeklyGoal = 24;
-  const weeklyProgress = history.filter(h => h.type === 'pomodoro' && new Date(h.completedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length * 25 / 60;
+  const weeklyProgress = history
+    .filter(h => h.type === 'pomodoro' && new Date(h.completedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+    .reduce((total, h) => total + (h.duration || 25), 0) / 60;
 
   const allTasks = bingoTiles.flat().filter(t => !t.isFreeTile);
 

@@ -1,8 +1,10 @@
 import { GachaPool, GachaReward, GachaState, GachaRarity, GachaHistoryEntry } from './types';
 import { GACHA_POOL, GACHA_DRAWS_PER_LEVEL, GACHA_GUARANTEE } from './constants';
 
-export const getDrawsPerLevel = (_level: number): number => {
-  return GACHA_DRAWS_PER_LEVEL;
+export const getDrawsPerLevel = (level: number): number => {
+  // 低等级每级 1 次，高等级（20级+）每级 2 次
+  if (level >= 20) return 2;
+  return 1;
 };
 
 export const drawReward = (pool: GachaPool, gachaState: GachaState): { reward: GachaReward; actualValue: number; newState: GachaState } => {

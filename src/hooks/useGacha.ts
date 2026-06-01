@@ -51,7 +51,7 @@ export function useGacha({ user, setUser, onAddXPWithLevelUp, playSound, trigger
     if (reward.type === 'xp') {
       onAddXPWithLevelUp(actualValue);
     } else {
-      setUser({ ...user, balance: user.balance + actualValue });
+      setUser(prev => prev ? { ...prev, balance: prev.balance + actualValue } : null);
     }
 
     playSound('levelUp');

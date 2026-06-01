@@ -5,7 +5,7 @@ import { supabase, migrateBase64Avatar } from './lib/supabase';
 import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState, ShopHistoryEntry } from './types';
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS, DEFAULT_AVATAR } from './constants';
 import type { Task } from './types';
-import { getDrawsPerLevel } from './gachaUtils';
+import { getDrawsPerLevel, calculateAvailableDraws } from './gachaUtils';
 import { toDB, fromDB } from './lib/utils';
 import { calculateXP, getTitleForLevel, getNextLevelXp, XP_PER_LEVEL } from './lib/gameLogic';
 import { logError } from './lib/utils';
@@ -136,10 +136,7 @@ function AppContent() {
     }
 
     if (newLevel > oldLevel) {
-      let additionalDraws = 0;
-      for (let level = oldLevel + 1; level <= newLevel; level++) {
-        additionalDraws += getDrawsPerLevel(level);
-      }
+      const additionalDraws = calculateAvailableDraws(newLevel, oldLevel);
       gacha.setGachaState(prev => ({
         ...prev,
         availableDraws: prev.availableDraws + additionalDraws,
@@ -178,10 +175,7 @@ function AppContent() {
     }
 
     if (newLevel < auth.user.level) {
-      let drawsToRemove = 0;
-      for (let level = newLevel + 1; level <= auth.user.level; level++) {
-        drawsToRemove += getDrawsPerLevel(level);
-      }
+      const drawsToRemove = calculateAvailableDraws(auth.user.level, newLevel);
       gacha.setGachaState(prev => ({
         ...prev,
         availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
@@ -217,7 +211,26 @@ function AppContent() {
       let xpToDeduct = tile.xpValue || 10;
       if (tile.isGolden) xpToDeduct *= 2;
 
-    applyXPDeduction(xpToDeduct, () => ({ bingosCount: Math.max(0, stats.bingosCount - 1) }));
+      // 计算取消前该 tile 参与了多少条 bingo 线（行/列/对角线）
+      const size = bingo.bingoTiles.length;
+      let brokenBingos = 0;
+      // 行：除当前 tile 外该行其他格子都完成 → 取消会破坏这条 bingo
+      if (bingo.bingoTiles[r].every((t, ci) => ci === c || t.completed)) brokenBingos++;
+      // 列
+      if (bingo.bingoTiles.every((row, ri) => ri === r || row[c].completed)) brokenBingos++;
+      // 对角线 1（左上→右下）
+      if (r === c && bingo.bingoTiles.every((row, i) => i === r || row[i].completed)) brokenBingos++;
+      // 对角线 2（右上→左下）
+      if (r + c === size - 1 && bingo.bingoTiles.every((row, i) => i === r || row[size - 1 - i].completed)) brokenBingos++;
+
+      applyXPDeduction(xpToDeduct, brokenBingos > 0
+        ? (prev) => ({ bingosCount: Math.max(0, prev.bingosCount - brokenBingos) })
+        : undefined);
+
+      // 取消金色格子时回退 goldenTilesCompleted
+      if (tile.isGolden) {
+        setStats(prev => ({ ...prev, goldenTilesCompleted: Math.max(0, prev.goldenTilesCompleted - 1) }));
+      }
 
       bingo.setBingoTiles(prev => prev.map((row, ri) =>
         row.map((t, ci) => ri === r && ci === c ? { ...t, completed: false, completedAt: undefined } : t)
@@ -291,13 +304,6 @@ function AppContent() {
     }));
 
     applyXPDeduction(xpToDeduct);
-
-    if (auth.user) {
-      supabase.from('stats').upsert(toDB({ id: 'current-stats', user_id: auth.user.id, ...stats }))
-        .then(null, logError('upserting stats in deleteHistoryEntry'));
-      supabase.from('users').upsert(toDB({ id: auth.user.id, ...auth.user }))
-        .then(null, logError('upserting user in deleteHistoryEntry'));
-    }
 
     bingo.setBingoTiles(prev => prev.map(row => row.map(tile => {
       if (tile.taskName === entryToDelete.taskName && tile.completed) {
@@ -502,7 +508,8 @@ function AppContent() {
         if (gachaData?.[0]) {
           const gs = fromDB<GachaState>(gachaData[0]);
           const today = new Date().toISOString().split('T')[0];
-          if (gs.lastFreeDrawDate !== today) {
+          if (!dailyDrawAppliedRef.current && gs.lastFreeDrawDate !== today) {
+            dailyDrawAppliedRef.current = true;
             gs.availableDraws = (gs.availableDraws || 0) + 1;
             gs.lastFreeDrawDate = today;
             supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(null, logError('saving daily free draw'));
@@ -586,6 +593,7 @@ function AppContent() {
 
   // Persistence hooks
   const prevUserRef = useRef<string>('');
+  const dailyDrawAppliedRef = useRef(false);
   useEffect(() => {
     if (!auth.user) return;
     const serialized = JSON.stringify(auth.user);

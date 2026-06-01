@@ -13,8 +13,15 @@ export function CalendarView({ history, onBackToToday, onDeleteEntry, onEditEntr
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const days = [];
+    // 计算该月第一天是周几（周一=0, 周日=6）
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
+    const days: (Date | null)[] = [];
+    // 填充前面的空白占位
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
+    }
     for (let i = 1; i <= lastDay.getDate(); i++) {
       days.push(new Date(year, month, i));
     }
