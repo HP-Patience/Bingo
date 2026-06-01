@@ -119,11 +119,13 @@ CREATE TABLE IF NOT EXISTS gacha (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id),
   availableDraws INTEGER NOT NULL DEFAULT 0,
-  lastDrawLevel INTEGER NOT NULL DEFAULT 1,
+  totalDrawsSpent INTEGER NOT NULL DEFAULT 0,
   consecutiveLowRewards INTEGER NOT NULL DEFAULT 0,
   consecutiveSameType INTEGER NOT NULL DEFAULT 0,
   lastRewardType TEXT DEFAULT NULL,
-  history JSONB NOT NULL DEFAULT '[]'
+  history JSONB NOT NULL DEFAULT '[]',
+  lastFreeDrawDate TEXT DEFAULT NULL,
+  freeDrawUsed BOOLEAN NOT NULL DEFAULT false
 );
 
 -- 创建商店历史表
@@ -155,35 +157,57 @@ ALTER TABLE shop_history ENABLE ROW LEVEL SECURITY;
 
 -- users 表：id 就是 auth.uid()
 DROP POLICY IF EXISTS "users_manage_own" ON users;
-CREATE POLICY "users_manage_own" ON users FOR ALL USING (auth.uid()::text = id);
+CREATE POLICY "users_manage_own" ON users FOR ALL
+  USING (auth.uid()::text = id)
+  WITH CHECK (auth.uid()::text = id);
 
--- 其余表：通过 user_id 关联
+-- 其余表：通过 user_id 关联，显式 USING + WITH CHECK
 DROP POLICY IF EXISTS "task_groups_own" ON task_groups;
-CREATE POLICY "task_groups_own" ON task_groups FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "task_groups_own" ON task_groups FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "bingo_tiles_own" ON bingo_tiles;
-CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "bingo_tiles_own" ON bingo_tiles FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "history_own" ON history;
-CREATE POLICY "history_own" ON history FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "history_own" ON history FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "achievements_own" ON achievements;
-CREATE POLICY "achievements_own" ON achievements FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "achievements_own" ON achievements FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "stats_own" ON stats;
-CREATE POLICY "stats_own" ON stats FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "stats_own" ON stats FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "settings_own" ON settings;
-CREATE POLICY "settings_own" ON settings FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "settings_own" ON settings FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "grid_size_own" ON grid_size;
-CREATE POLICY "grid_size_own" ON grid_size FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "grid_size_own" ON grid_size FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "shop_items_own" ON shop_items;
-CREATE POLICY "shop_items_own" ON shop_items FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "shop_items_own" ON shop_items FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "gacha_own" ON gacha;
-CREATE POLICY "gacha_own" ON gacha FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "gacha_own" ON gacha FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);
 
 DROP POLICY IF EXISTS "shop_history_own" ON shop_history;
-CREATE POLICY "shop_history_own" ON shop_history FOR ALL USING (auth.uid()::text = user_id);
+CREATE POLICY "shop_history_own" ON shop_history FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);

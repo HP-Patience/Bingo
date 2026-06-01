@@ -39,7 +39,6 @@ export function useSupabaseSync<T>(
         toDB({ ...(item as Record<string, unknown>), user_id: options.userId })
       );
       dbData = toDB({ id: recordId, user_id: options.userId, items });
-      // For arrays, upsert each item individually
       supabase
         .from(tableName)
         .upsert(items)

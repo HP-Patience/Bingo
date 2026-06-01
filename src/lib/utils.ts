@@ -23,9 +23,9 @@ const CAMEL_KEYS = [
   'mostProductiveDay', 'totalXp', 'fullHousesCount', 'goldenTilesCompleted',
   'earlyBirdCount', 'nightOwlCount', 'totalSpent',
   'itemId', 'itemName', 'itemIcon',
-  'availableDraws', 'lastDrawLevel', 'consecutiveLowRewards',
+  'availableDraws', 'totalDrawsSpent', 'consecutiveLowRewards',
   'consecutiveSameType', 'lastRewardType',
-  'levelRequirement', 'lastFreeDrawDate',
+  'levelRequirement', 'lastFreeDrawDate', 'freeDrawUsed',
 ];
 for (const key of CAMEL_KEYS) {
   LOWER_TO_CAMEL[key.toLowerCase()] = key;

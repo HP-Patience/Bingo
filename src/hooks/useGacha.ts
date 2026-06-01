@@ -16,11 +16,12 @@ type UseGachaDeps = {
 export function useGacha({ user, setUser, onAddXPWithLevelUp, playSound, triggerHaptic }: UseGachaDeps) {
   const [gachaState, setGachaState] = useState<GachaState>({
     availableDraws: 0,
-    lastDrawLevel: 1,
+    totalDrawsSpent: 0,
     consecutiveLowRewards: 0,
     consecutiveSameType: 0,
     history: [],
     lastFreeDrawDate: undefined,
+    freeDrawUsed: false,
   });
   const [showGachaResult, setShowGachaResult] = useState(false);
   const [lastDrawResult, setLastDrawResult] = useState<{
@@ -46,6 +47,10 @@ export function useGacha({ user, setUser, onAddXPWithLevelUp, playSound, trigger
       timestamp: new Date().toISOString(),
     });
     newGachaState.availableDraws = newGachaState.availableDraws - 1;
+    newGachaState.totalDrawsSpent = (newGachaState.totalDrawsSpent || 0) + 1;
+    if (newGachaState.lastFreeDrawDate === new Date().toISOString().split('T')[0] && !newGachaState.freeDrawUsed) {
+      newGachaState.freeDrawUsed = true;
+    }
     setGachaState(newGachaState);
 
     if (reward.type === 'xp') {

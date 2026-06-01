@@ -54,10 +54,10 @@ export const addDrawHistory = (state: GachaState, entry: GachaHistoryEntry): Gac
   };
 };
 
-export const calculateAvailableDraws = (currentLevel: number, lastDrawLevel: number): number => {
-  let available = 0;
-  for (let level = lastDrawLevel + 1; level <= currentLevel; level++) {
-    available += getDrawsPerLevel(level);
+export const getTotalDrawsForLevel = (level: number): number => {
+  let total = 0;
+  for (let l = 1; l <= level; l++) {
+    total += getDrawsPerLevel(l);
   }
-  return available;
+  return total;
 };

@@ -145,10 +145,11 @@ export type ShopHistoryEntry = {
 
 export type GachaState = {
   availableDraws: number;
-  lastDrawLevel: number;
+  totalDrawsSpent: number;
   consecutiveLowRewards: number;
   consecutiveSameType: number;
   lastRewardType?: 'xp' | 'balance';
   history: GachaHistoryEntry[];
   lastFreeDrawDate?: string;
+  freeDrawUsed?: boolean;
 };

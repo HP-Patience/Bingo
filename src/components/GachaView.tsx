@@ -58,7 +58,7 @@ export function GachaView({
             <div className="text-center">
               <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">可用抽奖次数</p>
               <div className="text-6xl font-extrabold tracking-tighter text-primary">{gachaState.availableDraws}</div>
-              {gachaState.lastFreeDrawDate === new Date().toISOString().split('T')[0] && gachaState.availableDraws > 0 && (
+              {gachaState.lastFreeDrawDate === new Date().toISOString().split('T')[0] && !gachaState.freeDrawUsed && gachaState.availableDraws > 0 && (
                 <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full">含今日免费</span>
               )}
             </div>

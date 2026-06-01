@@ -5,7 +5,7 @@ import { supabase, migrateBase64Avatar } from './lib/supabase';
 import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState, ShopHistoryEntry } from './types';
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS, DEFAULT_AVATAR } from './constants';
 import type { Task } from './types';
-import { getDrawsPerLevel } from './gachaUtils';
+import { getTotalDrawsForLevel } from './gachaUtils';
 import { toDB, fromDB } from './lib/utils';
 import { calculateXP, getTitleForLevel, getNextLevelXp, XP_PER_LEVEL } from './lib/gameLogic';
 import { logError } from './lib/utils';
@@ -136,14 +136,9 @@ function AppContent() {
     }
 
     if (newLevel > oldLevel) {
-      let additionalDraws = 0;
-      for (let level = oldLevel + 1; level <= newLevel; level++) {
-        additionalDraws += getDrawsPerLevel(level);
-      }
       gacha.setGachaState(prev => ({
         ...prev,
-        availableDraws: prev.availableDraws + additionalDraws,
-        lastDrawLevel: newLevel
+        availableDraws: getTotalDrawsForLevel(newLevel) - (prev.totalDrawsSpent || 0),
       }));
     }
 
@@ -178,14 +173,9 @@ function AppContent() {
     }
 
     if (newLevel < auth.user.level) {
-      let drawsToRemove = 0;
-      for (let level = newLevel + 1; level <= auth.user.level; level++) {
-        drawsToRemove += getDrawsPerLevel(level);
-      }
       gacha.setGachaState(prev => ({
         ...prev,
-        availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
-        lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel),
+        availableDraws: Math.max(0, getTotalDrawsForLevel(newLevel) - (prev.totalDrawsSpent || 0)),
       }));
     }
 
@@ -383,9 +373,9 @@ function AppContent() {
     bingo.setGridSize(5);
     shop.setShopItems(INITIAL_SHOP_ITEMS);
     gacha.setGachaState({
-      availableDraws: 0, lastDrawLevel: 1,
+      availableDraws: 0, totalDrawsSpent: 0,
       consecutiveLowRewards: 0, consecutiveSameType: 0,
-      history: [], lastFreeDrawDate: undefined,
+      history: [], lastFreeDrawDate: undefined, freeDrawUsed: false,
     });
     shop.setShopHistory([]);
   };
@@ -505,6 +495,7 @@ function AppContent() {
           if (gs.lastFreeDrawDate !== today) {
             gs.availableDraws = (gs.availableDraws || 0) + 1;
             gs.lastFreeDrawDate = today;
+            gs.freeDrawUsed = false;
             supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(null, logError('saving daily free draw'));
           }
           gacha.setGachaState(gs);
