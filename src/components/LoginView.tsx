@@ -4,6 +4,7 @@ import { Bolt, Mail } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { DEFAULT_AVATAR } from '../constants';
+import { XP_PER_LEVEL } from '../lib/gameLogic';
 import type { User } from '../types';
 
 export function LoginView({ onLogin }: { onLogin: (user: User) => void }) {
@@ -42,7 +43,7 @@ export function LoginView({ onLogin }: { onLogin: (user: User) => void }) {
             joinedAt: data.user.created_at || new Date().toISOString(),
             level: 1,
             xp: 0,
-            nextLevelXp: 200,
+            nextLevelXp: XP_PER_LEVEL,
             balance: 0
           });
         }

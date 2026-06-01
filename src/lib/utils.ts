@@ -5,6 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function logError(context: string) {
+  return (error: unknown) => console.error(`Error ${context}:`, error);
+}
+
 // Supabase 数据库列名全部小写（PostgreSQL 折叠未引用的标识符），
 // 但应用代码使用 camelCase。这些函数在 API 边界做双向转换。
 

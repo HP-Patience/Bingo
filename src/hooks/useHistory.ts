@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { toDB } from '../lib/utils';
+import { toDB, logError } from '../lib/utils';
 import React from 'react';
 import type { HistoryEntry, BingoTile } from '../types';
 
@@ -73,8 +73,7 @@ export function useHistory({ user, setBingoTiles }: UseHistoryDeps) {
         note: updatedEntry.note,
         noteTimestamp: updatedEntry.noteTimestamp,
       })).eq('id', updatedEntry.id)
-        .then(() => {})
-        .then(null, (error: unknown) => console.error('Error updating history entry:', error));
+        .then(null, logError('updating history entry'));
     }
 
     setIsEditTaskModalOpen(false);

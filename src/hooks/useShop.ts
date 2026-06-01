@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { toDB } from '../lib/utils';
+import { toDB, logError } from '../lib/utils';
 import React from 'react';
 import type { ShopItem, ShopHistoryEntry, User, Stats } from '../types';
 import { INITIAL_SHOP_ITEMS } from '../constants';
@@ -37,8 +37,7 @@ export function useShop({ user, setUser, setStats }: UseShopDeps) {
     supabase
       .from('shop_history')
       .insert(toDB({ ...historyEntry, price: item.cost, user_id: user.id }))
-      .then(() => {})
-      .then(null, (error: unknown) => console.error('Error saving shop history:', error));
+      .then(null, logError('saving shop history'));
 
     setPurchasedItem(item);
   };

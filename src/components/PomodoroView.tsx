@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft, Settings2, Edit2, Focus, Coffee, Play, Pause, RotateCcw, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { supabase } from '../lib/supabase';
-import { toDB } from '../lib/utils';
 import { ConfirmDialog } from './Modal';
 import { PomodoroSettingsModal } from './PomodoroSettingsModal';
 import { TaskSelectorBottomSheet } from './TaskSelectorBottomSheet';
+import { XP_PER_LEVEL } from '../lib/gameLogic';
 import type { User, Stats, HistoryEntry, BingoTile } from '../types';
 
 export function PomodoroView({
-  onBack, user, setUser, stats, setStats, history, setHistory, bingoTiles, playSound, triggerHaptic,
+  onBack, user, setUser, stats, setStats, history, setHistory, bingoTiles, playSound, triggerHaptic, onSaveHistory,
 }: {
   onBack: () => void;
   user: User | null;
@@ -22,6 +21,7 @@ export function PomodoroView({
   bingoTiles: BingoTile[][];
   playSound: (type: 'complete' | 'bingo' | 'levelUp') => void;
   triggerHaptic: (intensity?: 'light' | 'medium' | 'heavy') => void;
+  onSaveHistory: (entry: HistoryEntry) => void;
 }) {
   const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -65,7 +65,7 @@ export function PomodoroView({
           let nextLevelXp = prev.nextLevelXp;
           let newTitle = prev.title;
           if (newXp >= nextLevelXp) {
-            newXp -= nextLevelXp; newLevel += 1; nextLevelXp = 200;
+            newXp -= nextLevelXp; newLevel += 1; nextLevelXp = XP_PER_LEVEL;
             if (newLevel % 10 === 0) {
               if (newLevel === 10) newTitle = '资深玩家';
               else if (newLevel === 20) newTitle = '大师级';
@@ -82,7 +82,7 @@ export function PomodoroView({
       setStats(prev => ({ ...prev, totalCompleted: prev.totalCompleted + 1, totalXp: prev.totalXp + xpReward }));
       const newEntry: HistoryEntry = { id: `pomo-${Date.now()}`, taskName: selectedTask || '专注会话', completedAt: new Date().toISOString(), xpEarned: xpReward, type: 'pomodoro', duration: durations.work / 60 };
       setHistory(prev => [newEntry, ...prev]);
-      if (user) { supabase.from('history').insert(toDB({ ...newEntry, user_id: user.id })).then(() => {}).then(null, error => console.error('Error saving pomodoro history:', error)); }
+      onSaveHistory(newEntry);
       setMode('shortBreak'); setTimeLeft(durations.shortBreak);
     } else {
       setMode('work'); setTimeLeft(durations.work);
@@ -159,7 +159,7 @@ export function PomodoroView({
             </motion.button>
             <motion.button onClick={resetTimer} className="flex-1 bg-surface-container text-on-surface py-7 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all shadow-lg" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}><RotateCcw className="w-6 h-6" />重置</motion.button>
           </div>
-          <motion.button onClick={() => { setIsActive(false); setTimeLeft(durations[mode]); }} className="w-full py-4 text-[10px] font-black text-on-surface-variant/40 uppercase tracking-[0.3em] hover:text-red-500 transition-colors" whileHover={{ y: 2 }}>放弃本次会话</motion.button>
+          <motion.button onClick={() => { setIsActive(false); setTimeLeft(durations[mode]); }} className="w-full py-4 rounded-3xl text-[10px] font-black text-on-surface-variant/50 uppercase tracking-[0.3em] hover:text-on-surface-variant hover:bg-surface-container transition-all" whileTap={{ scale: 0.98 }}>放弃本次会话</motion.button>
         </div>
 
         <div className="space-y-5 pt-6 border-t border-outline-variant/50">

@@ -18,6 +18,19 @@ export function useBingo({ taskGroups, setActiveTab }: UseBingoDeps) {
 
   const setActiveTabToToday = () => setActiveTab('today');
 
+  const fillTileFromTask = (tile: BingoTile, task: Task, overrides?: Partial<BingoTile>) => {
+    const difficulty = task.difficulty || 'easy';
+    const priority = task.priority || 'medium';
+    return {
+      ...tile,
+      taskName: task.name, completed: false,
+      difficulty, priority,
+      xpValue: task.xpValue || calculateXP(difficulty, priority),
+      isGolden: false, isFreeTile: false,
+      ...overrides,
+    };
+  };
+
   const applyGroupToGrid = (groupId: string) => {
     const group = taskGroups.find(g => g.id === groupId);
     if (!group) return;
@@ -51,16 +64,7 @@ export function useBingo({ taskGroups, setActiveTab }: UseBingoDeps) {
       for (let c = 0; c < gridSize; c++) {
         const isGolden = goldenPositions.has(`${r},${c}`);
         if (taskIdx < tasks.length) {
-          const task = tasks[taskIdx];
-          const d = task.difficulty || 'easy';
-          const p = task.priority || 'medium';
-          newTiles[r][c] = {
-            ...newTiles[r][c],
-            taskName: task.name, completed: false,
-            difficulty: d, priority: p,
-            xpValue: task.xpValue || calculateXP(d, p),
-            isGolden, isFreeTile: false
-          };
+          newTiles[r][c] = fillTileFromTask(newTiles[r][c], tasks[taskIdx], { isGolden });
           taskIdx++;
         } else {
           newTiles[r][c] = {
@@ -82,15 +86,7 @@ export function useBingo({ taskGroups, setActiveTab }: UseBingoDeps) {
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         if (!newTiles[r][c].completed) {
-          const d = task.difficulty || 'easy';
-          const p = task.priority || 'medium';
-          newTiles[r][c] = {
-            ...newTiles[r][c],
-            taskName: task.name, completed: false,
-            difficulty: d, priority: p,
-            xpValue: task.xpValue || calculateXP(d, p),
-            isGolden: false, isFreeTile: false
-          };
+          newTiles[r][c] = fillTileFromTask(newTiles[r][c], task);
           setBingoTiles(newTiles);
           setActiveTabToToday();
           return;
@@ -105,16 +101,7 @@ export function useBingo({ taskGroups, setActiveTab }: UseBingoDeps) {
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         if (!newTiles[r][c].completed && taskIdx < tasks.length) {
-          const task = tasks[taskIdx];
-          const d = task.difficulty || 'easy';
-          const p = task.priority || 'medium';
-          newTiles[r][c] = {
-            ...newTiles[r][c],
-            taskName: task.name, completed: false,
-            difficulty: d, priority: p,
-            xpValue: task.xpValue || calculateXP(d, p),
-            isGolden: false, isFreeTile: false
-          };
+          newTiles[r][c] = fillTileFromTask(newTiles[r][c], tasks[taskIdx]);
           taskIdx++;
         }
       }

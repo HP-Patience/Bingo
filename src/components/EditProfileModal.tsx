@@ -10,6 +10,7 @@ export function EditProfileModal({
   onUsernameChange,
   onEmailChange,
   onAvatarChange,
+  onAvatarFile,
   onSave,
 }: {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function EditProfileModal({
   onUsernameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onAvatarChange: (value: string) => void;
+  onAvatarFile: (file: File | null) => void;
   onSave: () => void;
 }) {
   return (
@@ -38,6 +40,7 @@ export function EditProfileModal({
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
+                onAvatarFile(file);
                 const reader = new FileReader();
                 reader.onload = (event) => {
                   onAvatarChange(event.target?.result as string);

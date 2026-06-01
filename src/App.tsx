@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, X } from 'lucide-react';
-import { supabase } from './lib/supabase';
+import { supabase, migrateBase64Avatar } from './lib/supabase';
 import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState, ShopHistoryEntry } from './types';
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS, DEFAULT_AVATAR } from './constants';
 import type { Task } from './types';
 import { getDrawsPerLevel } from './gachaUtils';
 import { toDB, fromDB } from './lib/utils';
-import { calculateXP } from './lib/gameLogic';
+import { calculateXP, getTitleForLevel, getNextLevelXp, XP_PER_LEVEL } from './lib/gameLogic';
+import { logError } from './lib/utils';
 import { Modal, ConfirmDialog } from './components/Modal';
 import { ToastProvider, useToast } from './components/Toast';
 import { Layout } from './components/Layout';
@@ -126,14 +127,9 @@ function AppContent() {
     while (newXp >= newNextLevelXp) {
       newXp -= newNextLevelXp;
       newLevel += 1;
-      newNextLevelXp = 200;
+      newNextLevelXp = XP_PER_LEVEL;
       if (newLevel % 10 === 0) {
-        if (newLevel === 10) newTitle = '资深玩家';
-        else if (newLevel === 20) newTitle = '大师级';
-        else if (newLevel === 30) newTitle = '传说级';
-        else if (newLevel === 40) newTitle = '神话级';
-        else if (newLevel === 50) newTitle = '不朽级';
-        else if (newLevel > 50) newTitle = '超越不朽';
+        newTitle = getTitleForLevel(newLevel);
       }
       playSound('levelUp');
       triggerHaptic('heavy');
@@ -160,6 +156,47 @@ function AppContent() {
     }));
   }
 
+  // Shared XP deduction (used by toggleTile and deleteHistoryEntry)
+  function applyXPDeduction(xpToDeduct: number, extraStatsUpdate?: (prev: Stats) => Partial<Stats>) {
+    if (!auth.user) return;
+
+    let newXp = auth.user.xp - xpToDeduct;
+    let newLevel = auth.user.level;
+    let newNextLevelXp = auth.user.nextLevelXp;
+    let newBalance = Math.max(0, auth.user.balance - xpToDeduct);
+    let newTitle = auth.user.title;
+
+    if (newXp < 0) {
+      if (newLevel > 1) {
+        newLevel -= 1;
+        newNextLevelXp = getNextLevelXp();
+        newTitle = getTitleForLevel(newLevel);
+        newXp = newNextLevelXp + newXp;
+      } else {
+        newXp = 0;
+      }
+    }
+
+    if (newLevel < auth.user.level) {
+      let drawsToRemove = 0;
+      for (let level = newLevel + 1; level <= auth.user.level; level++) {
+        drawsToRemove += getDrawsPerLevel(level);
+      }
+      gacha.setGachaState(prev => ({
+        ...prev,
+        availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
+        lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel),
+      }));
+    }
+
+    auth.setUser({ ...auth.user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle });
+    setStats(prev => ({
+      ...prev,
+      totalXp: Math.max(0, prev.totalXp - xpToDeduct),
+      ...(extraStatsUpdate ? extraStatsUpdate(prev) : {}),
+    }));
+  }
+
   // Cross-domain: toggle tile (touches bingo, history, user, stats, gacha)
   const toggleTile = (r: number, c: number) => {
     const tile = bingo.bingoTiles[r][c];
@@ -174,61 +211,13 @@ function AppContent() {
       if (entryToRemove) {
         historyHook.setHistory(prev => prev.filter(h => h.id !== entryToRemove.id));
         supabase.from('history').delete().eq('id', entryToRemove.id)
-          .then(() => {}).then(null, (error: unknown) => console.error('Error deleting history entry:', error));
+          .then(null, logError('deleting history entry in toggleTile'));
       }
 
       let xpToDeduct = tile.xpValue || 10;
       if (tile.isGolden) xpToDeduct *= 2;
 
-      if (auth.user) {
-        let newXp = auth.user.xp - xpToDeduct;
-        let newLevel = auth.user.level;
-        let newNextLevelXp = auth.user.nextLevelXp;
-        let newBalance = Math.max(0, auth.user.balance - xpToDeduct);
-        let newTitle = auth.user.title;
-
-        if (newXp < 0) {
-          if (newLevel > 1) {
-            newLevel -= 1;
-            if (newLevel <= 5) {
-              const levelThresholds = [0, 50, 70, 90, 110, 130];
-              newNextLevelXp = levelThresholds[newLevel];
-            } else if (newLevel <= 24) {
-              newNextLevelXp = Math.max(130, Math.floor(newNextLevelXp / 1.15));
-            } else {
-              newNextLevelXp = 2000;
-            }
-            if (newLevel < 10 && newTitle === '资深玩家') newTitle = undefined;
-            else if (newLevel < 20 && newTitle === '大师级') newTitle = '资深玩家';
-            else if (newLevel < 30 && newTitle === '传说级') newTitle = '大师级';
-            else if (newLevel < 40 && newTitle === '神话级') newTitle = '传说级';
-            else if (newLevel < 50 && newTitle === '不朽级') newTitle = '神话级';
-            else if (newLevel < 51 && newTitle === '超越不朽') newTitle = '不朽级';
-            newXp = newNextLevelXp + newXp;
-          } else {
-            newXp = 0;
-          }
-        }
-
-        let gachaUpdate: Partial<GachaState> = {};
-        if (newLevel < auth.user.level) {
-          let drawsToRemove = 0;
-          for (let level = newLevel + 1; level <= auth.user.level; level++) {
-            drawsToRemove += getDrawsPerLevel(level);
-          }
-          gachaUpdate = {
-            availableDraws: Math.max(0, gacha.gachaState.availableDraws - drawsToRemove),
-            lastDrawLevel: Math.min(gacha.gachaState.lastDrawLevel, newLevel),
-          };
-          gacha.setGachaState(prev => ({ ...prev, ...gachaUpdate }));
-        }
-
-        const updatedUser = { ...auth.user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle };
-        auth.setUser(updatedUser);
-        setStats(prev => ({ ...prev, totalXp: Math.max(0, prev.totalXp - xpToDeduct),
-          bingosCount: Math.max(0, prev.bingosCount - 1),
-        }));
-      }
+    applyXPDeduction(xpToDeduct, () => ({ bingosCount: Math.max(0, stats.bingosCount - 1) }));
 
       bingo.setBingoTiles(prev => prev.map((row, ri) =>
         row.map((t, ci) => ri === r && ci === c ? { ...t, completed: false, completedAt: undefined } : t)
@@ -246,20 +235,21 @@ function AppContent() {
         xpEarned: xp,
       };
 
-      bingo.setBingoTiles(prev => prev.map((row, ri) =>
+      const newGrid = bingo.bingoTiles.map((row, ri) =>
         row.map((t, ci) => ri === r && ci === c ? { ...t, completed: true, completedAt } : t)
-      ));
+      );
+      bingo.setBingoTiles(newGrid);
 
       historyHook.setHistory(prev => [newEntry, ...prev]);
       addXPWithLevelUp(xp);
 
-      if (checkBingo(bingo.bingoTiles, r, c)) {
+      if (checkBingo(newGrid, r, c)) {
         setStats(prev => ({ ...prev, bingosCount: prev.bingosCount + 1 }));
         playSound('bingo');
         triggerHaptic('heavy');
       }
 
-      const allCompleted = bingo.bingoTiles.flat().every(t => t.completed || t === tile);
+      const allCompleted = newGrid.flat().every(t => t.completed);
       if (allCompleted) {
         setStats(prev => ({ ...prev, fullHousesCount: prev.fullHousesCount + 1 }));
       }
@@ -273,7 +263,7 @@ function AppContent() {
       if (hour >= 23) setStats(prev => ({ ...prev, nightOwlCount: prev.nightOwlCount + 1 }));
 
       supabase.from('history').insert(toDB({ ...newEntry, user_id: auth.user?.id }))
-        .then(() => {}).then(null, (error: unknown) => console.error('Error saving history entry:', error));
+        .then(null, logError('saving history entry'));
 
       playSound('complete');
       triggerHaptic('light');
@@ -289,7 +279,7 @@ function AppContent() {
 
     if (auth.user) {
       supabase.from('history').delete().eq('id', id)
-        .then(() => {}).then(null, (error: unknown) => console.error('Error deleting history entry:', error));
+        .then(null, logError('deleting history entry in deleteHistoryEntry'));
     }
 
     let xpToDeduct = 10;
@@ -300,64 +290,13 @@ function AppContent() {
       }
     }));
 
+    applyXPDeduction(xpToDeduct);
+
     if (auth.user) {
-      let newXp = auth.user.xp - xpToDeduct;
-      let newLevel = auth.user.level;
-      let newNextLevelXp = auth.user.nextLevelXp;
-      let newBalance = Math.max(0, auth.user.balance - xpToDeduct);
-      let newTitle = auth.user.title;
-
-      if (newXp < 0) {
-        if (newLevel > 1) {
-          newLevel -= 1;
-          if (newLevel <= 5) {
-            const levelThresholds = [0, 50, 70, 90, 110, 130];
-            newNextLevelXp = levelThresholds[newLevel];
-          } else if (newLevel <= 24) {
-            newNextLevelXp = Math.max(130, Math.floor(newNextLevelXp / 1.15));
-          } else {
-            newNextLevelXp = 2000;
-          }
-          if (newLevel < 10 && newTitle === '资深玩家') newTitle = undefined;
-          else if (newLevel < 20 && newTitle === '大师级') newTitle = '资深玩家';
-          else if (newLevel < 30 && newTitle === '传说级') newTitle = '大师级';
-          else if (newLevel < 40 && newTitle === '神话级') newTitle = '传说级';
-          else if (newLevel < 50 && newTitle === '不朽级') newTitle = '神话级';
-          else if (newLevel < 51 && newTitle === '超越不朽') newTitle = '不朽级';
-          newXp = newNextLevelXp + newXp;
-        } else {
-          newXp = 0;
-        }
-      }
-
-      let gachaUpdate: Partial<GachaState> = {};
-      if (newLevel < auth.user.level) {
-        let drawsToRemove = 0;
-        for (let level = newLevel + 1; level <= auth.user.level; level++) {
-          drawsToRemove += getDrawsPerLevel(level);
-        }
-        gachaUpdate = {
-          availableDraws: Math.max(0, gacha.gachaState.availableDraws - drawsToRemove),
-          lastDrawLevel: Math.min(gacha.gachaState.lastDrawLevel, newLevel),
-        };
-        gacha.setGachaState(prev => ({ ...prev, ...gachaUpdate }));
-      }
-
-      const updatedUser = { ...auth.user, xp: newXp, level: newLevel, nextLevelXp: newNextLevelXp, balance: newBalance, title: newTitle };
-      auth.setUser(updatedUser);
-      setStats(prev => {
-        const updatedStats = { ...prev, totalXp: Math.max(0, prev.totalXp - xpToDeduct) };
-        supabase.from('stats').upsert(toDB({ id: 'current-stats', user_id: auth.user!.id, ...updatedStats }))
-          .then(() => {}).then(null, (error: unknown) => console.error('Error upserting stats:', error));
-        return updatedStats;
-      });
-
-      supabase.from('users').upsert(toDB({ id: updatedUser.id, ...updatedUser }))
-        .then(() => {}).then(null, (error: unknown) => console.error('Error upserting user:', error));
-      if (Object.keys(gachaUpdate).length > 0) {
-        supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: auth.user!.id, ...gacha.gachaState, ...gachaUpdate }))
-          .then(() => {}).then(null, (error: unknown) => console.error('Error upserting gacha:', error));
-      }
+      supabase.from('stats').upsert(toDB({ id: 'current-stats', user_id: auth.user.id, ...stats }))
+        .then(null, logError('upserting stats in deleteHistoryEntry'));
+      supabase.from('users').upsert(toDB({ id: auth.user.id, ...auth.user }))
+        .then(null, logError('upserting user in deleteHistoryEntry'));
     }
 
     bingo.setBingoTiles(prev => prev.map(row => row.map(tile => {
@@ -409,7 +348,7 @@ function AppContent() {
           historyHook.setHistory(data.history);
           if (auth.user) {
             const hWithUserId = data.history.map((h: HistoryEntry) => toDB({ ...h, user_id: auth.user!.id }));
-            supabase.from('history').upsert(hWithUserId).then(null, (e: unknown) => console.error('Import history error:', e));
+            supabase.from('history').upsert(hWithUserId).then(null, logError('import history'));
           }
         }
         if (data.achievements) achievements.setAchievements(data.achievements);
@@ -422,7 +361,7 @@ function AppContent() {
           shop.setShopHistory(data.shopHistory);
           if (auth.user) {
             const shWithUserId = data.shopHistory.map((h: ShopHistoryEntry) => toDB({ ...h, user_id: auth.user!.id }));
-            supabase.from('shop_history').upsert(shWithUserId).then(null, (e: unknown) => console.error('Import shop history error:', e));
+            supabase.from('shop_history').upsert(shWithUserId).then(null, logError('import shop history'));
           }
         }
         toast('数据导入成功！', 'success');
@@ -434,7 +373,7 @@ function AppContent() {
     input.click();
   };
 
-  const handleClearAllData = async () => {
+  const resetAllAppState = () => {
     tasks.setTaskGroups(INITIAL_TASK_GROUPS);
     bingo.setBingoTiles(INITIAL_BINGO_TILES);
     historyHook.setHistory([]);
@@ -444,19 +383,20 @@ function AppContent() {
     bingo.setGridSize(5);
     shop.setShopItems(INITIAL_SHOP_ITEMS);
     gacha.setGachaState({
-      availableDraws: 0,
-      lastDrawLevel: 1,
-      consecutiveLowRewards: 0,
-      consecutiveSameType: 0,
-      history: [],
-      lastFreeDrawDate: undefined,
+      availableDraws: 0, lastDrawLevel: 1,
+      consecutiveLowRewards: 0, consecutiveSameType: 0,
+      history: [], lastFreeDrawDate: undefined,
     });
     shop.setShopHistory([]);
+  };
+
+  const handleClearAllData = async () => {
+    resetAllAppState();
     if (auth.user) {
       const tables = ['task_groups', 'bingo_tiles', 'history', 'achievements', 'stats', 'settings', 'grid_size', 'shop_items', 'gacha', 'shop_history'];
       for (const table of tables) {
         supabase.from(table).delete().eq('user_id', auth.user.id)
-          .then(() => {}).then(null, (error: unknown) => console.error(`Error clearing ${table}:`, error));
+          .then(null, logError(`clearing ${table}`));
       }
     }
     setIsClearConfirmOpen(false);
@@ -469,41 +409,13 @@ function AppContent() {
   };
 
   const handleLogout = () => {
-    auth.logout(() => {
-      tasks.setTaskGroups(INITIAL_TASK_GROUPS);
-      bingo.setBingoTiles(INITIAL_BINGO_TILES);
-      historyHook.setHistory([]);
-      achievements.setAchievements(INITIAL_ACHIEVEMENTS);
-      setStats(INITIAL_STATS);
-      settings.setSettings(INITIAL_SETTINGS);
-      bingo.setGridSize(5);
-      shop.setShopItems(INITIAL_SHOP_ITEMS);
-      gacha.setGachaState({
-        availableDraws: 0, lastDrawLevel: 1,
-        consecutiveLowRewards: 0, consecutiveSameType: 0,
-        history: [], lastFreeDrawDate: undefined,
-      });
-      shop.setShopHistory([]);
-    });
+    auth.logout(resetAllAppState);
   };
 
   // Data loading
   useEffect(() => {
-    const apiFetch = (path: string, method = 'GET', body?: unknown) => {
-      const stored = window.localStorage.getItem('sb-ifqhbubjkgbfognvmonr-auth-token');
-      const token = (() => { try { return stored ? JSON.parse(stored).access_token || '' : ''; } catch { return ''; } })();
-      const headers: Record<string, string> = {
-        'apikey': 'sb_publishable_4cvCbNm_2y7gxwOFxjlAMA_63DzT4Sy',
-        'Content-Type': 'application/json',
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const init: RequestInit = { method, headers };
-      if (body && method !== 'GET') init.body = JSON.stringify(body);
-      return fetch(`https://ifqhbubjkgbfognvmonr.supabase.co/rest/v1${path}`, init).then(r => {
-        if (r.status === 201 || r.status === 204) return [];
-        return r.json();
-      });
-    };
+    const sf = <T,>(promise: PromiseLike<{ data: T }>) =>
+      promise.then(({ data }) => data, () => undefined);
 
     const loadData = async () => {
       try {
@@ -516,22 +428,35 @@ function AppContent() {
           return;
         }
 
-        const userDataArr = await apiFetch(`/users?id=eq.${authUser.id}&select=*`);
+        const uid = authUser.id;
+        const { data: userDataArr } = await supabase.from('users').select('id,username,email,joinedat,level,xp,nextlevelxp,balance,title').eq('id', uid);
         const userData = userDataArr?.[0];
         let loadedUser: User;
         if (!userData) {
           loadedUser = {
-            id: authUser.id,
+            id: uid,
             username: authUser.email?.split('@')[0] || '用户',
             email: authUser.email || 'user@example.com',
             avatar: DEFAULT_AVATAR,
             joinedAt: authUser.created_at || new Date().toISOString(),
-            level: 1, xp: 0, nextLevelXp: 200, balance: 0
+            level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
           };
-          await apiFetch('/users', 'POST', toDB(loadedUser));
+          supabase.from('users').insert(toDB(loadedUser)).then(null, logError('inserting new user'));
         } else {
           loadedUser = fromDB<User>(userData);
-          if (!loadedUser.avatar || loadedUser.avatar.includes('googleusercontent')) loadedUser.avatar = DEFAULT_AVATAR;
+          const { data: avatarArr } = await supabase.from('users').select('avatar').eq('id', uid);
+          const dbAvatar = avatarArr?.[0]?.avatar;
+          if (dbAvatar && dbAvatar.startsWith('data:') && !dbAvatar.startsWith('data:image/svg')) {
+            loadedUser.avatar = DEFAULT_AVATAR;
+            migrateBase64Avatar(uid, dbAvatar).then(url => {
+              supabase.from('users').update(toDB({ avatar: url })).eq('id', uid).then(null, logError('updating migrated avatar'));
+              auth.setUser(prev => prev ? { ...prev, avatar: url } : null);
+            }).catch(e => console.error('Avatar migration failed:', e));
+          } else if (dbAvatar) {
+            loadedUser.avatar = dbAvatar;
+          } else {
+            loadedUser.avatar = DEFAULT_AVATAR;
+          }
         }
 
         const [
@@ -539,31 +464,31 @@ function AppContent() {
           statsRes, settingsRes, gridSizeRes, shopItemsRes,
           gachaRes, shopHistoryRes
         ] = await Promise.allSettled([
-          apiFetch(`/task_groups?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/bingo_tiles?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/history?user_id=eq.${authUser.id}&select=*&order=completedat.desc`),
-          apiFetch(`/achievements?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/stats?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/settings?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/grid_size?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/shop_items?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/gacha?user_id=eq.${authUser.id}&select=*`),
-          apiFetch(`/shop_history?user_id=eq.${authUser.id}&select=*&order=timestamp.desc`),
+          sf(supabase.from('task_groups').select('*').eq('user_id', uid)),
+          sf(supabase.from('bingo_tiles').select('*').eq('user_id', uid)),
+          sf(supabase.from('history').select('*').eq('user_id', uid).order('completedat', { ascending: false })),
+          sf(supabase.from('achievements').select('*').eq('user_id', uid)),
+          sf(supabase.from('stats').select('*').eq('user_id', uid)),
+          sf(supabase.from('settings').select('*').eq('user_id', uid)),
+          sf(supabase.from('grid_size').select('*').eq('user_id', uid)),
+          sf(supabase.from('shop_items').select('*').eq('user_id', uid)),
+          sf(supabase.from('gacha').select('*').eq('user_id', uid)),
+          sf(supabase.from('shop_history').select('*').eq('user_id', uid).order('timestamp', { ascending: false })),
         ]);
 
-        const val = <T,>(r: PromiseSettledResult<T>): T | undefined =>
+        const extractSettled = <T,>(r: PromiseSettledResult<T>): T | undefined =>
           r.status === 'fulfilled' ? r.value : undefined;
 
-        const groupsData = val(groupsRes);
-        const tilesData = val(tilesRes);
-        const historyData = val(historyRes);
-        const achievementsData = val(achievementsRes);
-        const statsData = val(statsRes);
-        const settingsData = val(settingsRes);
-        const gridSizeData = val(gridSizeRes);
-        const shopItemsData = val(shopItemsRes);
-        const gachaData = val(gachaRes);
-        const shopHistoryData = val(shopHistoryRes);
+        const groupsData = extractSettled(groupsRes);
+        const tilesData = extractSettled(tilesRes);
+        const historyData = extractSettled(historyRes);
+        const achievementsData = extractSettled(achievementsRes);
+        const statsData = extractSettled(statsRes);
+        const settingsData = extractSettled(settingsRes);
+        const gridSizeData = extractSettled(gridSizeRes);
+        const shopItemsData = extractSettled(shopItemsRes);
+        const gachaData = extractSettled(gachaRes);
+        const shopHistoryData = extractSettled(shopHistoryRes);
 
         auth.setUser(loadedUser);
         if (groupsData?.length > 0) tasks.setTaskGroups(groupsData.map((g: Record<string, unknown>) => fromDB<TaskGroup>(g)));
@@ -580,7 +505,7 @@ function AppContent() {
           if (gs.lastFreeDrawDate !== today) {
             gs.availableDraws = (gs.availableDraws || 0) + 1;
             gs.lastFreeDrawDate = today;
-            supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(() => {}, e => console.error('Error saving daily free draw:', e));
+            supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(null, logError('saving daily free draw'));
           }
           gacha.setGachaState(gs);
         }
@@ -600,18 +525,19 @@ function AppContent() {
       if (!initialLoadDone) { initialLoadDone = true; return; }
       if (event === 'SIGNED_IN' && session?.user) {
         try {
-          const userDataArr = await apiFetch(`/users?id=eq.${session.user.id}&select=*`);
+          const suid = session.user.id;
+          const { data: userDataArr } = await supabase.from('users').select('*').eq('id', suid);
           const userData = userDataArr?.[0];
           if (!userData) {
             const newUser = {
-              id: session.user.id,
+              id: suid,
               username: session.user.email?.split('@')[0] || '用户',
               email: session.user.email || 'user@example.com',
               avatar: DEFAULT_AVATAR,
               joinedAt: session.user.created_at || new Date().toISOString(),
-              level: 1, xp: 0, nextLevelXp: 200, balance: 0
+              level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
             };
-            await apiFetch('/users', 'POST', toDB(newUser));
+            supabase.from('users').insert(toDB(newUser)).then(null, logError('inserting user on sign-in'));
             auth.setUser(newUser);
           } else {
             const u = fromDB<User>(userData);
@@ -659,7 +585,15 @@ function AppContent() {
   }, [historyHook.history]);
 
   // Persistence hooks
-  useSupabaseSync('users', auth.user, { userId: auth.user?.id });
+  const prevUserRef = useRef<string>('');
+  useEffect(() => {
+    if (!auth.user) return;
+    const serialized = JSON.stringify(auth.user);
+    if (serialized === prevUserRef.current) return;
+    prevUserRef.current = serialized;
+    supabase.from('users').upsert(toDB(auth.user)).then(null, logError('syncing user'));
+  }, [auth.user]);
+
   useSupabaseSync('bingo_tiles', { grid: bingo.bingoTiles }, { userId: auth.user?.id, id: 'current-tiles' });
   useSupabaseSync('task_groups', tasks.taskGroups, { userId: auth.user?.id, idField: 'id' });
   useSupabaseSync('achievements', achievements.achievements, { userId: auth.user?.id, idField: 'id' });
@@ -668,11 +602,6 @@ function AppContent() {
   useSupabaseSync('settings', settings.settings, { userId: auth.user?.id, id: 'current-settings' });
   useSupabaseSync('grid_size', { size: bingo.gridSize }, { userId: auth.user?.id, id: 'current-grid-size' });
   useSupabaseSync('shop_items', shop.shopItems, { userId: auth.user?.id, idField: 'id' });
-
-  // Theme sync
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', settings.settings.theme);
-  }, [settings.settings.theme]);
 
   if (auth.isAuthLoading) {
     return (
@@ -758,6 +687,12 @@ function AppContent() {
               bingoTiles={bingo.bingoTiles}
               playSound={playSound}
               triggerHaptic={triggerHaptic}
+              onSaveHistory={(entry) => {
+                if (auth.user) {
+                  supabase.from('history').insert(toDB({ ...entry, user_id: auth.user.id }))
+                    .then(null, logError('saving pomodoro history'));
+                }
+              }}
             />
           </motion.div>
         )}
@@ -924,6 +859,7 @@ function AppContent() {
         onUsernameChange={auth.setEditUsername}
         onEmailChange={auth.setEditEmail}
         onAvatarChange={auth.setEditAvatar}
+        onAvatarFile={auth.setEditAvatarFile}
         onSave={() => auth.handleSaveProfile(toast)}
       />
 

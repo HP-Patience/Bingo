@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { toDB } from '../lib/utils';
+import { toDB, logError } from '../lib/utils';
 
 type SyncOptions = {
   /** 记录的主键 ID，默认为 `current-{tableName}` */
@@ -48,16 +48,16 @@ export function useSupabaseSync<T>(
             const allIds = [...(options.currentIds || []), ...(options.extraIds || [])];
             const del = supabase.from(tableName).delete().eq('user_id', options.userId);
             (allIds.length > 0 ? del.not(options.idField, 'in', `(${allIds.join(',')})`) : del)
-              .then(null, (error: unknown) => console.error(`Error cleaning up ${tableName}:`, error));
+              .then(null, logError(`cleaning up ${tableName}`));
           }
         })
-        .then(null, (error: unknown) => console.error(`Error saving ${tableName}:`, error));
+        .then(null, logError(`saving ${tableName}`));
     } else {
       dbData = toDB({ id: recordId, user_id: options.userId, ...(data as Record<string, unknown>) });
       supabase
         .from(tableName)
         .upsert(dbData)
-        .then(null, (error: unknown) => console.error(`Error saving ${tableName}:`, error));
+        .then(null, logError(`saving ${tableName}`));
     }
   }, [data, options.userId]);
 }

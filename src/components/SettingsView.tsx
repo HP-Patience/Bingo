@@ -9,22 +9,6 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
     { name: 'dark', color: '#1a1a1a' },
   ];
 
-  const handleEditProfile = () => {
-    if (user) {
-      setEditUsername(user.username);
-      setEditEmail(user.email);
-      setEditAvatar(user.avatar);
-      setIsEditModalOpen(true);
-    }
-  };
-
-  const handleSaveProfile = () => {
-    if (user) {
-      onUpdateUser({ username: editUsername.trim(), email: editEmail.trim(), avatar: editAvatar.trim() });
-      setIsEditModalOpen(false);
-    }
-  };
-
   return (
     <div className="space-y-10">
       {user && (
@@ -38,9 +22,9 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
                 <h2 className="text-xl font-black tracking-tight">{user.username}</h2>
                 {user.title && <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">{user.title}</span>}
               </div>
-              <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest opacity-60">{user.email}</p>
+              <p className="text-on-surface-variant text-[10px] font-bold tracking-widest opacity-60">{user.email}</p>
             </div>
-            <button onClick={handleEditProfile} className="ml-auto text-primary p-2 hover:bg-primary/10 rounded-full transition-all"><Edit2 className="w-5 h-5" /></button>
+            <button onClick={onEditProfile} className="ml-auto text-primary p-2 hover:bg-primary/10 rounded-full transition-all"><Edit2 className="w-5 h-5" /></button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant">
