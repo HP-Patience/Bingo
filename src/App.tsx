@@ -4,6 +4,8 @@ import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGro
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS, DEFAULT_AVATAR } from './constants';
 import { getDrawsPerLevel, getPoolByLevel, drawReward, addDrawHistory } from './gachaUtils';
 import { toDB, fromDB } from './lib/utils';
+import { Modal, ConfirmDialog } from './components/Modal';
+import { ToastProvider, useToast } from './components/Toast';
 
 // 计算任务经验值
 export const calculateXP = (difficulty: TaskDifficulty, priority: TaskPriority): number => {
@@ -142,12 +144,12 @@ const Layout = ({ children, activeTab, onTabChange, user, onLoginClick, theme }:
                     />
                   </div>
                 </div>
-                <span className="text-[8px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{user.xp} / {user.nextLevelXp} XP</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{user.xp} / {user.nextLevelXp} XP</span>
               </div>
               <div className="flex items-center gap-1">
                 <Zap className="w-3 h-3 fill-primary" />
                 <span className="text-[10px] font-black tracking-tighter">{user.balance}</span>
-                <span className="text-[8px] font-bold text-on-surface-variant/60 uppercase tracking-widest">金币</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">金币</span>
               </div>
               <button 
                 onClick={() => onTabChange('settings')}
@@ -224,8 +226,9 @@ const Layout = ({ children, activeTab, onTabChange, user, onLoginClick, theme }:
 
 const NavItem = ({ icon, label, isActive, onClick }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }) => {
   return (
-    <button 
+    <button
       onClick={onClick}
+      aria-label={label}
       className={cn(
         "flex flex-col items-center justify-center px-3 py-2 rounded-2xl transition-all duration-300 active:scale-90",
         isActive ? "bg-surface-container-low text-on-surface" : "text-on-surface-variant hover:bg-surface-container-low/50"
@@ -508,8 +511,8 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                 <span className="z-10">{tile.taskName}</span>
               </div>
               {!tile.completed && (
-                <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap text-[8px]">
-                  <div className="flex gap-0.5 items-center flex-shrink-0">
+                <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap text-[10px]">
+                  <div className="flex gap-0.5 items-center flex-shrink-0" aria-label={`难度：${tile.difficulty === 'hard' ? '困难' : tile.difficulty === 'medium' ? '中等' : '简单'}`} title={`难度：${tile.difficulty === 'hard' ? '困难' : tile.difficulty === 'medium' ? '中等' : '简单'}`}>
                     {[...Array(tile.difficulty === 'hard' ? 3 : tile.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
                       <div key={i} className="w-1 h-1 rounded-full bg-current" />
                     ))}
@@ -517,7 +520,7 @@ const TodayView = ({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStat
                   <div className={cn(
                     "w-1.5 h-1.5 rounded-full flex-shrink-0",
                     tile.priority === 'high' ? "bg-red-500" : tile.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
-                  )} />
+                  )} aria-label={`优先级：${tile.priority === 'high' ? '高' : tile.priority === 'medium' ? '中' : '低'}`} title={`优先级：${tile.priority === 'high' ? '高' : tile.priority === 'medium' ? '中' : '低'}`} />
                   <span className="font-bold flex-shrink-0">+{tile.xpValue || 10}</span>
                 </div>
               )}
@@ -547,7 +550,7 @@ const ToolbarItem = ({ icon, label, onClick }: { icon: React.ReactNode, label: s
     <div className="text-on-surface-variant group-hover:text-primary transition-colors">
       {icon}
     </div>
-    <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">{label}</span>
+    <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">{label}</span>
   </button>
 );
 
@@ -602,7 +605,7 @@ const TaskEditModal = ({
         
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">任务名称</label>
+            <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
             <input 
               type="text" 
               className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -613,7 +616,7 @@ const TaskEditModal = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">标签 (逗号分隔)</label>
+            <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">标签 (逗号分隔)</label>
             <input 
               type="text" 
               className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -625,7 +628,7 @@ const TaskEditModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">难度</label>
+              <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">难度</label>
               <select 
                 className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
                 value={difficulty}
@@ -637,7 +640,7 @@ const TaskEditModal = ({
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">优先级</label>
+              <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">优先级</label>
               <select 
                 className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
                 value={priority}
@@ -654,13 +657,13 @@ const TaskEditModal = ({
         <div className="flex gap-3 pt-2">
           <button 
             onClick={onClose}
-            className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+            className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
           >
             取消
           </button>
           <button 
             onClick={handleSave}
-            className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+            className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
           >
             保存
           </button>
@@ -974,7 +977,7 @@ const TasksView = ({
                             {task.name}
                           </div>
                           <div className="flex items-center gap-2 opacity-60">
-                            <div className="flex gap-0.5">
+                            <div className="flex gap-0.5" aria-label={`难度：${task.difficulty === 'hard' ? '困难' : task.difficulty === 'medium' ? '中等' : '简单'}`} title={`难度：${task.difficulty === 'hard' ? '困难' : task.difficulty === 'medium' ? '中等' : '简单'}`}>
                               {[...Array(task.difficulty === 'hard' ? 3 : task.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
                                 <div key={i} className="w-1 h-1 rounded-full bg-current" />
                               ))}
@@ -982,12 +985,12 @@ const TasksView = ({
                             <div className={cn(
                               "w-1.5 h-1.5 rounded-full",
                               task.priority === 'high' ? "bg-red-500" : task.priority === 'medium' ? "bg-amber-500" : "bg-emerald-500"
-                            )} />
+                            )} aria-label={`优先级：${task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}`} title={`优先级：${task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}`} />
                             <span className="text-[10px] font-bold">+{task.xpValue || 10} XP</span>
                             {task.tags && task.tags.length > 0 && (
                               <div className="flex gap-1">
                                 {task.tags.slice(0, 2).map(tag => (
-                                  <span key={tag} className="text-[8px] uppercase tracking-tighter opacity-80">#{tag}</span>
+                                  <span key={tag} className="text-[10px] uppercase tracking-tighter opacity-80">#{tag}</span>
                                 ))}
                               </div>
                             )}
@@ -1102,7 +1105,7 @@ const TasksView = ({
               <div className="flex gap-3">
                 <button 
                   onClick={() => setDeletingGroupId(null)}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   取消
                 </button>
@@ -1111,7 +1114,7 @@ const TasksView = ({
                     onDeleteGroup(deletingGroupId);
                     setDeletingGroupId(null);
                   }}
-                  className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   删除
                 </button>
@@ -1708,23 +1711,24 @@ const StatsView = ({ stats, history, timeRange, setTimeRange, isTimeRangeModalOp
           </button>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={xpData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="name" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }}
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-container-highest)" />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fontWeight: 700, fill: 'var(--on-surface-variant)' }}
                 dy={10}
               />
               <YAxis hide />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  borderRadius: '16px', 
-                  border: '1px solid #e2e8f0',
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--surface-container-lowest)',
+                  borderRadius: '16px',
+                  border: '1px solid var(--outline-variant)',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   fontSize: '10px',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
+                  color: 'var(--on-surface)'
                 }}
               />
               <Line 
@@ -1732,7 +1736,7 @@ const StatsView = ({ stats, history, timeRange, setTimeRange, isTimeRangeModalOp
                 dataKey="xp" 
                 stroke="#ef4444" 
                 strokeWidth={4} 
-                dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
+                dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: 'var(--surface-container-lowest)' }}
                 activeDot={{ r: 6, strokeWidth: 0 }}
               />
             </LineChart>
@@ -1767,18 +1771,19 @@ const StatsView = ({ stats, history, timeRange, setTimeRange, isTimeRangeModalOp
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }}
+                tick={{ fontSize: 10, fontWeight: 700, fill: 'var(--on-surface-variant)' }}
                 dy={10}
               />
               <YAxis hide />
-              <Tooltip 
-                cursor={{ fill: '#f1f5f9' }}
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  borderRadius: '16px', 
-                  border: '1px solid #e2e8f0',
+              <Tooltip
+                cursor={{ fill: 'var(--surface-container-low)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--surface-container-lowest)',
+                  borderRadius: '16px',
+                  border: '1px solid var(--outline-variant)',
                   fontSize: '10px',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
+                  color: 'var(--on-surface)'
                 }}
                 formatter={(value) => [`${value} 分钟`, '专注时长']}
               />
@@ -1974,12 +1979,12 @@ const AchievementsView = ({
                     )}>
                       <AchievementIcon name={achievement.icon} className="w-10 h-10 text-primary mb-2" />
                       {achievement.level && (
-                        <div className="absolute -top-2 -right-2 bg-primary text-on-primary text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-widest">
+                        <div className="absolute -top-2 -right-2 bg-primary text-on-primary text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest">
                           等级 {achievement.level}
                         </div>
                       )}
 
-                      <span className="text-[9px] text-on-surface-variant/60 text-center leading-tight px-1">{achievement.description}</span>
+                      <span className="text-[11px] text-on-surface-variant/60 text-center leading-tight px-1">{achievement.description}</span>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-tighter text-center leading-tight px-1">{achievement.title}</span>
                   </button>
@@ -2012,7 +2017,7 @@ const AchievementsView = ({
                       )}>
                         <AchievementIcon name={achievement.icon} className="w-10 h-10 text-primary mb-2" />
 
-                        <span className="text-[9px] text-on-surface-variant/60 text-center leading-tight px-1">{achievement.requirement || achievement.description}</span>
+                        <span className="text-[11px] text-on-surface-variant/60 text-center leading-tight px-1">{achievement.requirement || achievement.description}</span>
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-tighter text-center leading-tight px-1">{achievement.title}</span>
                     </button>
@@ -2032,14 +2037,14 @@ const AchievementsView = ({
                 {!isAddingCustom ? (
                   <button 
                     onClick={() => setIsAddingCustom(true)}
-                    className="w-full bg-primary text-on-primary py-5 rounded-2xl font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                    className="w-full bg-primary text-on-primary py-5 rounded-2xl font-semibold tracking-wide text-[11px] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-primary/20"
                   >
                     <PlusCircle className="w-5 h-5" /> 创建自定义成就
                   </button>
                 ) : (
                   <div className="space-y-4 text-left">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">成就名称</label>
+                      <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">成就名称</label>
                       <input 
                         type="text" 
                         placeholder="成就名称..." 
@@ -2050,7 +2055,7 @@ const AchievementsView = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">获得条件</label>
+                      <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">获得条件</label>
                       <input 
                         type="text" 
                         placeholder="获得条件 (例如: 连续3天早起)..." 
@@ -2062,13 +2067,13 @@ const AchievementsView = ({
                     <div className="flex gap-3 pt-2">
                       <button 
                         onClick={() => setIsAddingCustom(false)}
-                        className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                        className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                       >
                         取消
                       </button>
                       <button 
                         onClick={handleAddCustom}
-                        className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                        className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                       >
                         创建
                       </button>
@@ -2127,7 +2132,7 @@ const AchievementsView = ({
                   
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">图标</label>
+                      <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">图标</label>
                       <div className="flex flex-wrap gap-2 p-2 bg-surface-container-low rounded-2xl border border-outline-variant max-h-32 overflow-y-auto">
                         {availableIcons.map(iconName => (
                           <button 
@@ -2144,7 +2149,7 @@ const AchievementsView = ({
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">成就名称</label>
+                      <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">成就名称</label>
                       <input 
                         type="text" 
                         className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -2153,7 +2158,7 @@ const AchievementsView = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">获得条件</label>
+                      <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">获得条件</label>
                       <input 
                         type="text" 
                         className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -2166,13 +2171,13 @@ const AchievementsView = ({
                   <div className="flex gap-3 pt-2">
                     <button 
                       onClick={() => setIsEditing(false)}
-                      className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                      className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                     >
                       取消
                     </button>
                     <button 
                       onClick={handleSaveEdit}
-                      className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                      className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                     >
                       保存
                     </button>
@@ -2222,7 +2227,7 @@ const AchievementsView = ({
                         <button 
                           onClick={handleToggle}
                           className={cn(
-                            "flex-1 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] active:scale-95 transition-all",
+                            "flex-1 py-4 rounded-2xl font-semibold tracking-wide text-[11px] active:scale-95 transition-all",
                             selectedAchievement.unlocked ? "bg-surface-container-low text-on-surface" : "bg-primary text-on-primary shadow-lg shadow-primary/20"
                           )}
                         >
@@ -2244,7 +2249,7 @@ const AchievementsView = ({
                     )}
                     <button 
                       onClick={() => setSelectedAchievement(null)}
-                      className="w-full bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] active:scale-95 transition-all"
+                      className="w-full bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px] active:scale-95 transition-all"
                     >
                       关闭
                     </button>
@@ -2529,7 +2534,7 @@ const ShopView = ({
                   <div className="flex items-center gap-2">
                     <h4 className="font-bold text-sm">{item.name}</h4>
                     {item.levelRequirement && item.levelRequirement > 1 && (
-                      <span className="text-[9px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">
+                      <span className="text-[11px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">
                         等级 {item.levelRequirement}+
                       </span>
                     )}
@@ -2596,7 +2601,7 @@ const ShopView = ({
               
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">商品名称</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">商品名称</label>
                   <input 
                     type="text" 
                     className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -2606,7 +2611,7 @@ const ShopView = ({
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">描述</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">描述</label>
                   <input 
                     type="text" 
                     className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -2617,7 +2622,7 @@ const ShopView = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">价格 (金币)</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">价格 (金币)</label>
                     <input 
                       type="number" 
                       className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -2626,7 +2631,7 @@ const ShopView = ({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">图标</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">图标</label>
                     <select 
                       className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
                       value={isAdding ? newItem.icon : editingItem?.icon || 'sparkles'}
@@ -2646,13 +2651,13 @@ const ShopView = ({
               <div className="flex gap-3 pt-2">
                 <button 
                   onClick={() => { setIsAdding(false); setEditingItem(null); }}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   取消
                 </button>
                 <button 
                   onClick={isAdding ? handleAddItem : handleUpdateItem}
-                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   保存
                 </button>
@@ -3168,7 +3173,7 @@ const PomodoroView = ({
               <div className="space-y-6">
                 {/* 专注时长设置 */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">专注时长 (分钟)</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">专注时长 (分钟)</label>
                   <input 
                     type="number" 
                     min="1" 
@@ -3181,7 +3186,7 @@ const PomodoroView = ({
                 
                 {/* 短休时长设置 */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">短休时长 (分钟)</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">短休时长 (分钟)</label>
                   <input 
                     type="number" 
                     min="1" 
@@ -3194,7 +3199,7 @@ const PomodoroView = ({
                 
                 {/* 长休时长设置 */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">长休时长 (分钟)</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">长休时长 (分钟)</label>
                   <input 
                     type="number" 
                     min="1" 
@@ -3208,7 +3213,7 @@ const PomodoroView = ({
               
               <button 
                 onClick={saveSettings}
-                className="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                className="w-full bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
               >
                 保存设置
               </button>
@@ -3245,13 +3250,13 @@ const PomodoroView = ({
               <div className="flex gap-3">
                 <button 
                   onClick={cancelModeSwitch}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   取消
                 </button>
                 <button 
                   onClick={confirmModeSwitch}
-                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   确认
                 </button>
@@ -3277,13 +3282,13 @@ const PomodoroView = ({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: 'spring', bounce: 0.1, duration: 0.5 }}
-              className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-t-[3rem] p-12 border-t border-gray-200 dark:border-gray-700 shadow-2xl space-y-8 z-10"
+              className="relative w-full max-w-md bg-surface-container-lowest rounded-t-[3rem] p-12 border-t border-outline-variant shadow-2xl space-y-8 z-10"
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-black tracking-tight uppercase text-gray-900 dark:text-white">选择专注任务</h3>
-                <motion.button 
-                  onClick={() => setIsTaskSelectorOpen(false)} 
-                  className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                <h3 className="text-2xl font-black tracking-tight uppercase text-on-surface">选择专注任务</h3>
+                <motion.button
+                  onClick={() => setIsTaskSelectorOpen(false)}
+                  className="p-3 text-on-surface-variant hover:text-on-surface transition-colors rounded-full hover:bg-surface-container-low"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -3301,9 +3306,9 @@ const PomodoroView = ({
                     }}
                     className={cn(
                       "w-full p-8 rounded-2xl border text-left transition-all flex items-center justify-between group shadow-sm",
-                      selectedTask === task.taskName 
-                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 shadow-blue-100 dark:shadow-blue-900/20" 
-                        : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md"
+                      selectedTask === task.taskName
+                        ? "bg-primary/10 border-primary/30 shadow-primary/10"
+                        : "bg-surface-container-low border-outline-variant hover:border-primary/40 hover:shadow-md"
                     )}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3312,13 +3317,13 @@ const PomodoroView = ({
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="space-y-2">
-                      <span className="text-base font-black text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{task.taskName}</span>
+                      <span className="text-base font-black text-on-surface group-hover:text-primary transition-colors">{task.taskName}</span>
                       <div className="flex items-center gap-3">
                         <div className="flex gap-1">
                           {[...Array((task.difficulty || 'easy') === 'hard' ? 3 : (task.difficulty || 'easy') === 'medium' ? 2 : 1)].map((_, i) => (
-                            <motion.div 
-                              key={i} 
-                              className="w-2 h-2 rounded-full bg-gray-400" 
+                            <motion.div
+                              key={i}
+                              className="w-2 h-2 rounded-full bg-on-surface-variant/40"
                               whileHover={{ scale: 1.2 }}
                             />
                           ))}
@@ -3327,8 +3332,8 @@ const PomodoroView = ({
                           "w-2 h-2 rounded-full",
                           (task.priority || 'medium') === 'high' ? "bg-red-500" : (task.priority || 'medium') === 'medium' ? "bg-amber-500" : "bg-emerald-500"
                         )} />
-                        <motion.span 
-                          className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full"
+                        <motion.span
+                          className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full"
                           whileHover={{ scale: 1.05 }}
                         >
                           +{task.xpValue || 10} XP
@@ -3410,17 +3415,17 @@ const SettingsView = ({ settings, onUpdateSettings, user, onLogout, onEditProfil
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">加入时间</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">加入时间</p>
               <p className="text-xs font-bold">{new Date(user.joinedAt).toLocaleDateString()}</p>
             </div>
             <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">账号状态</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">账号状态</p>
               <p className="text-xs font-bold text-primary">高级会员</p>
             </div>
           </div>
           <button 
             onClick={onLogout}
-            className="w-full bg-red-50 text-red-500 py-3.5 rounded-xl font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 active:scale-95 transition-all"
+            className="w-full bg-red-50 text-red-500 py-3.5 rounded-xl font-semibold tracking-wide text-[11px] flex items-center justify-center gap-2 active:scale-95 transition-all"
           >
             <LogOut className="w-4 h-4" /> 退出登录
           </button>
@@ -3501,7 +3506,8 @@ const SettingsButton = ({ icon, label, variant = 'default', onClick }: { icon: R
 
 // --- Main App ---
 
-export default function App() {
+function AppContent() {
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('today');
   const [activeSubTab, setActiveSubTab] = useState('achievements');
@@ -4253,7 +4259,7 @@ export default function App() {
     const durationMinutes = parseInt(duration.toString());
 
     if (isNaN(hours) || isNaN(minutes) || isNaN(seconds) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59 || isNaN(durationMinutes) || durationMinutes < 0) {
-      alert('请输入有效的时间和耗时');
+      toast('请检查时间格式（例如 14:30:00）和耗时（分钟），确保数值有效', 'error');
       return;
     }
 
@@ -4573,10 +4579,10 @@ export default function App() {
             supabase.from('shop_history').upsert(shWithUserId).then(null, e => console.error('Import shop history error:', e));
           }
         }
-        alert('数据导入成功！');
+        toast('数据导入成功！', 'success');
       } catch (err) {
         console.error('Import error:', err);
-        alert('导入失败，请检查文件格式');
+        toast('导入失败，请检查文件格式', 'error');
       }
     };
     input.click();
@@ -4986,7 +4992,7 @@ export default function App() {
         setIsEditModalOpen(false);
       } catch (error) {
         console.error('Error saving profile to Supabase:', error);
-        alert('保存失败，请重试');
+        toast('保存失败，请重试', 'error');
       } finally {
         setIsSaving(false);
       }
@@ -5335,13 +5341,13 @@ export default function App() {
                 <div className="flex gap-3 pt-2">
                   <button 
                     onClick={() => setIsResetConfirmOpen(false)}
-                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                   >
                     取消
                   </button>
                   <button 
                     onClick={confirmReset}
-                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                   >
                     确认重置
                   </button>
@@ -5380,14 +5386,14 @@ export default function App() {
                 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">任务名称</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
                     <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
                       {editingEntry.taskName}
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">完成时间</label>
+                      <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">完成时间</label>
                       <button 
                         type="button"
                         onClick={() => {
@@ -5410,7 +5416,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">耗时 (分钟)</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">耗时 (分钟)</label>
                     <input 
                       type="number" 
                       min="0" 
@@ -5420,7 +5426,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">备注</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注</label>
                     <textarea 
                       className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                       rows={3}
@@ -5434,13 +5440,13 @@ export default function App() {
                 <div className="flex gap-3 pt-2">
                   <button 
                     onClick={() => setIsEditTaskModalOpen(false)}
-                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                   >
                     取消
                   </button>
                   <button 
                     onClick={saveEditTask}
-                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                   >
                     保存
                   </button>
@@ -5506,7 +5512,7 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">用户名</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">用户名</label>
                   <input 
                     type="text" 
                     className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -5517,7 +5523,7 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">邮箱地址</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">邮箱地址</label>
                   <input 
                     type="email" 
                     className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -5527,7 +5533,7 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">头像 URL (可选)</label>
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">头像 URL (可选)</label>
                   <input 
                     type="url" 
                     placeholder="输入头像图片链接" 
@@ -5541,14 +5547,14 @@ export default function App() {
               <div className="flex gap-3 pt-2">
                 <button 
                   onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   取消
                 </button>
                 <button
                   onClick={handleSaveProfile}
                   disabled={isSaving}
-                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] disabled:opacity-50"
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px] disabled:opacity-50"
                 >
                   {isSaving ? '保存中...' : '保存'}
                 </button>
@@ -5836,13 +5842,13 @@ export default function App() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsClearConfirmOpen(false)}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   取消
                 </button>
                 <button
                   onClick={handleClearAllData}
-                  className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   确认清除
                 </button>
@@ -5880,13 +5886,13 @@ export default function App() {
                 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">任务名称</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
                     <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
                       {selectedTile?.tile.taskName}
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-1">备注信息</label>
+                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注信息</label>
                     <textarea 
                       placeholder="请输入任务备注..." 
                       className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none h-32"
@@ -5900,13 +5906,13 @@ export default function App() {
                 <div className="flex gap-3 pt-2">
                   <button 
                     onClick={() => setShowNoteModal(false)}
-                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                   >
                     取消
                   </button>
                   <button 
                     onClick={handleSaveNote}
-                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
                   >
                     保存备注
                   </button>
@@ -5917,5 +5923,13 @@ export default function App() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }

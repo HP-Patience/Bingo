@@ -32,13 +32,13 @@ npm run clean            # 删除 dist 目录
 
 | 文件 | 用途 |
 |------|------|
-| `src/App.tsx` (~5700 行) | 整个应用的单体文件，包含所有组件、状态管理和业务逻辑 |
+| `src/App.tsx` (~5900 行) | 整个应用的单体文件，包含所有组件、状态管理和业务逻辑 |
 | `src/types.ts` | 所有 TypeScript 类型定义 |
 | `src/constants.ts` | 初始数据（任务池、宾果棋盘、成就、商店物品、抽奖池）及游戏配置 |
 | `src/gachaUtils.ts` | 抽奖系统逻辑：奖池选择、抽奖次数计算、奖励抽取、保底机制 |
 | `src/lib/supabase.ts` | Supabase 客户端初始化 |
 | `src/lib/utils.ts` | `cn()` 工具函数（clsx + tailwind-merge） |
-| `src/index.css` | Tailwind 指令 + CSS 自定义属性主题变量（9 种主题） |
+| `src/index.css` | Tailwind 指令 + CSS 自定义属性主题变量（zinc 和 dark 两种主题） |
 | `bingo.sql` | Supabase 数据库建表语句 |
 
 ### App.tsx 结构
@@ -66,7 +66,7 @@ npm run clean            # 删除 dist 目录
 
 ### 主题系统
 
-9 种主题（zinc/slate/gray/blue/rose/amber/emerald/violet/dark），通过 `data-theme` 属性 + CSS 自定义属性实现。主题选择保存在 Supabase settings 表中。
+2 种主题（zinc 浅色 / dark 深色），通过 `data-theme` 属性 + CSS 自定义属性实现。主题选择保存在 Supabase settings 表中。
 
 ### 数据持久化
 
