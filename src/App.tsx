@@ -399,7 +399,7 @@ function AppContent() {
   };
 
   const handleLogout = () => {
-    auth.logout(resetAllAppState);
+    auth.logout(resetAllAppState, () => Promise.all(flushRef.current.map(f => f())));
   };
 
   // Data loading
@@ -577,6 +577,8 @@ function AppContent() {
 
   // Persistence hooks
   const prevUserRef = useRef<string>('');
+  const userRef = useRef(auth.user);
+  userRef.current = auth.user;
   useEffect(() => {
     if (!auth.user) return;
     const serialized = JSON.stringify(auth.user);
@@ -585,14 +587,23 @@ function AppContent() {
     supabase.from('users').upsert(toDB(auth.user)).then(null, logError('syncing user'));
   }, [auth.user]);
 
-  useSupabaseSync('bingo_tiles', { grid: bingo.bingoTiles }, { userId: auth.user?.id, id: 'current-tiles' });
-  useSupabaseSync('task_groups', tasks.taskGroups, { userId: auth.user?.id, idField: 'id' });
-  useSupabaseSync('achievements', achievements.achievements, { userId: auth.user?.id, idField: 'id' });
-  useSupabaseSync('stats', stats, { userId: auth.user?.id, id: 'current-stats' });
-  useSupabaseSync('gacha', gacha.gachaState, { userId: auth.user?.id, id: 'current-gacha' });
-  useSupabaseSync('settings', settings.settings, { userId: auth.user?.id, id: 'current-settings' });
-  useSupabaseSync('grid_size', { size: bingo.gridSize }, { userId: auth.user?.id, id: 'current-grid-size' });
-  useSupabaseSync('shop_items', shop.shopItems, { userId: auth.user?.id, idField: 'id' });
+  const flushRef = useRef<Array<() => Promise<void>>>([]);
+  flushRef.current = [];
+  flushRef.current.push(() => {
+    if (!userRef.current) return Promise.resolve();
+    const serialized = JSON.stringify(userRef.current);
+    if (serialized === prevUserRef.current) return Promise.resolve();
+    prevUserRef.current = serialized;
+    return supabase.from('users').upsert(toDB(userRef.current)).then(null, logError('flushing user'));
+  });
+  const s1 = useSupabaseSync('bingo_tiles', { grid: bingo.bingoTiles }, { userId: auth.user?.id, id: 'current-tiles' }); flushRef.current.push(s1.flush);
+  const s2 = useSupabaseSync('task_groups', tasks.taskGroups, { userId: auth.user?.id, idField: 'id', currentIds: tasks.taskGroups.map(g => g.id) }); flushRef.current.push(s2.flush);
+  const s3 = useSupabaseSync('achievements', achievements.achievements, { userId: auth.user?.id, idField: 'id', currentIds: achievements.achievements.map(a => a.id) }); flushRef.current.push(s3.flush);
+  const s4 = useSupabaseSync('stats', stats, { userId: auth.user?.id, id: 'current-stats' }); flushRef.current.push(s4.flush);
+  const s5 = useSupabaseSync('gacha', gacha.gachaState, { userId: auth.user?.id, id: 'current-gacha' }); flushRef.current.push(s5.flush);
+  const s6 = useSupabaseSync('settings', settings.settings, { userId: auth.user?.id, id: 'current-settings' }); flushRef.current.push(s6.flush);
+  const s7 = useSupabaseSync('grid_size', { size: bingo.gridSize }, { userId: auth.user?.id, id: 'current-grid-size' }); flushRef.current.push(s7.flush);
+  const s8 = useSupabaseSync('shop_items', shop.shopItems, { userId: auth.user?.id, idField: 'id', currentIds: shop.shopItems.map(i => i.id) }); flushRef.current.push(s8.flush);
 
   if (auth.isAuthLoading) {
     return (
