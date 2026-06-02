@@ -392,12 +392,7 @@ function AppContent() {
     setIsClearConfirmOpen(false);
   };
 
-  // Login/logout wrappers
-  const handleLogin = (userData: User) => {
-    auth.login(userData);
-    setActiveTab('today');
-  };
-
+  // Logout wrapper
   const handleLogout = () => {
     auth.logout(resetAllAppState, () => Promise.all(flushRef.current.map(f => f())));
   };
@@ -515,27 +510,7 @@ function AppContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!initialLoadDone) { initialLoadDone = true; return; }
       if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          const suid = session.user.id;
-          const { data: userDataArr } = await supabase.from('users').select('*').eq('id', suid);
-          const userData = userDataArr?.[0];
-          if (!userData) {
-            const newUser = {
-              id: suid,
-              username: session.user.email?.split('@')[0] || '用户',
-              email: session.user.email || 'user@example.com',
-              avatar: DEFAULT_AVATAR,
-              joinedAt: session.user.created_at || new Date().toISOString(),
-              level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
-            };
-            supabase.from('users').insert(toDB(newUser)).then(null, logError('inserting user on sign-in'));
-            auth.setUser(newUser);
-          } else {
-            const u = fromDB<User>(userData);
-            if (!u.avatar || u.avatar.includes('googleusercontent')) u.avatar = DEFAULT_AVATAR;
-            auth.setUser(u);
-          }
-        } catch (e) { console.error('Error in auth change:', e); }
+        window.location.reload();
       } else if (event === 'SIGNED_OUT') {
         auth.setUser(null);
       }
@@ -638,7 +613,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <LoginView onLogin={handleLogin} />
+            <LoginView />
           </motion.div>
         )}
         {activeTab === 'today' && (

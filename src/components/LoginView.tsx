@@ -3,11 +3,8 @@ import { useState } from 'react';
 import { Bolt, Mail } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
-import { DEFAULT_AVATAR } from '../constants';
-import { XP_PER_LEVEL } from '../lib/gameLogic';
-import type { User } from '../types';
 
-export function LoginView({ onLogin }: { onLogin: (user: User) => void }) {
+export function LoginView() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,18 +31,6 @@ export function LoginView({ onLogin }: { onLogin: (user: User) => void }) {
           } else {
             throw error;
           }
-        } else if (data.user) {
-          onLogin({
-            id: data.user.id,
-            username: data.user.email?.split('@')[0] || '用户',
-            email: data.user.email || 'user@example.com',
-            avatar: data.user.user_metadata?.avatar || DEFAULT_AVATAR,
-            joinedAt: data.user.created_at || new Date().toISOString(),
-            level: 1,
-            xp: 0,
-            nextLevelXp: XP_PER_LEVEL,
-            balance: 0
-          });
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
