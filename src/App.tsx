@@ -408,16 +408,19 @@ function AppContent() {
         const authUser = session?.user ?? null;
 
         if (!authUser) {
+          console.log('🟡 [loadData] 无会话，显示登录页');
           auth.setUser(null);
           auth.setIsAuthLoading(false);
           return;
         }
+        console.log('🟢 [loadData] 会话存在，开始加载数据:', authUser.email);
 
         const uid = authUser.id;
         const { data: userDataArr } = await supabase.from('users').select('id,username,email,joinedat,level,xp,nextlevelxp,balance,title').eq('id', uid);
         const userData = userDataArr?.[0];
         let loadedUser: User;
         if (!userData) {
+          console.log('🟡 [loadData] 用户不在 users 表中，创建新用户:', uid);
           loadedUser = {
             id: uid,
             username: authUser.email?.split('@')[0] || '用户',
@@ -426,8 +429,11 @@ function AppContent() {
             joinedAt: authUser.created_at || new Date().toISOString(),
             level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
           };
-          supabase.from('users').insert(toDB(loadedUser)).then(null, logError('inserting new user'));
+          supabase.from('users').insert(toDB(loadedUser))
+            .then(() => console.log('🟢 [loadData] 新用户已插入 users 表'))
+            .then(null, logError('inserting new user'));
         } else {
+          console.log('🟢 [loadData] 用户已存在，加载数据:', uid);
           loadedUser = fromDB<User>(userData);
           const { data: avatarArr } = await supabase.from('users').select('avatar').eq('id', uid);
           const dbAvatar = avatarArr?.[0]?.avatar;

@@ -36,26 +36,35 @@ export function useSupabaseSync<T>(
       const items = (data as unknown[]).map(item =>
         toDB({ ...(item as Record<string, unknown>), user_id: opts.userId })
       );
+      console.log(`🔄 [Sync] 保存 ${tableName}: ${items.length} 条记录`);
       return supabase
         .from(tableName)
         .upsert(items)
         .then(() => {
+          console.log(`✅ [Sync] ${tableName} 保存成功`);
           if (opts.idField && opts.currentIds !== undefined) {
             const allIds = [...opts.currentIds, ...(opts.extraIds || [])];
             let query = supabase.from(tableName).delete().eq('user_id', opts.userId);
             if (allIds.length > 0) {
               query = query.not(opts.idField, 'in', `(${allIds.join(',')})`);
             }
-            return query.then(null, logError(`cleaning up ${tableName}`));
+            return query.then(
+              () => console.log(`🧹 [Sync] ${tableName} 清理完成`),
+              logError(`cleaning up ${tableName}`)
+            );
           }
         })
         .then(null, logError(`saving ${tableName}`));
     } else {
       const dbData = toDB({ id: recordId, user_id: opts.userId, ...(data as Record<string, unknown>) });
+      console.log(`🔄 [Sync] 保存 ${tableName} (单条):`, recordId);
       return supabase
         .from(tableName)
         .upsert(dbData)
-        .then(null, logError(`saving ${tableName}`));
+        .then(
+          () => console.log(`✅ [Sync] ${tableName} 保存成功`),
+          logError(`saving ${tableName}`)
+        );
     }
   }, [tableName]);
 

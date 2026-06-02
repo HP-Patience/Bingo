@@ -6,7 +6,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function logError(context: string) {
-  return (error: unknown) => console.error(`Error ${context}:`, error);
+  return (error: unknown) => {
+    console.error(`🔴 [SyncError] ${context}:`, error);
+    // 如果 error 有 code/message/details 字段（Supabase 错误格式），单独打印
+    if (error && typeof error === 'object') {
+      const e = error as Record<string, unknown>;
+      if (e.code) console.error(`  → code: ${e.code}`);
+      if (e.message) console.error(`  → message: ${e.message}`);
+      if (e.details) console.error(`  → details: ${e.details}`);
+    }
+  };
 }
 
 // Supabase 数据库列名全部小写（PostgreSQL 折叠未引用的标识符），

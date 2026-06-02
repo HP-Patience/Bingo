@@ -22,24 +22,26 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- 创建任务组表
 CREATE TABLE IF NOT EXISTS task_groups (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   color TEXT DEFAULT '#6366f1',
   icon TEXT DEFAULT 'folder',
-  tasks JSONB NOT NULL DEFAULT '[]'
+  tasks JSONB NOT NULL DEFAULT '[]',
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建宾果格子表
 CREATE TABLE IF NOT EXISTS bingo_tiles (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
-  grid JSONB NOT NULL DEFAULT '[]'
+  grid JSONB NOT NULL DEFAULT '[]',
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建历史记录表
 CREATE TABLE IF NOT EXISTS history (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   taskName TEXT NOT NULL,
   completedAt TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -47,12 +49,13 @@ CREATE TABLE IF NOT EXISTS history (
   xpEarned INTEGER NOT NULL DEFAULT 0,
   duration INTEGER DEFAULT NULL,
   note TEXT DEFAULT NULL,
-  noteTimestamp TIMESTAMP DEFAULT NULL
+  noteTimestamp TIMESTAMP DEFAULT NULL,
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建成就表
 CREATE TABLE IF NOT EXISTS achievements (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   title TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -64,12 +67,13 @@ CREATE TABLE IF NOT EXISTS achievements (
   maxProgress INTEGER DEFAULT NULL,
   category TEXT DEFAULT NULL,
   isCustom BOOLEAN DEFAULT false,
-  requirement TEXT DEFAULT NULL
+  requirement TEXT DEFAULT NULL,
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建统计表
 CREATE TABLE IF NOT EXISTS stats (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   totalCompleted INTEGER NOT NULL DEFAULT 0,
   currentStreak INTEGER NOT NULL DEFAULT 0,
@@ -81,26 +85,29 @@ CREATE TABLE IF NOT EXISTS stats (
   nightOwlCount INTEGER NOT NULL DEFAULT 0,
   onTimeRate INTEGER DEFAULT 100,
   mostProductiveDay TEXT DEFAULT NULL,
-  totalSpent INTEGER DEFAULT 0
+  totalSpent INTEGER DEFAULT 0,
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建设置表
 CREATE TABLE IF NOT EXISTS settings (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
-  theme TEXT NOT NULL DEFAULT 'zinc'
+  theme TEXT NOT NULL DEFAULT 'zinc',
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建网格大小表
 CREATE TABLE IF NOT EXISTS grid_size (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
-  size INTEGER NOT NULL DEFAULT 5
+  size INTEGER NOT NULL DEFAULT 5,
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建商店物品表
 CREATE TABLE IF NOT EXISTS shop_items (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -111,12 +118,13 @@ CREATE TABLE IF NOT EXISTS shop_items (
   effect TEXT DEFAULT NULL,
   icon TEXT NOT NULL,
   rarity TEXT NOT NULL DEFAULT 'common',
-  unlocked BOOLEAN NOT NULL DEFAULT false
+  unlocked BOOLEAN NOT NULL DEFAULT false,
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建抽奖状态表
 CREATE TABLE IF NOT EXISTS gacha (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   availableDraws INTEGER NOT NULL DEFAULT 0,
   totalDrawsSpent INTEGER NOT NULL DEFAULT 0,
@@ -125,12 +133,13 @@ CREATE TABLE IF NOT EXISTS gacha (
   lastRewardType TEXT DEFAULT NULL,
   history JSONB NOT NULL DEFAULT '[]',
   lastFreeDrawDate TEXT DEFAULT NULL,
-  freeDrawUsed BOOLEAN NOT NULL DEFAULT false
+  freeDrawUsed BOOLEAN NOT NULL DEFAULT false,
+  PRIMARY KEY (id, user_id)
 );
 
 -- 创建商店历史表
 CREATE TABLE IF NOT EXISTS shop_history (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   itemId TEXT NOT NULL,
   itemName TEXT NOT NULL,
@@ -138,7 +147,8 @@ CREATE TABLE IF NOT EXISTS shop_history (
   itemIcon TEXT DEFAULT NULL,
   level INTEGER DEFAULT NULL,
   cost INTEGER DEFAULT NULL,
-  timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+  timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (id, user_id)
 );
 
 -- ========== RLS Policies: 用户只能访问自己的数据 ==========
