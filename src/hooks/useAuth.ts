@@ -22,8 +22,9 @@ export function useAuth() {
     setUser(userData);
   };
 
-  const logout = async (resetAllState: () => void) => {
+  const logout = async (resetAllState: () => void, flushAll?: () => Promise<unknown>) => {
     try {
+      if (flushAll) await flushAll();
       setUser(null);
       resetAllState();
       await supabase.auth.signOut();

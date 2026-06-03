@@ -5,7 +5,7 @@ import { supabase, migrateBase64Avatar } from './lib/supabase';
 import { TaskDifficulty, TaskPriority, Achievement, Stats, HistoryEntry, TaskGroup, BingoTile, Settings, ShopItem, User, GachaState, ShopHistoryEntry } from './types';
 import { INITIAL_TASK_GROUPS, INITIAL_BINGO_TILES, INITIAL_ACHIEVEMENTS, INITIAL_STATS, INITIAL_SETTINGS, INITIAL_SHOP_ITEMS, DEFAULT_AVATAR } from './constants';
 import type { Task } from './types';
-import { getDrawsPerLevel, calculateAvailableDraws } from './gachaUtils';
+import { getTotalDrawsForLevel } from './gachaUtils';
 import { toDB, fromDB } from './lib/utils';
 import { calculateXP, getTitleForLevel, getNextLevelXp, XP_PER_LEVEL } from './lib/gameLogic';
 import { logError } from './lib/utils';
@@ -136,11 +136,10 @@ function AppContent() {
     }
 
     if (newLevel > oldLevel) {
-      const additionalDraws = calculateAvailableDraws(newLevel, oldLevel);
+
       gacha.setGachaState(prev => ({
         ...prev,
-        availableDraws: prev.availableDraws + additionalDraws,
-        lastDrawLevel: newLevel
+        availableDraws: getTotalDrawsForLevel(newLevel) - (prev.totalDrawsSpent || 0),
       }));
     }
 
@@ -175,11 +174,10 @@ function AppContent() {
     }
 
     if (newLevel < auth.user.level) {
-      const drawsToRemove = calculateAvailableDraws(auth.user.level, newLevel);
+
       gacha.setGachaState(prev => ({
         ...prev,
-        availableDraws: Math.max(0, prev.availableDraws - drawsToRemove),
-        lastDrawLevel: Math.min(prev.lastDrawLevel, newLevel),
+        availableDraws: Math.max(0, getTotalDrawsForLevel(newLevel) - (prev.totalDrawsSpent || 0)),
       }));
     }
 
@@ -389,9 +387,9 @@ function AppContent() {
     bingo.setGridSize(5);
     shop.setShopItems(INITIAL_SHOP_ITEMS);
     gacha.setGachaState({
-      availableDraws: 0, lastDrawLevel: 1,
+      availableDraws: 0, totalDrawsSpent: 0,
       consecutiveLowRewards: 0, consecutiveSameType: 0,
-      history: [], lastFreeDrawDate: undefined,
+      history: [], lastFreeDrawDate: undefined, freeDrawUsed: false,
     });
     shop.setShopHistory([]);
   };
@@ -408,14 +406,9 @@ function AppContent() {
     setIsClearConfirmOpen(false);
   };
 
-  // Login/logout wrappers
-  const handleLogin = (userData: User) => {
-    auth.login(userData);
-    setActiveTab('today');
-  };
-
+  // Logout wrapper
   const handleLogout = () => {
-    auth.logout(resetAllAppState);
+    auth.logout(resetAllAppState, () => Promise.all(flushRef.current.map(f => f())));
   };
 
   // Data loading
@@ -429,16 +422,19 @@ function AppContent() {
         const authUser = session?.user ?? null;
 
         if (!authUser) {
+          console.log('🟡 [loadData] 无会话，显示登录页');
           auth.setUser(null);
           auth.setIsAuthLoading(false);
           return;
         }
+        console.log('🟢 [loadData] 会话存在，开始加载数据:', authUser.email);
 
         const uid = authUser.id;
         const { data: userDataArr } = await supabase.from('users').select('id,username,email,joinedat,level,xp,nextlevelxp,balance,title').eq('id', uid);
         const userData = userDataArr?.[0];
         let loadedUser: User;
         if (!userData) {
+          console.log('🟡 [loadData] 用户不在 users 表中，创建新用户:', uid);
           loadedUser = {
             id: uid,
             username: authUser.email?.split('@')[0] || '用户',
@@ -447,8 +443,11 @@ function AppContent() {
             joinedAt: authUser.created_at || new Date().toISOString(),
             level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
           };
-          supabase.from('users').insert(toDB(loadedUser)).then(null, logError('inserting new user'));
+          supabase.from('users').insert(toDB(loadedUser))
+            .then(() => console.log('🟢 [loadData] 新用户已插入 users 表'))
+            .then(null, logError('inserting new user'));
         } else {
+          console.log('🟢 [loadData] 用户已存在，加载数据:', uid);
           loadedUser = fromDB<User>(userData);
           const { data: avatarArr } = await supabase.from('users').select('avatar').eq('id', uid);
           const dbAvatar = avatarArr?.[0]?.avatar;
@@ -512,6 +511,7 @@ function AppContent() {
             dailyDrawAppliedRef.current = true;
             gs.availableDraws = (gs.availableDraws || 0) + 1;
             gs.lastFreeDrawDate = today;
+            gs.freeDrawUsed = false;
             supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(null, logError('saving daily free draw'));
           }
           gacha.setGachaState(gs);
@@ -531,27 +531,7 @@ function AppContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!initialLoadDone) { initialLoadDone = true; return; }
       if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          const suid = session.user.id;
-          const { data: userDataArr } = await supabase.from('users').select('*').eq('id', suid);
-          const userData = userDataArr?.[0];
-          if (!userData) {
-            const newUser = {
-              id: suid,
-              username: session.user.email?.split('@')[0] || '用户',
-              email: session.user.email || 'user@example.com',
-              avatar: DEFAULT_AVATAR,
-              joinedAt: session.user.created_at || new Date().toISOString(),
-              level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
-            };
-            supabase.from('users').insert(toDB(newUser)).then(null, logError('inserting user on sign-in'));
-            auth.setUser(newUser);
-          } else {
-            const u = fromDB<User>(userData);
-            if (!u.avatar || u.avatar.includes('googleusercontent')) u.avatar = DEFAULT_AVATAR;
-            auth.setUser(u);
-          }
-        } catch (e) { console.error('Error in auth change:', e); }
+        window.location.reload();
       } else if (event === 'SIGNED_OUT') {
         auth.setUser(null);
       }
@@ -594,6 +574,8 @@ function AppContent() {
   // Persistence hooks
   const prevUserRef = useRef<string>('');
   const dailyDrawAppliedRef = useRef(false);
+  const userRef = useRef(auth.user);
+  userRef.current = auth.user;
   useEffect(() => {
     if (!auth.user) return;
     const serialized = JSON.stringify(auth.user);
@@ -602,14 +584,23 @@ function AppContent() {
     supabase.from('users').upsert(toDB(auth.user)).then(null, logError('syncing user'));
   }, [auth.user]);
 
-  useSupabaseSync('bingo_tiles', { grid: bingo.bingoTiles }, { userId: auth.user?.id, id: 'current-tiles' });
-  useSupabaseSync('task_groups', tasks.taskGroups, { userId: auth.user?.id, idField: 'id' });
-  useSupabaseSync('achievements', achievements.achievements, { userId: auth.user?.id, idField: 'id' });
-  useSupabaseSync('stats', stats, { userId: auth.user?.id, id: 'current-stats' });
-  useSupabaseSync('gacha', gacha.gachaState, { userId: auth.user?.id, id: 'current-gacha' });
-  useSupabaseSync('settings', settings.settings, { userId: auth.user?.id, id: 'current-settings' });
-  useSupabaseSync('grid_size', { size: bingo.gridSize }, { userId: auth.user?.id, id: 'current-grid-size' });
-  useSupabaseSync('shop_items', shop.shopItems, { userId: auth.user?.id, idField: 'id' });
+  const flushRef = useRef<Array<() => Promise<void>>>([]);
+  flushRef.current = [];
+  flushRef.current.push(() => {
+    if (!userRef.current) return Promise.resolve();
+    const serialized = JSON.stringify(userRef.current);
+    if (serialized === prevUserRef.current) return Promise.resolve();
+    prevUserRef.current = serialized;
+    return supabase.from('users').upsert(toDB(userRef.current)).then(null, logError('flushing user'));
+  });
+  const s1 = useSupabaseSync('bingo_tiles', { grid: bingo.bingoTiles }, { userId: auth.user?.id, id: 'current-tiles' }); flushRef.current.push(s1.flush);
+  const s2 = useSupabaseSync('task_groups', tasks.taskGroups, { userId: auth.user?.id, idField: 'id', currentIds: tasks.taskGroups.map(g => g.id) }); flushRef.current.push(s2.flush);
+  const s3 = useSupabaseSync('achievements', achievements.achievements, { userId: auth.user?.id, idField: 'id', currentIds: achievements.achievements.map(a => a.id) }); flushRef.current.push(s3.flush);
+  const s4 = useSupabaseSync('stats', stats, { userId: auth.user?.id, id: 'current-stats' }); flushRef.current.push(s4.flush);
+  const s5 = useSupabaseSync('gacha', gacha.gachaState, { userId: auth.user?.id, id: 'current-gacha' }); flushRef.current.push(s5.flush);
+  const s6 = useSupabaseSync('settings', settings.settings, { userId: auth.user?.id, id: 'current-settings' }); flushRef.current.push(s6.flush);
+  const s7 = useSupabaseSync('grid_size', { size: bingo.gridSize }, { userId: auth.user?.id, id: 'current-grid-size' }); flushRef.current.push(s7.flush);
+  const s8 = useSupabaseSync('shop_items', shop.shopItems, { userId: auth.user?.id, idField: 'id', currentIds: shop.shopItems.map(i => i.id) }); flushRef.current.push(s8.flush);
 
   if (auth.isAuthLoading) {
     return (
@@ -644,7 +635,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <LoginView onLogin={handleLogin} />
+            <LoginView />
           </motion.div>
         )}
         {activeTab === 'today' && (

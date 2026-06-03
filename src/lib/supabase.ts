@@ -11,10 +11,10 @@ const customFetch: typeof fetch = async (input, init) => {
     headers.set('apikey', supabaseAnonKey);
   }
   const response = await fetch(input, { ...init, headers });
-  if (import.meta.env.DEV && !response.ok && response.status === 400) {
+  if (!response.ok) {
     const cloned = response.clone();
     cloned.text().then(body => {
-      console.error(`[Supabase 400] ${init?.method || 'GET'} ${String(input).split('?')[0]}`, body);
+      console.error(`🔴 [Supabase ${response.status}] ${init?.method || 'GET'} ${String(input).split('/rest/v1/')[1]?.split('?')[0] || String(input).split('?')[0]}`, body.slice(0, 500));
     });
   }
   return response;

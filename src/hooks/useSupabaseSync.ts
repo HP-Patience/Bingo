@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toDB, logError } from '../lib/utils';
 
@@ -21,6 +21,62 @@ export function useSupabaseSync<T>(
   options: SyncOptions = {}
 ) {
   const prevRef = useRef<string>('');
+  const dataRef = useRef(data);
+  const optionsRef = useRef(options);
+  dataRef.current = data;
+  optionsRef.current = options;
+
+  const doSync = useCallback((data: T, opts: SyncOptions) => {
+    if (!opts.userId) return Promise.resolve();
+
+    const recordId = opts.id || `current-${tableName}`;
+    const isArray = Array.isArray(data);
+
+    if (isArray) {
+      const items = (data as unknown[]).map(item =>
+        toDB({ ...(item as Record<string, unknown>), user_id: opts.userId })
+      );
+      console.log(`🔄 [Sync] 保存 ${tableName}: ${items.length} 条记录`);
+      return supabase
+        .from(tableName)
+        .upsert(items)
+        .then(() => {
+          console.log(`✅ [Sync] ${tableName} 保存成功`);
+          if (opts.idField && opts.currentIds !== undefined) {
+            const allIds = [...opts.currentIds, ...(opts.extraIds || [])];
+            let query = supabase.from(tableName).delete().eq('user_id', opts.userId);
+            if (allIds.length > 0) {
+              query = query.not(opts.idField, 'in', `(${allIds.join(',')})`);
+            }
+            return query.then(
+              () => console.log(`🧹 [Sync] ${tableName} 清理完成`),
+              logError(`cleaning up ${tableName}`)
+            );
+          }
+        })
+        .then(null, logError(`saving ${tableName}`));
+    } else {
+      const dbData = toDB({ id: recordId, user_id: opts.userId, ...(data as Record<string, unknown>) });
+      console.log(`🔄 [Sync] 保存 ${tableName} (单条):`, recordId);
+      return supabase
+        .from(tableName)
+        .upsert(dbData)
+        .then(
+          () => console.log(`✅ [Sync] ${tableName} 保存成功`),
+          logError(`saving ${tableName}`)
+        );
+    }
+  }, [tableName]);
+
+  const flush = useCallback(() => {
+    const currentData = dataRef.current;
+    const currentOpts = optionsRef.current;
+    if (!currentOpts.userId) return Promise.resolve();
+    const serialized = JSON.stringify(currentData);
+    if (serialized === prevRef.current) return Promise.resolve();
+    prevRef.current = serialized;
+    return doSync(currentData, currentOpts);
+  }, [doSync]);
 
   useEffect(() => {
     if (!options.userId) return;
@@ -29,42 +85,8 @@ export function useSupabaseSync<T>(
     if (serialized === prevRef.current) return;
     prevRef.current = serialized;
 
-    const recordId = options.id || `current-${tableName}`;
-    const isArray = Array.isArray(data);
-
-    let dbData: Record<string, unknown>;
-
-    if (isArray) {
-      const items = (data as unknown[]).map(item =>
-        toDB({ ...(item as Record<string, unknown>), user_id: options.userId })
-      );
-      dbData = toDB({ id: recordId, user_id: options.userId, items });
-      // For arrays, upsert each item individually
-      supabase
-        .from(tableName)
-        .upsert(items)
-        .then(() => {
-          if (options.idField) {
-            const allIds = [...(options.currentIds || []), ...(options.extraIds || [])];
-            let del = supabase.from(tableName).delete().eq('user_id', options.userId);
-            // 将 ID 数组安全地传给 Supabase（数值型 ID 直接拼接，文本型需引号包裹）
-            if (allIds.length > 0) {
-              const isNumericIds = allIds.every(id => /^\d+$/.test(String(id)));
-              const idList = isNumericIds
-                ? `(${allIds.join(',')})`
-                : `(${allIds.map(id => `"${String(id).replace(/"/g, '""')}"`).join(',')})`;
-              del = del.not(options.idField, 'in', idList);
-            }
-            del.then(null, logError(`cleaning up ${tableName}`));
-          }
-        })
-        .then(null, logError(`saving ${tableName}`));
-    } else {
-      dbData = toDB({ id: recordId, user_id: options.userId, ...(data as Record<string, unknown>) });
-      supabase
-        .from(tableName)
-        .upsert(dbData)
-        .then(null, logError(`saving ${tableName}`));
-    }
+    doSync(data, options);
   }, [data, options.userId]);
+
+  return { flush };
 }

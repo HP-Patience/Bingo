@@ -7,12 +7,12 @@
   "theme_color": "#6f797a",
   "icons": [
     {
-      "src": "/public/Life Bingo 项目图标.png",
+      "src": "/icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/public/Life Bingo 项目图标.png",
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
