@@ -1,6 +1,6 @@
 import React from "react";
 import { useState } from 'react';
-import { Bolt, Mail } from 'lucide-react';
+import { Bolt, Eye, EyeOff, Mail } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 
@@ -8,6 +8,7 @@ export function LoginView() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -138,7 +139,7 @@ export function LoginView() {
               <input
                 type="email"
                 placeholder="邮箱地址"
-                className="bg-transparent border-none focus:ring-0 text-sm font-bold w-full"
+                className="bg-transparent border-none outline-none focus:ring-0 text-sm font-bold w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -148,14 +149,22 @@ export function LoginView() {
             <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-4 py-3 flex items-center gap-3">
               <Bolt className="w-5 h-5 text-on-surface-variant" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="密码"
-                className="bg-transparent border-none focus:ring-0 text-sm font-bold w-full"
+                className="bg-transparent border-none outline-none focus:ring-0 text-sm font-bold w-full"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-on-surface-variant hover:text-on-surface transition-colors shrink-0"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </div>
