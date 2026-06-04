@@ -65,17 +65,17 @@ export function ShopView({
         <div className="grid grid-cols-1 gap-4">
           {items.filter(item => !item.levelRequirement || userLevel >= item.levelRequirement).map(item => (
             <div key={item.id} className="bg-surface-container-lowest border border-outline-variant rounded-3xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-surface-container-low rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform"><ShopItemIcon name={item.icon} className="w-7 h-7" /></div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-sm">{item.name}</h4>
-                    {item.levelRequirement && item.levelRequirement > 1 && <span className="text-[11px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">等级 {item.levelRequirement}+</span>}
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                <div className="w-14 h-14 bg-surface-container-low rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0"><ShopItemIcon name={item.icon} className="w-7 h-7" /></div>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h4 className="font-bold text-sm truncate">{item.name}</h4>
+                    {item.levelRequirement && item.levelRequirement > 1 && <span className="text-[11px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold shrink-0">等级 {item.levelRequirement}+</span>}
                   </div>
-                  <p className="text-[10px] text-on-surface-variant font-medium line-clamp-2">{item.description}</p>
+                  <p className="text-[10px] text-on-surface-variant font-medium line-clamp-2 max-w-[100px]">{item.description}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {isManageMode ? (
                   <>
                     <button onClick={() => setEditingItem(item)} className="p-2 text-on-surface-variant/40 hover:text-primary transition-colors"><Edit3 className="w-5 h-5" /></button>
