@@ -72,7 +72,7 @@ export function ShopView({
                     <h4 className="font-bold text-sm">{item.name}</h4>
                     {item.levelRequirement && item.levelRequirement > 1 && <span className="text-[11px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">等级 {item.levelRequirement}+</span>}
                   </div>
-                  <p className="text-[10px] text-on-surface-variant font-medium">{item.description}</p>
+                  <p className="text-[10px] text-on-surface-variant font-medium line-clamp-2">{item.description}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ export function ShopView({
                     <button onClick={() => onDeleteItem(item.id)} className="p-2 text-on-surface-variant/40 hover:text-red-500 transition-colors"><Trash2 className="w-5 h-5" /></button>
                   </>
                 ) : (
-                  <button onClick={() => onBuyItem(item)} disabled={userBalance < item.cost} className={cn("px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95", userBalance >= item.cost ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>{item.cost} 金币</button>
+                  <button onClick={() => onBuyItem(item)} disabled={userBalance < item.cost} className={cn("px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shrink-0 min-w-[76px]", userBalance >= item.cost ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>{item.cost} 金币</button>
                 )}
               </div>
             </div>

@@ -13,9 +13,9 @@ export function GachaHelpModal({
       isOpen={isOpen}
       onClose={onClose}
       title="抽奖机制说明"
-      contentClassName="bg-surface rounded-3xl max-h-[70vh] flex flex-col"
+      contentClassName="bg-surface rounded-3xl max-h-[70vh] flex flex-col !p-5 !space-y-2"
     >
-      <div className="p-6 pt-4 space-y-4">
+      <div className="space-y-3">
         <div className="bg-surface-container-low rounded-2xl p-4">
           <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
             <Gift className="w-4 h-4 text-primary" />

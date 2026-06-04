@@ -91,9 +91,9 @@ export function AchievementsView({
                     <div className={cn("w-full aspect-square rounded-[1.5rem] flex flex-col items-center justify-center relative transition-all p-3", achievement.unlocked ? "bg-surface-container-lowest border border-outline-variant shadow-sm" : "bg-surface-container-low border border-outline-variant/50")}>
                       <AchievementIcon name={achievement.icon} className="w-10 h-10 text-primary mb-2" />
                       {achievement.level && <div className="absolute -top-2 -right-2 bg-primary text-on-primary text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest">等级 {achievement.level}</div>}
-                      <span className="text-[11px] text-on-surface-variant/60 text-center leading-tight px-1">{achievement.description}</span>
+                      <span className="text-[11px] text-on-surface-variant/60 text-center leading-tight px-1 line-clamp-2">{achievement.description}</span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-tighter text-center leading-tight px-1">{achievement.title}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-tighter text-center leading-tight px-1 line-clamp-1">{achievement.title}</span>
                   </button>
                 ))}
               </div>
@@ -110,9 +110,9 @@ export function AchievementsView({
                     <button key={achievement.id} onClick={() => { setSelectedAchievement(achievement); setIsEditing(false); }} className={cn("flex flex-col items-center gap-3 transition-all active:scale-95", !achievement.unlocked && "opacity-30")}>
                       <div className={cn("w-full aspect-square rounded-[1.5rem] flex flex-col items-center justify-center relative transition-all p-3", achievement.unlocked ? "bg-surface-container-lowest border border-outline-variant shadow-sm" : "bg-surface-container-low border border-outline-variant/50")}>
                         <AchievementIcon name={achievement.icon} className="w-10 h-10 text-primary mb-2" />
-                        <span className="text-[11px] text-on-surface-variant/60 text-center leading-tight px-1">{achievement.requirement || achievement.description}</span>
+                        <span className="text-[11px] text-on-surface-variant/60 text-center leading-tight px-1 line-clamp-2">{achievement.requirement || achievement.description}</span>
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-tighter text-center leading-tight px-1">{achievement.title}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-tighter text-center leading-tight px-1 line-clamp-1">{achievement.title}</span>
                     </button>
                   ))}
                 </div>
