@@ -41,6 +41,39 @@ import { useHistory } from './hooks/useHistory';
 
 export { calculateXP };
 
+// Helper: count consecutive days from the most recent activity date backwards.
+// Streak is anchored to today or yesterday; breaks if gap > 1 day.
+function calcConsecutiveDays(history: HistoryEntry[]): number {
+  const dateSet = new Set(history.map(h => new Date(h.completedAt).toDateString()));
+  if (dateSet.size === 0) return 0;
+
+  const dates = [...dateSet]
+    .map(d => new Date(d + 'T00:00:00'))
+    .sort((a, b) => b.getTime() - a.getTime()); // descending
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const mostRecent = dates[0];
+  // Streak must be anchored to today or yesterday
+  if (mostRecent.getTime() !== today.getTime() && mostRecent.getTime() !== yesterday.getTime()) {
+    return 0;
+  }
+
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const diffDays = (dates[i - 1].getTime() - dates[i].getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays === 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
 // --- Main App ---
 
 function AppContent() {
@@ -529,14 +562,14 @@ function AppContent() {
   useEffect(() => {
     if (!auth.user) return;
     const totalCompleted = historyHook.history.length;
-    const uniqueDates = new Set(historyHook.history.map(h => new Date(h.completedAt).toDateString()));
+    const consecutiveDays = calcConsecutiveDays(historyHook.history);
 
     achievements.setAchievements(prev => prev.map(a => {
       if (a.unlocked) return a;
       let shouldUnlock = false;
       switch (a.id) {
         case 'a1': shouldUnlock = totalCompleted >= 1; break;
-        case 'a2': shouldUnlock = uniqueDates.size >= 3; break;
+        case 'a2': shouldUnlock = consecutiveDays >= 3; break;
         case 'a3': shouldUnlock = stats.bingosCount >= 10; break;
         case 'a4': shouldUnlock = stats.fullHousesCount >= 1; break;
         case 'a5': shouldUnlock = stats.totalXp >= 1000; break;
@@ -552,8 +585,8 @@ function AppContent() {
   // Stats computation
   useEffect(() => {
     const totalCompleted = historyHook.history.length;
-    const uniqueDates = new Set(historyHook.history.map(h => new Date(h.completedAt).toDateString()));
-    setStats(prev => ({ ...prev, totalCompleted, currentStreak: uniqueDates.size }));
+    const consecutiveDays = calcConsecutiveDays(historyHook.history);
+    setStats(prev => ({ ...prev, totalCompleted, currentStreak: consecutiveDays }));
   }, [historyHook.history]);
 
   // Persistence hooks
