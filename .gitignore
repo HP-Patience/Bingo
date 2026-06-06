@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# IDE & tools
+.claude/
+.codegraph/
+.playwright-mcp/
+.understand-anything/
