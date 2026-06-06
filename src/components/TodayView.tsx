@@ -28,7 +28,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
   const progress = Math.round((completedCount / totalCount) * 100);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <section className="space-y-1.5">
         <div className="flex items-center gap-3">
           <div className="flex-1 h-2.5 bg-surface-container-high rounded-full overflow-hidden">
@@ -50,7 +50,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
         </p>
       </section>
 
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm mt-4">
         <div className={cn(
         "grid gap-1",
         tiles.length === 3 && "grid-cols-3",
@@ -107,7 +107,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
       </div>
       </div>
 
-      <div className="flex justify-between items-center bg-surface-container-low border border-outline-variant px-3 py-2 rounded-2xl shadow-sm">
+      <div className="flex justify-between items-center bg-surface-container-low border border-outline-variant px-3 py-2 rounded-2xl shadow-sm mt-4">
         <ToolbarItem icon={<Shuffle className="w-4 h-4" />} label="洗牌" onClick={onShuffle} />
         <ToolbarItem icon={<Timer className="w-4 h-4" />} label="番茄钟" onClick={onPomodoro} />
         <ToolbarItem icon={<BarChart2 className="w-4 h-4" />} label="统计" onClick={onStats} />

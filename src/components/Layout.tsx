@@ -64,7 +64,7 @@ export function Layout({ children, activeTab, onTabChange, user, onLoginClick, t
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto z-50 glass border-t border-outline-variant rounded-t-[2rem] shadow-2xl">
-        <div className="flex justify-around items-center px-3 py-2 pb-6">
+        <div className="flex justify-around items-center px-3 py-3">
           <NavItem icon={<Grid className="w-5 h-5" />} label="今日" isActive={activeTab === 'today'} onClick={() => onTabChange('today')} />
           <NavItem icon={<CheckSquare className="w-5 h-5" />} label="任务" isActive={activeTab === 'tasks'} onClick={() => onTabChange('tasks')} />
           <NavItem icon={<CalendarIcon className="w-5 h-5" />} label="日历" isActive={activeTab === 'calendar'} onClick={() => onTabChange('calendar')} />
