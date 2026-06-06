@@ -94,8 +94,14 @@ CREATE TABLE IF NOT EXISTS settings (
   id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id),
   theme TEXT NOT NULL DEFAULT 'zinc',
+  showCellDetails BOOLEAN NOT NULL DEFAULT true,
   PRIMARY KEY (id, user_id)
 );
+
+-- 迁移：为已有 settings 表添加 showCellDetails 列
+DO $$ BEGIN
+  ALTER TABLE settings ADD COLUMN showCellDetails BOOLEAN NOT NULL DEFAULT true;
+EXCEPTION WHEN others THEN END $$;
 
 -- 创建网格大小表
 CREATE TABLE IF NOT EXISTS grid_size (

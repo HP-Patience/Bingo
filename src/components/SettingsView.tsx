@@ -1,5 +1,6 @@
 import { cn } from '../lib/utils';
 import { Palette, Database, FileUp, FileDown, Trash2, Edit2, LogOut, LayoutGrid } from 'lucide-react';
+import { motion } from 'motion/react';
 import { SettingsButton } from './SettingsButton';
 import type { Settings, User, Theme } from '../types';
 
@@ -51,6 +52,33 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
           {themes.map((t, i) => (
             <button key={i} onClick={() => onUpdateSettings({ theme: t.name })} className={cn("w-10 h-10 rounded-full flex-shrink-0 transition-all active:scale-90 border-2", settings.theme === t.name ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-surface" : "border-transparent opacity-60 hover:opacity-100")} style={{ backgroundColor: t.color }} />
           ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-center gap-3 mb-4 px-2">
+          <LayoutGrid className="w-5 h-5 text-on-surface-variant" />
+          <h2 className="font-headline font-bold text-sm uppercase tracking-widest text-on-surface-variant">显示设置</h2>
+        </div>
+        <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant space-y-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-bold text-sm text-on-surface">单元格详细信息</p>
+              <p className="text-[10px] text-on-surface-variant/60 mt-0.5">显示难度、优先级和经验值</p>
+            </div>
+            <button
+              onClick={() => onUpdateSettings({ showCellDetails: !settings.showCellDetails })}
+              className={cn(
+                "w-12 h-7 rounded-full transition-all relative",
+                settings.showCellDetails ? "bg-primary" : "bg-surface-container-high"
+              )}
+            >
+              <motion.div
+                animate={{ x: settings.showCellDetails ? 20 : 2 }}
+                className="w-5 h-5 bg-white rounded-full absolute top-1 shadow-sm"
+              />
+            </button>
+          </div>
         </div>
       </section>
 

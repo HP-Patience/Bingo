@@ -682,6 +682,7 @@ function AppContent() {
               setNoteText={bingo.setNoteText}
               handleLongPress={bingo.handleLongPress}
               handleSaveNote={bingo.handleSaveNote}
+              settings={settings.settings}
             />
           </motion.div>
         )}

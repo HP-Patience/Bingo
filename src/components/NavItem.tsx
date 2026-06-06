@@ -8,14 +8,14 @@ export function NavItem({ icon, label, isActive, onClick }: { icon: React.ReactN
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "flex flex-col items-center justify-center px-3 py-2 rounded-2xl transition-all duration-300 active:scale-90",
+        "flex flex-col items-center justify-center px-2 py-1.5 rounded-xl transition-all duration-300 active:scale-90",
         isActive ? "bg-surface-container-low text-on-surface" : "text-on-surface-variant hover:bg-surface-container-low/50"
       )}
     >
       <div className={cn("transition-all duration-300", isActive && "scale-110")}>
         {icon}
       </div>
-      <span className="text-[10px] font-bold mt-1 tracking-wider">{label}</span>
+      <span className="text-[9px] font-semibold mt-0.5 tracking-wider">{label}</span>
       {isActive && (
         <motion.div
           layoutId="nav-active"

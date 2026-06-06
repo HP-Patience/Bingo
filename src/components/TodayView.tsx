@@ -2,9 +2,9 @@ import { motion } from 'motion/react';
 import { Shuffle, Timer, BarChart2, Bolt, Palette, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ToolbarItem } from './ToolbarItem';
-import type { BingoTile } from '../types';
+import type { BingoTile, Settings } from '../types';
 
-export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStats, onThemeClick, onUpdateTileNote, showNoteModal, setShowNoteModal, selectedTile, setSelectedTile, noteText, setNoteText, handleLongPress, handleSaveNote }: {
+export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro, onStats, onThemeClick, onUpdateTileNote, showNoteModal, setShowNoteModal, selectedTile, setSelectedTile, noteText, setNoteText, handleLongPress, handleSaveNote, settings }: {
   tiles: BingoTile[][];
   onToggleTile: (r: number, c: number) => void;
   onShuffle: () => void;
@@ -21,6 +21,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
   setNoteText: (text: string) => void;
   handleLongPress: (r: number, c: number, tile: BingoTile) => void;
   handleSaveNote: () => void;
+  settings: Settings;
 }) {
   const completedCount = tiles.flat().filter(t => t.completed).length;
   const totalCount = tiles.flat().length;
@@ -28,20 +29,30 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <h2 className="font-headline font-extrabold text-5xl tracking-tighter leading-none">已完成 {progress}%</h2>
-        <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">做得很棒！继续加油！</p>
-        <div className="mt-4 h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            className="h-full bg-primary"
-          />
+      <section className="space-y-1.5">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-2.5 bg-surface-container-high rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              className="h-full bg-primary"
+            />
+          </div>
+          <span className="text-xs font-semibold text-on-surface-variant tabular-nums min-w-[3ch] text-right">{progress}%</span>
         </div>
+        <p className="text-on-surface-variant/60 text-[10px] font-medium tracking-wide">
+          {progress === 0 && '新的一天，开始吧！'}
+          {progress >= 1 && progress <= 25 && '千里之行，始于足下'}
+          {progress >= 26 && progress <= 50 && '坚持就是胜利！'}
+          {progress >= 51 && progress <= 75 && '你做得很棒！'}
+          {progress >= 76 && progress <= 99 && '胜利在望！'}
+          {progress === 100 && '完美！全部完成！'}
+        </p>
       </section>
 
-      <div className={cn(
-        "grid gap-2",
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm">
+        <div className={cn(
+        "grid gap-1",
         tiles.length === 3 && "grid-cols-3",
         tiles.length === 4 && "grid-cols-4",
         tiles.length === 5 && "grid-cols-5",
@@ -57,7 +68,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
                 handleLongPress(rIdx, cIdx, tile);
               }}
               className={cn(
-                "aspect-square rounded-2xl flex flex-col items-center justify-between p-2 text-center text-[10px] font-bold leading-tight transition-all active:scale-90 relative overflow-hidden",
+                "aspect-square rounded-lg flex flex-col items-center justify-between p-1.5 text-center text-[10px] font-bold leading-tight transition-all active:scale-90 relative overflow-hidden",
                 tile.completed
                   ? "bg-primary text-on-primary"
                   : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest",
@@ -76,7 +87,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
               <div className="flex-1 flex items-center justify-center">
                 <span className="z-10">{tile.taskName}</span>
               </div>
-              {!tile.completed && (
+              {!tile.completed && settings.showCellDetails && (
                 <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap text-[10px]">
                   <div className="flex gap-0.5 items-center flex-shrink-0" aria-label={`难度：${tile.difficulty === 'hard' ? '困难' : tile.difficulty === 'medium' ? '中等' : '简单'}`} title={`难度：${tile.difficulty === 'hard' ? '困难' : tile.difficulty === 'medium' ? '中等' : '简单'}`}>
                     {[...Array(tile.difficulty === 'hard' ? 3 : tile.difficulty === 'medium' ? 2 : 1)].map((_, i) => (
@@ -94,13 +105,14 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
           ))
         ))}
       </div>
+      </div>
 
-      <div className="flex justify-between items-center bg-surface-container-low border border-outline-variant p-4 rounded-3xl shadow-sm">
-        <ToolbarItem icon={<Shuffle className="w-5 h-5" />} label="洗牌" onClick={onShuffle} />
-        <ToolbarItem icon={<Timer className="w-5 h-5" />} label="番茄钟" onClick={onPomodoro} />
-        <ToolbarItem icon={<BarChart2 className="w-5 h-5" />} label="统计" onClick={onStats} />
-        <ToolbarItem icon={<Bolt className="w-5 h-5" />} label="重置" onClick={onReset} />
-        <ToolbarItem icon={<Palette className="w-5 h-5" />} label="主题" onClick={onThemeClick} />
+      <div className="flex justify-between items-center bg-surface-container-low border border-outline-variant px-3 py-2 rounded-2xl shadow-sm">
+        <ToolbarItem icon={<Shuffle className="w-4 h-4" />} label="洗牌" onClick={onShuffle} />
+        <ToolbarItem icon={<Timer className="w-4 h-4" />} label="番茄钟" onClick={onPomodoro} />
+        <ToolbarItem icon={<BarChart2 className="w-4 h-4" />} label="统计" onClick={onStats} />
+        <ToolbarItem icon={<Bolt className="w-4 h-4" />} label="重置" onClick={onReset} />
+        <ToolbarItem icon={<Palette className="w-4 h-4" />} label="主题" onClick={onThemeClick} />
       </div>
     </div>
   );
