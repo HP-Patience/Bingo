@@ -961,7 +961,7 @@ function AppContent() {
                   <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注信息</label>
                   <textarea
                     placeholder="请输入任务备注..."
-                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none h-32"
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold outline-none resize-none h-32"
                     value={bingo.noteText}
                     onChange={(e) => bingo.setNoteText(e.target.value)}
                     autoFocus

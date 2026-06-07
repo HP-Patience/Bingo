@@ -46,6 +46,11 @@ export function Select({ value, onChange, options, className = '' }: SelectProps
     };
   }, [isOpen, updatePosition]);
 
+  const close = useCallback(() => {
+    setIsOpen(false);
+    btnRef.current?.blur();
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -53,21 +58,22 @@ export function Select({ value, onChange, options, className = '' }: SelectProps
         !btnRef.current.contains(e.target as Node) &&
         !(e.target as HTMLElement).closest('[data-select-menu]')
       ) {
-        setIsOpen(false);
+        close();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [close]);
 
   const toggle = () => {
-    if (!isOpen) updatePosition();
-    setIsOpen(v => !v);
+    if (isOpen) { close(); return; }
+    updatePosition();
+    setIsOpen(true);
   };
 
   const selectOption = (v: string) => {
     onChange(v);
-    setIsOpen(false);
+    close();
   };
 
   return (
@@ -76,7 +82,7 @@ export function Select({ value, onChange, options, className = '' }: SelectProps
         ref={btnRef}
         type="button"
         onClick={toggle}
-        className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none focus-visible:outline-none flex items-center justify-between gap-2"
+        className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold flex items-center justify-between gap-2"
       >
         <span className="truncate">{selected?.label || value}</span>
         <ChevronDown className={`w-4 h-4 shrink-0 text-on-surface-variant/40 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -97,7 +103,7 @@ export function Select({ value, onChange, options, className = '' }: SelectProps
               key={opt.value}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); selectOption(opt.value); }}
-              className={`w-full px-5 py-3 text-sm font-bold text-left transition-colors focus:outline-none focus-visible:outline-none ${
+              className={`w-full px-5 py-3 text-sm font-bold text-left transition-colors ${
                 opt.value === value
                   ? 'text-primary bg-surface-container-low'
                   : 'text-on-surface hover:bg-surface-container-low'

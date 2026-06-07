@@ -83,7 +83,7 @@ export function TasksView({
                       {expandedGroups[group.id] ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                     </button>
                     {editingGroupId === group.id ? (
-                      <input autoFocus className="bg-surface-container-low border-none rounded-lg px-2 py-1 text-xl font-extrabold tracking-tight focus:ring-1 focus:ring-primary w-32" value={editName} onChange={(e) => setEditName(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === 'Enter' && saveEdit()} />
+                      <input autoFocus className="bg-surface-container-low border-none rounded-lg px-2 py-1 text-xl font-extrabold tracking-tight focus:outline-none w-32" value={editName} onChange={(e) => setEditName(e.target.value)} onBlur={saveEdit} onKeyDown={(e) => e.key === 'Enter' && saveEdit()} />
                     ) : (
                       <span className="text-xl font-extrabold tracking-tight cursor-pointer hover:text-primary transition-colors" onClick={() => startEditing(group)}>{group.name}</span>
                     )}
@@ -103,7 +103,7 @@ export function TasksView({
                 {expandedGroups[group.id] && (
                   <>
                     <div className="flex gap-2">
-                      <input type="text" placeholder="添加任务..." className="flex-1 bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:ring-1 focus:ring-primary" value={newTaskNames[group.id] || ''} onChange={(e) => setNewTaskNames(prev => ({ ...prev, [group.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)} />
+                      <input type="text" placeholder="添加任务..." className="flex-1 bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:outline-none" value={newTaskNames[group.id] || ''} onChange={(e) => setNewTaskNames(prev => ({ ...prev, [group.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)} />
                       <button onClick={() => handleAddTask(group.id)} className="bg-primary/10 text-primary p-2 rounded-xl hover:bg-primary/20 transition-colors"><Plus className="w-5 h-5" /></button>
                       <button onClick={() => { const newSelected = new Set(selectedTaskIds); if (allSelected) { group.tasks.forEach(t => newSelected.delete(t.id)); } else { group.tasks.forEach(t => newSelected.add(t.id)); } setSelectedTaskIds(newSelected); }} className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 px-3">
                         {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}{allSelected ? '取消' : '全选'}
@@ -151,7 +151,7 @@ export function TasksView({
 
         <div className="space-y-4 pt-6">
           <div className="bg-surface-container-lowest rounded-2xl p-4 flex items-center border border-outline-variant transition-all hover:border-primary/40">
-            <input className="w-full bg-transparent border-none text-on-surface placeholder:text-on-surface-variant/40 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="添加一个新组别" type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddGroup()} />
+            <input className="w-full bg-transparent border-none text-on-surface placeholder:text-on-surface-variant/40 font-medium focus:outline-none transition-all" placeholder="添加一个新组别" type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddGroup()} />
             <button onClick={handleAddGroup} className="text-primary p-2 rounded-full hover:bg-primary/10 active:scale-90 transition-all"><PlusCircle className="w-5 h-5" /></button>
           </div>
           <button onClick={handleAddGroup} className="w-full bg-surface-container-low text-on-surface-variant py-5 rounded-3xl font-extrabold flex items-center justify-center gap-3 hover:bg-surface-container-high hover:border-primary/40 transition-all border-2 border-dashed border-outline-variant"><FolderPlus className="w-6 h-6" />新建分组</button>

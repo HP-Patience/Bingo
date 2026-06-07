@@ -118,10 +118,13 @@
   background-color: rgba(10, 10, 10, 0.8);
 }
 
-/* 全局去除输入元素和按钮的聚焦轮廓/阴影 */
-input:focus, select:focus, textarea:focus,
-button:focus, button:focus-visible,
-[tabindex]:focus, [tabindex]:focus-visible {
-  outline: none !important;
+/* 全局去除所有元素的聚焦轮廓/阴影 */
+*, *::before, *::after {
+  --tw-ring-offset-width: 0px;
+}
+*:focus,
+*:focus-visible {
+  outline: 0 !important;
+  outline-offset: 0 !important;
   box-shadow: none !important;
 }

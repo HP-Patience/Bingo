@@ -63,7 +63,7 @@ export function EditTaskEntryModal({
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注</label>
           <textarea
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none resize-none"
             rows={3}
             value={editForm.note}
             onChange={(e) => onFormChange({ note: e.target.value })}
