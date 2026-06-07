@@ -35,6 +35,7 @@ const CAMEL_KEYS = [
   'availableDraws', 'totalDrawsSpent', 'consecutiveLowRewards',
   'consecutiveSameType', 'lastRewardType',
   'levelRequirement', 'lastFreeDrawDate', 'freeDrawUsed',
+  'showCellDetails', 'showAvatarEffect',
 ];
 for (const key of CAMEL_KEYS) {
   LOWER_TO_CAMEL[key.toLowerCase()] = key;
