@@ -85,7 +85,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
                 <div className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-blue-300" />
               )}
               <div className="flex-1 flex items-center justify-center">
-                <span className="z-10">{tile.taskName}</span>
+                <span className="z-10 line-clamp-2 break-all">{tile.taskName}</span>
               </div>
               {!tile.completed && settings.showCellDetails && (
                 <div className="w-full flex items-center justify-center gap-1 opacity-40 whitespace-nowrap text-[10px]">
