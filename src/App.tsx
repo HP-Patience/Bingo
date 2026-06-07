@@ -79,8 +79,14 @@ function calcConsecutiveDays(history: HistoryEntry[]): number {
 function AppContent() {
   const { toast } = useToast();
 
+  // Recovery flow detection (password reset via email link)
+  const initialRecoveryCheck = window.location.hash.includes('type=recovery');
+  const [recoveryFlow, setRecoveryFlow] = useState(initialRecoveryCheck);
+  const recoveryFlowRef = useRef(initialRecoveryCheck);
+  useEffect(() => { recoveryFlowRef.current = recoveryFlow; }, [recoveryFlow]);
+
   // UI state
-  const [activeTab, setActiveTab] = useState('today');
+  const [activeTab, setActiveTab] = useState(initialRecoveryCheck ? 'login' : 'today');
   const [activeSubTab, setActiveSubTab] = useState('achievements');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'quarter' | 'year' | 'all'>('today');
   const [isTimeRangeModalOpen, setIsTimeRangeModalOpen] = useState(false);
@@ -548,10 +554,16 @@ function AppContent() {
     let initialLoadDone = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!initialLoadDone) { initialLoadDone = true; return; }
+      if (event === 'PASSWORD_RECOVERY') {
+        setActiveTab('login');
+        return;
+      }
       if (event === 'SIGNED_IN' && session?.user) {
+        if (recoveryFlowRef.current) return;
         window.location.reload();
       } else if (event === 'SIGNED_OUT') {
         auth.setUser(null);
+        setRecoveryFlow(false);
       }
     });
 
@@ -652,7 +664,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <LoginView />
+            <LoginView isRecoveryFlow={recoveryFlow} />
           </motion.div>
         )}
         {activeTab === 'today' && (
