@@ -12,7 +12,7 @@ export function ShopHistoryModal({
   history: ShopHistoryEntry[];
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="购买记录" contentClassName="p-8 space-y-6 max-h-[80vh] overflow-hidden">
+    <Modal isOpen={isOpen} onClose={onClose} title="购买记录" contentClassName="p-8 pt-4 space-y-4 max-h-[80vh] overflow-hidden">
       {history.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-on-surface-variant font-medium">还没有购买记录</p>
@@ -31,14 +31,15 @@ export function ShopHistoryModal({
                 <div>
                   <span className="font-bold text-sm">{entry.itemName}</span>
                   <p className="text-[10px] text-on-surface-variant font-medium">
-                    {new Date(entry.timestamp).toLocaleDateString('zh-CN')} · 等级 {entry.level}
+                    {new Date(entry.timestamp).toLocaleString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex items-center gap-1">
                 <span className="font-black text-lg text-secondary">
                   -{entry.cost}
                 </span>
+                <span className="text-[11px] font-semibold text-secondary/70">金币</span>
               </div>
             </div>
           ))}

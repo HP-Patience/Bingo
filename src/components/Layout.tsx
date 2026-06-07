@@ -9,13 +9,13 @@ export function Layout({ children, activeTab, onTabChange, user, onLoginClick, t
     <div className="min-h-screen pb-32 max-w-md mx-auto relative overflow-hidden" data-theme={theme}>
       {/* Top App Bar */}
       <header className="fixed top-0 w-full max-w-md z-50 glass border-b border-outline-variant">
-        <div className="flex justify-between items-center px-6 h-16 flex-nowrap">
+        <div className="flex justify-between items-center px-6 h-16">
           <div className="flex items-center gap-2 text-primary active:scale-95 transition-all cursor-pointer">
             <Bolt className="w-4 h-4" />
-            <span className="font-headline font-semibold text-sm uppercase tracking-tight whitespace-nowrap">Life Bingo</span>
+            <span className="font-headline font-semibold text-sm uppercase tracking-tight">Life Bingo</span>
           </div>
           {user ? (
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-black text-primary uppercase tracking-tighter">LV.{user.level}</span>
@@ -49,7 +49,7 @@ export function Layout({ children, activeTab, onTabChange, user, onLoginClick, t
           ) : (
             <button
               onClick={onLoginClick}
-              className="text-xs font-bold text-primary hover:underline whitespace-nowrap"
+              className="text-xs font-bold text-primary hover:underline"
             >
               登录/注册
             </button>
