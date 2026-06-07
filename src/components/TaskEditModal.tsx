@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
+import { Select } from './Select';
 import type { Task, TaskDifficulty, TaskPriority } from '../types';
+
+const DIFFICULTY_OPTIONS = [
+  { value: 'easy', label: '简单 (10 XP)' },
+  { value: 'medium', label: '中等 (20 XP)' },
+  { value: 'hard', label: '困难 (30 XP)' },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: 'low', label: '低' },
+  { value: 'medium', label: '中' },
+  { value: 'high', label: '高' },
+];
 
 function calculateXP(difficulty: TaskDifficulty, priority: TaskPriority): number {
   let base = 0;
@@ -51,7 +64,7 @@ export function TaskEditModal({
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
           <input
             type="text"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -62,7 +75,7 @@ export function TaskEditModal({
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">标签 (逗号分隔)</label>
           <input
             type="text"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             placeholder="例如: 工作, 健身, 学习"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
@@ -72,27 +85,19 @@ export function TaskEditModal({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">难度</label>
-            <select
-              className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+            <Select
               value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as TaskDifficulty)}
-            >
-              <option value="easy">简单 (10 XP)</option>
-              <option value="medium">中等 (20 XP)</option>
-              <option value="hard">困难 (30 XP)</option>
-            </select>
+              onChange={(v) => setDifficulty(v as TaskDifficulty)}
+              options={DIFFICULTY_OPTIONS}
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">优先级</label>
-            <select
-              className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+            <Select
               value={priority}
-              onChange={(e) => setPriority(e.target.value as TaskPriority)}
-            >
-              <option value="low">低</option>
-              <option value="medium">中</option>
-              <option value="high">高</option>
-            </select>
+              onChange={(v) => setPriority(v as TaskPriority)}
+              options={PRIORITY_OPTIONS}
+            />
           </div>
         </div>
       </div>

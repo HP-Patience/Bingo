@@ -24,7 +24,7 @@ export function PomodoroSettingsModal({
             max="60"
             value={Math.round(durations.work / 60)}
             onChange={(e) => onDurationChange('work', parseInt(e.target.value) || 25)}
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
           />
         </div>
 
@@ -36,7 +36,7 @@ export function PomodoroSettingsModal({
             max="30"
             value={Math.round(durations.shortBreak / 60)}
             onChange={(e) => onDurationChange('shortBreak', parseInt(e.target.value) || 5)}
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
           />
         </div>
 
@@ -48,7 +48,7 @@ export function PomodoroSettingsModal({
             max="60"
             value={Math.round(durations.longBreak / 60)}
             onChange={(e) => onDurationChange('longBreak', parseInt(e.target.value) || 15)}
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
           />
         </div>
       </div>

@@ -117,3 +117,11 @@
 [data-theme='dark'] .glass {
   background-color: rgba(10, 10, 10, 0.8);
 }
+
+/* 全局去除输入元素和按钮的聚焦轮廓/阴影 */
+input:focus, select:focus, textarea:focus,
+button:focus, button:focus-visible,
+[tabindex]:focus, [tabindex]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, X } from 'lucide-react';
 import { supabase, migrateBase64Avatar } from './lib/supabase';
@@ -925,69 +926,68 @@ function AppContent() {
         icon={<Trash2 className="w-8 h-8 text-red-500" />}
       />
 
-      <AnimatePresence>
-        {bingo.showNoteModal && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => bingo.setShowNoteModal(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-black tracking-tight uppercase">任务备注</h3>
-                  <button onClick={() => bingo.setShowNoteModal(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+      {bingo.showNoteModal && createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => bingo.setShowNoteModal(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black tracking-tight uppercase">任务备注</h3>
+                <button onClick={() => bingo.setShowNoteModal(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
-                    <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
-                      {bingo.selectedTile?.tile.taskName}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注信息</label>
-                    <textarea
-                      placeholder="请输入任务备注..."
-                      className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none h-32"
-                      value={bingo.noteText}
-                      onChange={(e) => bingo.setNoteText(e.target.value)}
-                      autoFocus
-                    />
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
+                  <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
+                    {bingo.selectedTile?.tile.taskName}
                   </div>
                 </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => bingo.setShowNoteModal(false)}
-                    className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={bingo.handleSaveNote}
-                    className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
-                  >
-                    保存备注
-                  </button>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注信息</label>
+                  <textarea
+                    placeholder="请输入任务备注..."
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none resize-none h-32"
+                    value={bingo.noteText}
+                    onChange={(e) => bingo.setNoteText(e.target.value)}
+                    autoFocus
+                  />
                 </div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => bingo.setShowNoteModal(false)}
+                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={bingo.handleSaveNote}
+                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+                >
+                  保存备注
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

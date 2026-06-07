@@ -44,7 +44,7 @@ export function EditTaskEntryModal({
           <input
             type="time"
             step="1"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             value={editForm.time}
             onChange={(e) => onFormChange({ time: e.target.value })}
             autoFocus
@@ -55,7 +55,7 @@ export function EditTaskEntryModal({
           <input
             type="number"
             min="0"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             value={editForm.duration}
             onChange={(e) => onFormChange({ duration: parseInt(e.target.value) || 0 })}
           />

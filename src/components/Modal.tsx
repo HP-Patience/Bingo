@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 
@@ -45,7 +46,7 @@ export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdro
     }
   }, [isOpen, handleKeyDown]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-6 ${className}`}>
@@ -84,7 +85,8 @@ export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdro
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 
@@ -157,7 +159,7 @@ export function BottomSheet({ isOpen, onClose, children, className = '' }: Botto
     }
   }, [isOpen]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className={`fixed inset-0 z-[1000] flex items-end justify-center ${className}`}>
@@ -181,6 +183,7 @@ export function BottomSheet({ isOpen, onClose, children, className = '' }: Botto
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

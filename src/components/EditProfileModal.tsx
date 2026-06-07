@@ -61,7 +61,7 @@ export function EditProfileModal({
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">用户名</label>
           <input
             type="text"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             value={username}
             onChange={(e) => onUsernameChange(e.target.value)}
             autoFocus
@@ -72,7 +72,7 @@ export function EditProfileModal({
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">邮箱地址</label>
           <input
             type="email"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
           />
@@ -83,7 +83,7 @@ export function EditProfileModal({
           <input
             type="url"
             placeholder="输入头像图片链接"
-            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:outline-none"
             value={avatar}
             onChange={(e) => onAvatarChange(e.target.value)}
           />
