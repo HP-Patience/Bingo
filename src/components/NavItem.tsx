@@ -8,7 +8,7 @@ export function NavItem({ icon, label, isActive, onClick }: { icon: React.ReactN
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "flex flex-col items-center justify-center px-2 py-1.5 rounded-xl transition-all duration-300 active:scale-90",
+        "flex flex-col items-center justify-center px-1.5 py-1 rounded-xl transition-all duration-300 active:scale-90",
         isActive ? "bg-surface-container-low text-on-surface" : "text-on-surface-variant hover:bg-surface-container-low/50"
       )}
     >

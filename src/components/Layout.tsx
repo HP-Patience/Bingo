@@ -6,7 +6,7 @@ import type { User, Theme } from '../types';
 
 export function Layout({ children, activeTab, onTabChange, user, onLoginClick, theme }: { children: React.ReactNode, activeTab: string, onTabChange: (tab: string) => void, user: User | null, onLoginClick: () => void, theme: Theme }) {
   return (
-    <div className="min-h-screen pb-32 max-w-md mx-auto relative overflow-hidden" data-theme={theme}>
+    <div className="min-h-screen pb-24 max-w-md mx-auto relative overflow-hidden" data-theme={theme}>
       {/* Top App Bar */}
       <header className="fixed top-0 w-full max-w-md z-50 glass border-b border-outline-variant">
         <div className="flex justify-between items-center px-6 h-16">
@@ -58,19 +58,19 @@ export function Layout({ children, activeTab, onTabChange, user, onLoginClick, t
       </header>
 
       {/* Main Content */}
-      <main className="pt-24 px-6">
+      <main className="pt-20 px-6">
         {children}
       </main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto z-50 glass border-t border-outline-variant rounded-t-[2rem] shadow-2xl">
-        <div className="flex justify-around items-center px-3 py-3">
-          <NavItem icon={<Grid className="w-5 h-5" />} label="今日" isActive={activeTab === 'today'} onClick={() => onTabChange('today')} />
-          <NavItem icon={<CheckSquare className="w-5 h-5" />} label="任务" isActive={activeTab === 'tasks'} onClick={() => onTabChange('tasks')} />
-          <NavItem icon={<CalendarIcon className="w-5 h-5" />} label="日历" isActive={activeTab === 'calendar'} onClick={() => onTabChange('calendar')} />
-          <NavItem icon={<Trophy className="w-5 h-5" />} label="成就" isActive={activeTab === 'achievements'} onClick={() => onTabChange('achievements')} />
-          <NavItem icon={<ShoppingBag className="w-5 h-5" />} label="商店" isActive={activeTab === 'shop'} onClick={() => onTabChange('shop')} />
-          <NavItem icon={<SettingsIcon className="w-5 h-5" />} label="设置" isActive={activeTab === 'settings'} onClick={() => onTabChange('settings')} />
+        <div className="flex justify-around items-center px-2 py-2">
+          <NavItem icon={<Grid className="w-4 h-4" />} label="今日" isActive={activeTab === 'today'} onClick={() => onTabChange('today')} />
+          <NavItem icon={<CheckSquare className="w-4 h-4" />} label="任务" isActive={activeTab === 'tasks'} onClick={() => onTabChange('tasks')} />
+          <NavItem icon={<CalendarIcon className="w-4 h-4" />} label="日历" isActive={activeTab === 'calendar'} onClick={() => onTabChange('calendar')} />
+          <NavItem icon={<Trophy className="w-4 h-4" />} label="成就" isActive={activeTab === 'achievements'} onClick={() => onTabChange('achievements')} />
+          <NavItem icon={<ShoppingBag className="w-4 h-4" />} label="商店" isActive={activeTab === 'shop'} onClick={() => onTabChange('shop')} />
+          <NavItem icon={<SettingsIcon className="w-4 h-4" />} label="设置" isActive={activeTab === 'settings'} onClick={() => onTabChange('settings')} />
         </div>
       </nav>
     </div>

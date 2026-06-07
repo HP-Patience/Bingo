@@ -41,17 +41,17 @@ export function ShopView({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
         <button className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "bg-primary text-on-primary shadow-lg shadow-primary/20")}>商店</button>
         <button onClick={() => onTabChange('gacha')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "text-on-surface-variant hover:text-on-surface")}>抽奖</button>
       </div>
-      <section className="bg-surface-container-lowest border border-outline-variant rounded-[2rem] p-8 relative overflow-hidden shadow-sm">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 relative overflow-hidden shadow-sm">
         <div className="relative z-10 flex justify-between items-center">
-          <div><p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">当前金币</p><h3 className="text-5xl font-extrabold tracking-tighter text-primary">{userBalance.toLocaleString()}</h3><p className="text-on-surface-variant font-bold text-sm mt-1">可使用金币</p></div>
+          <div><p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">当前金币</p><h3 className="text-2xl font-extrabold tracking-tighter text-primary">{userBalance.toLocaleString()}</h3></div>
           <div className="flex gap-2">
-            <button onClick={() => setShowHistory(true)} className="p-4 rounded-2xl bg-surface-container-low text-on-surface-variant hover:text-primary transition-all active:scale-95" title="查看购买记录"><History className="w-6 h-6" /></button>
-            <button onClick={() => setIsManageMode(!isManageMode)} className={cn("p-4 rounded-2xl transition-all active:scale-95", isManageMode ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant")}><Settings2 className="w-6 h-6" /></button>
+            <button onClick={() => setShowHistory(true)} className="p-3 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-primary transition-all active:scale-95" title="查看购买记录"><History className="w-5 h-5" /></button>
+            <button onClick={() => setIsManageMode(!isManageMode)} className={cn("p-3 rounded-xl transition-all active:scale-95", isManageMode ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant")}><Settings2 className="w-5 h-5" /></button>
           </div>
         </div>
       </section>
@@ -85,20 +85,20 @@ export function ShopView({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {items.filter(item => !item.levelRequirement || userLevel >= item.levelRequirement).map(item => (
-            <div key={item.id} className="bg-surface-container-lowest border border-outline-variant rounded-3xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
-              <div className="flex items-center gap-4 min-w-0 flex-1">
-                <div className="w-14 h-14 bg-surface-container-low rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0"><ShopItemIcon name={item.icon} className="w-7 h-7" /></div>
-                <div className="space-y-1 min-w-0 flex-1">
+            <div key={item.id} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0"><ShopItemIcon name={item.icon} className="w-5 h-5" /></div>
+                <div className="space-y-0.5 min-w-0 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <h4 className="font-bold text-sm truncate">{item.name}</h4>
-                    {item.levelRequirement && item.levelRequirement > 1 && <span className="text-[11px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold shrink-0">等级 {item.levelRequirement}+</span>}
+                    <h4 className="font-bold text-xs truncate">{item.name}</h4>
+                    {item.levelRequirement && item.levelRequirement > 1 && <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-bold shrink-0">等级 {item.levelRequirement}+</span>}
                   </div>
-                  <p className="text-[10px] text-on-surface-variant font-medium line-clamp-2 max-w-[100px]">{item.description}</p>
+                  <p className="text-[10px] text-on-surface-variant font-medium line-clamp-2">{item.description}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 min-w-[76px] justify-end">
+              <div className="flex items-center gap-2 shrink-0 justify-end">
                 <AnimatePresence mode="wait">
                   {isManageMode ? (
                     <motion.div
@@ -109,8 +109,8 @@ export function ShopView({
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                       className="flex items-center gap-2"
                     >
-                      <button onClick={() => setEditingItem(item)} className="p-2 text-on-surface-variant/40 hover:text-primary transition-colors outline-none"><Edit3 className="w-5 h-5" /></button>
-                      <button onClick={() => onDeleteItem(item.id)} className="p-2 text-on-surface-variant/40 hover:text-red-500 transition-colors outline-none"><Trash2 className="w-5 h-5" /></button>
+                      <button onClick={() => setEditingItem(item)} className="p-1.5 text-on-surface-variant/40 hover:text-primary transition-colors outline-none"><Edit3 className="w-4 h-4" /></button>
+                      <button onClick={() => onDeleteItem(item.id)} className="p-1.5 text-on-surface-variant/40 hover:text-red-500 transition-colors outline-none"><Trash2 className="w-4 h-4" /></button>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -120,7 +120,7 @@ export function ShopView({
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                     >
-                      <button onClick={() => onBuyItem(item)} disabled={userBalance < item.cost} className={cn("px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95", userBalance >= item.cost ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>{item.cost} 金币</button>
+                      <button onClick={() => onBuyItem(item)} disabled={userBalance < item.cost} className={cn("px-3.5 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all active:scale-95", userBalance >= item.cost ? "bg-primary text-on-primary shadow-sm shadow-primary/20" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>{item.cost} 金币</button>
                     </motion.div>
                   )}
                 </AnimatePresence>
