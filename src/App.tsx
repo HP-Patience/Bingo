@@ -636,8 +636,8 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="inline-block p-6 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-sm">
-            <svg className="w-12 h-12 text-primary animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="inline-block p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-sm">
+            <svg className="w-10 h-10 text-primary animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               <line x1="3" y1="9" x2="21" y2="9" />
               <line x1="9" y1="21" x2="9" y2="9" />
@@ -656,7 +656,7 @@ function AppContent() {
 
   return (
     <>
-      <Layout activeTab={activeTab} onTabChange={setActiveTab} user={auth.user} onLoginClick={() => setActiveTab('login')} theme={settings.settings.theme}>
+      <Layout activeTab={activeTab} onTabChange={setActiveTab} user={auth.user} onLoginClick={() => setActiveTab('login')} settings={settings.settings}>
       <AnimatePresence mode="wait">
         {activeTab === 'login' && (
           <motion.div
@@ -939,7 +939,7 @@ function AppContent() {
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8"
+            className="relative w-full max-w-sm bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant shadow-2xl space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-6">
@@ -953,7 +953,7 @@ function AppContent() {
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
-                  <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
+                  <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3 text-sm font-bold">
                     {bingo.selectedTile?.tile.taskName}
                   </div>
                 </div>
@@ -961,7 +961,7 @@ function AppContent() {
                   <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">备注信息</label>
                   <textarea
                     placeholder="请输入任务备注..."
-                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold outline-none resize-none h-32"
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3 text-sm font-bold outline-none resize-none h-32"
                     value={bingo.noteText}
                     onChange={(e) => bingo.setNoteText(e.target.value)}
                     autoFocus
@@ -972,13 +972,13 @@ function AppContent() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => bingo.setShowNoteModal(false)}
-                  className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+                  className="flex-1 bg-surface-container-low text-on-surface py-3 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   取消
                 </button>
                 <button
                   onClick={bingo.handleSaveNote}
-                  className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+                  className="flex-1 bg-primary text-on-primary py-3 rounded-2xl font-semibold tracking-wide text-[11px]"
                 >
                   保存备注
                 </button>

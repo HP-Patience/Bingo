@@ -15,8 +15,8 @@ export function PurchaseSuccessModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="z-[1001]" contentClassName="p-8 text-center space-y-5">
-      <div className="mx-auto w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-[2rem] flex items-center justify-center">
-        <ShopItemIcon name={item.icon} className="w-12 h-12 text-primary" />
+      <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
+        <ShopItemIcon name={item.icon} className="w-10 h-10 text-primary" />
       </div>
       <div className="space-y-2">
         <h3 className="text-xl font-black tracking-tight">{item.name}</h3>
@@ -29,7 +29,7 @@ export function PurchaseSuccessModal({
       </div>
       <button
         onClick={onClose}
-        className="w-full py-4 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest text-sm active:scale-95 transition-all"
+        className="w-full py-3 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest text-sm active:scale-95 transition-all"
       >
         太棒了
       </button>

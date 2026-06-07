@@ -22,7 +22,7 @@ export function EditTaskEntryModal({
       <div className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">任务名称</label>
-          <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-6 py-4 text-sm font-bold">
+          <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3 text-sm font-bold">
             {entry.taskName}
           </div>
         </div>
@@ -75,13 +75,13 @@ export function EditTaskEntryModal({
       <div className="flex gap-3 pt-2">
         <button
           onClick={onClose}
-          className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+          className="flex-1 bg-surface-container-low text-on-surface py-3 rounded-2xl font-semibold tracking-wide text-[11px]"
         >
           取消
         </button>
         <button
           onClick={onSave}
-          className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+          className="flex-1 bg-primary text-on-primary py-3 rounded-2xl font-semibold tracking-wide text-[11px]"
         >
           保存
         </button>

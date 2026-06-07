@@ -58,7 +58,7 @@ export function CollapsibleHistorySection({ dateStr, tasks, defaultExpanded = fa
                 />
               ))
             ) : (
-              <div className="text-center py-10 text-on-surface-variant/40 font-bold text-sm italic">
+              <div className="text-center py-6 text-on-surface-variant/40 font-bold text-sm italic">
                 这一天没有完成的任务记录
               </div>
             )}

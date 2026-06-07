@@ -95,12 +95,18 @@ CREATE TABLE IF NOT EXISTS settings (
   user_id TEXT NOT NULL REFERENCES users(id),
   theme TEXT NOT NULL DEFAULT 'zinc',
   showCellDetails BOOLEAN NOT NULL DEFAULT true,
+  showAvatarEffect BOOLEAN NOT NULL DEFAULT true,
   PRIMARY KEY (id, user_id)
 );
 
 -- 迁移：为已有 settings 表添加 showCellDetails 列
 DO $$ BEGIN
   ALTER TABLE settings ADD COLUMN showCellDetails BOOLEAN NOT NULL DEFAULT true;
+EXCEPTION WHEN others THEN END $$;
+
+-- 迁移：为已有 settings 表添加 showAvatarEffect 列
+DO $$ BEGIN
+  ALTER TABLE settings ADD COLUMN showAvatarEffect BOOLEAN NOT NULL DEFAULT true;
 EXCEPTION WHEN others THEN END $$;
 
 -- 创建网格大小表

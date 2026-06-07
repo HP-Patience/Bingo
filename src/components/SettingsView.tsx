@@ -11,11 +11,11 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {user && (
-        <section className="bg-surface-container-lowest border border-outline-variant rounded-[2rem] p-6 shadow-sm space-y-5">
+        <section className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 shadow-sm space-y-5">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-[1.5rem] overflow-hidden border-2 border-primary/20">
+            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-primary/20">
               <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
             </div>
             <div className="space-y-0.5">
@@ -37,7 +37,7 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
               <p className="text-xs font-bold text-primary">高级会员</p>
             </div>
           </div>
-          <button onClick={onLogout} className="w-full bg-red-50 text-red-500 py-3.5 rounded-xl font-semibold tracking-wide text-[11px] flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <button onClick={onLogout} className="w-full bg-red-50 text-red-500 py-3 rounded-xl font-semibold tracking-wide text-[11px] flex items-center justify-center gap-2 active:scale-95 transition-all">
             <LogOut className="w-4 h-4" /> 退出登录
           </button>
         </section>
@@ -79,6 +79,24 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
               />
             </button>
           </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-bold text-sm text-on-surface">头像交互效果</p>
+              <p className="text-[10px] text-on-surface-variant/60 mt-0.5">鼠标悬停倾斜、点击展开动画</p>
+            </div>
+            <button
+              onClick={() => onUpdateSettings({ showAvatarEffect: !settings.showAvatarEffect })}
+              className={cn(
+                "w-12 h-7 rounded-full transition-all relative",
+                settings.showAvatarEffect ? "bg-primary" : "bg-surface-container-high"
+              )}
+            >
+              <motion.div
+                animate={{ x: settings.showAvatarEffect ? 20 : 2 }}
+                className="w-5 h-5 bg-white rounded-full absolute top-1 shadow-sm"
+              />
+            </button>
+          </div>
         </div>
       </section>
 
@@ -94,8 +112,8 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
         </div>
       </section>
 
-      <footer className="pt-10 pb-16 text-center space-y-8">
-        <div className="inline-block p-6 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-sm"><LayoutGrid className="w-10 h-10 text-primary" /></div>
+      <footer className="pt-6 pb-12 text-center space-y-5">
+        <div className="inline-block p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-sm"><LayoutGrid className="w-8 h-8 text-primary" /></div>
         <div className="space-y-2">
           <h3 className="text-2xl font-black text-primary tracking-[0.2em] mb-1">LIFE BINGO</h3>
           <p className="text-on-surface-variant text-xs font-bold tracking-widest opacity-60 uppercase">版本 2.4.0 (极简优化)</p>

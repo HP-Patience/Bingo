@@ -132,6 +132,7 @@ export const INITIAL_STATS: Stats = {
 export const INITIAL_SETTINGS: Settings = {
   theme: 'zinc',
   showCellDetails: true,
+  showAvatarEffect: true,
 };
 
 // 固定奖池（全等级通用） 比例 普通60% 稀有25% 史诗10% 传说5%

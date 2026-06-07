@@ -3,7 +3,7 @@ import { AlarmClock, Timer, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 
 export function HistoryItem({ icon, title, time, duration, onDelete, onEdit }: { icon: React.ReactNode, title: string, time: string, duration?: number, onDelete?: () => void, onEdit?: () => void; key?: React.Key }) {
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant p-5 rounded-[1.5rem] flex items-center justify-between shadow-sm active:bg-surface-container-low transition-colors group relative">
+    <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex items-center justify-between shadow-sm active:bg-surface-container-low transition-colors group relative">
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-surface-container-low text-primary flex items-center justify-center rounded-2xl">
           {icon}

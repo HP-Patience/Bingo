@@ -63,7 +63,7 @@ export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdro
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full max-w-sm bg-surface-container-lowest rounded-[3rem] p-10 border border-outline-variant shadow-2xl space-y-8 ${contentClassName}`}
+            className={`relative w-full max-w-sm bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant shadow-2xl space-y-5 ${contentClassName}`}
             role="dialog"
             aria-modal="true"
             aria-label={title}
@@ -112,7 +112,7 @@ export function ConfirmDialog({
     <Modal isOpen={isOpen} onClose={onClose} closeOnBackdrop={false}>
       <div className="text-center space-y-2">
         {icon && (
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
+          <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-3 ${
             variant === 'danger' ? 'bg-red-500/10' : 'bg-primary/10'
           }`}>
             {icon}
@@ -124,13 +124,13 @@ export function ConfirmDialog({
       <div className="flex gap-3">
         <button
           onClick={onClose}
-          className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+          className="flex-1 bg-surface-container-low text-on-surface py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
         >
           {cancelLabel}
         </button>
         <button
           onClick={() => { onConfirm(); onClose(); }}
-          className={`flex-1 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] ${
+          className={`flex-1 py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px] ${
             variant === 'danger'
               ? 'bg-red-500 text-white'
               : 'bg-primary text-on-primary'
@@ -175,7 +175,7 @@ export function BottomSheet({ isOpen, onClose, children, className = '' }: Botto
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="relative w-full max-w-md bg-surface-container-lowest rounded-t-[3rem] p-8 border border-outline-variant shadow-2xl"
+            className="relative w-full max-w-md bg-surface-container-lowest rounded-t-3xl p-5 border border-outline-variant shadow-2xl"
             role="dialog"
             aria-modal="true"
           >

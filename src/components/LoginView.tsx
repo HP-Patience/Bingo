@@ -176,12 +176,12 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
   // ========== Recovery: new password form ==========
   if (showNewPasswordForm) {
     return (
-      <div className="space-y-10 py-10">
+      <div className="space-y-6 py-6">
         <div className="text-center space-y-4">
           <div className="inline-block p-6 rounded-full bg-primary/10 text-primary mb-4">
-            <Lock className="w-12 h-12" />
+            <Lock className="w-10 h-10" />
           </div>
-          <h2 className="text-4xl font-extrabold tracking-tighter uppercase">设置新密码</h2>
+          <h2 className="text-2xl font-extrabold tracking-tighter uppercase">设置新密码</h2>
           <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">输入您的新密码</p>
         </div>
 
@@ -223,7 +223,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           </div>
 
           <button type="submit"
-            className="w-full bg-primary text-on-primary py-5 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+            className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
             disabled={loading}
           >
             {loading ? '处理中...' : '更新密码'}
@@ -236,12 +236,12 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
   // ========== Forgot password: send reset email ==========
   if (isResetPassword) {
     return (
-      <div className="space-y-10 py-10">
+      <div className="space-y-6 py-6">
         <div className="text-center space-y-4">
           <div className="inline-block p-6 rounded-full bg-primary/10 text-primary mb-4">
             <Lock className="w-12 h-12" />
           </div>
-          <h2 className="text-4xl font-extrabold tracking-tighter uppercase">重置密码</h2>
+          <h2 className="text-2xl font-extrabold tracking-tighter uppercase">重置密码</h2>
           <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">输入邮箱地址，我们将发送重置链接</p>
         </div>
 
@@ -263,7 +263,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           </div>
 
           <button type="submit"
-            className="w-full bg-primary text-on-primary py-5 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+            className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
             disabled={loading}
           >
             {loading ? '发送中...' : '发送重置链接'}
@@ -284,12 +284,12 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
 
   // ========== Main login / register form ==========
   return (
-    <div className="space-y-10 py-10">
+    <div className="space-y-6 py-6">
       <div className="text-center space-y-4">
         <div className="inline-block p-6 rounded-full bg-primary/10 text-primary mb-4">
-          <Bolt className="w-12 h-12" />
+          <Bolt className="w-10 h-10" />
         </div>
-        <h2 className="text-4xl font-extrabold tracking-tighter uppercase">{isLogin ? '欢迎回来' : '开启新征程'}</h2>
+        <h2 className="text-2xl font-extrabold tracking-tighter uppercase">{isLogin ? '欢迎回来' : '开启新征程'}</h2>
         <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">记录你的每一份成长</p>
       </div>
 
@@ -339,7 +339,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
 
         {/* Submit button */}
         <button type="submit"
-          className="w-full bg-primary text-on-primary py-5 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
           disabled={loading}
         >
           {loading ? '处理中...' : (isLogin ? '立即登录' : '创建账号')}

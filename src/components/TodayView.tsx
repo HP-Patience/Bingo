@@ -28,7 +28,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
   const progress = Math.round((completedCount / totalCount) * 100);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <section className="space-y-1.5">
         <div className="flex items-center gap-3">
           <div className="flex-1 h-2.5 bg-surface-container-high rounded-full overflow-hidden">

@@ -17,7 +17,7 @@ export function GachaResultModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="z-[1001]" contentClassName="p-8 space-y-6">
       <div className="text-center space-y-5">
-        <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-[2rem] flex items-center justify-center">
+        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
           {result.reward.type === 'xp' ? (
             <Zap className="w-10 h-10 text-primary" />
           ) : (
@@ -39,9 +39,9 @@ export function GachaResultModal({
           <h3 className="text-xl font-black tracking-tight">恭喜获得</h3>
           <p className="text-[11px] text-on-surface-variant font-medium mt-1">{result.poolName}</p>
         </div>
-        <div className="bg-surface-container-low rounded-[2rem] p-5 flex items-center justify-center gap-2">
+        <div className="bg-surface-container-low rounded-2xl p-5 flex items-center justify-center gap-2">
           <div className={cn(
-            "text-6xl font-extrabold tracking-tighter",
+            "text-4xl font-extrabold tracking-tighter",
             result.reward.type === 'xp' ? 'text-primary' : 'text-amber-500'
           )}>
             +{result.actualValue}
@@ -52,7 +52,7 @@ export function GachaResultModal({
         </div>
         <button
           onClick={onClose}
-          className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest bg-primary text-on-primary hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20"
+          className="w-full py-3 rounded-2xl font-black text-sm uppercase tracking-widest bg-primary text-on-primary hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20"
         >
           确定
         </button>

@@ -103,6 +103,7 @@ export type Theme = 'zinc' | 'dark';
 export type Settings = {
   theme: Theme;
   showCellDetails: boolean;
+  showAvatarEffect: boolean;
 };
 
 export type GachaRarity = 'common' | 'rare' | 'epic' | 'legendary';

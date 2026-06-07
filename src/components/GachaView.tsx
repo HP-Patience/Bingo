@@ -36,7 +36,7 @@ export function GachaView({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
         <button onClick={() => onTabChange('shop')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "text-on-surface-variant hover:text-on-surface")}>
           商店
@@ -46,7 +46,7 @@ export function GachaView({
         </button>
       </div>
 
-      <section className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-[2rem] p-8 relative overflow-hidden shadow-sm">
+      <section className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-5 relative overflow-hidden shadow-sm">
         <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
         <div className="relative z-10">
           <div className="text-center">
@@ -57,13 +57,13 @@ export function GachaView({
           <div className="mt-8 flex flex-col items-center gap-4">
             <div className="text-center">
               <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">可用抽奖次数</p>
-              <div className="text-6xl font-extrabold tracking-tighter text-primary">{gachaState.availableDraws}</div>
+              <div className="text-4xl font-extrabold tracking-tighter text-primary">{gachaState.availableDraws}</div>
               {gachaState.lastFreeDrawDate === new Date().toISOString().split('T')[0] && !gachaState.freeDrawUsed && gachaState.availableDraws > 0 && (
                 <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full">含今日免费</span>
               )}
             </div>
 
-            <button onClick={onDraw} disabled={gachaState.availableDraws <= 0} className={cn("w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg", gachaState.availableDraws > 0 ? "bg-primary text-on-primary hover:scale-[1.02] shadow-primary/30" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>
+            <button onClick={onDraw} disabled={gachaState.availableDraws <= 0} className={cn("w-full py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg", gachaState.availableDraws > 0 ? "bg-primary text-on-primary hover:scale-[1.02] shadow-primary/30" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>
               {gachaState.availableDraws > 0 ? '🎁 开始抽奖' : '升级获取抽奖机会'}
             </button>
           </div>

@@ -12,9 +12,9 @@ export function ShopHistoryModal({
   history: ShopHistoryEntry[];
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="购买记录" contentClassName="p-8 pt-4 space-y-4 max-h-[80vh] overflow-hidden">
+    <Modal isOpen={isOpen} onClose={onClose} title="购买记录" contentClassName="p-5 pt-3 space-y-4 max-h-[80vh] overflow-hidden">
       {history.length === 0 ? (
-        <div className="text-center py-8">
+        <div className="text-center py-6">
           <p className="text-on-surface-variant font-medium">还没有购买记录</p>
         </div>
       ) : (

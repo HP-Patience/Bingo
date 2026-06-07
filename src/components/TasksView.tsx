@@ -56,8 +56,8 @@ export function TasksView({
   const toggleGroupExpanded = (groupId: string) => setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-8">
+    <div className="space-y-5">
+      <div className="space-y-5">
         <section className="space-y-4">
           <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">格子大小</h3>
           <div className="flex gap-2">
@@ -67,12 +67,12 @@ export function TasksView({
           </div>
         </section>
 
-        <div className="flex items-center gap-6 py-3 my-3">
+        <div className="flex items-center gap-6 py-2 my-2">
           <button onClick={onShuffleTasks} className="text-sm font-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors"><Shuffle className="w-4 h-4" /> 随机</button>
           <button onClick={onSortTasks} className="text-sm font-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors"><SortAsc className="w-4 h-4" /> 排序</button>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-6">
           {groups.map(group => {
             const allSelected = group.tasks.length > 0 && group.tasks.every(t => selectedTaskIds.has(t.id));
             return (
@@ -154,7 +154,7 @@ export function TasksView({
             <input className="w-full bg-transparent border-none text-on-surface placeholder:text-on-surface-variant/40 font-medium focus:outline-none transition-all" placeholder="添加一个新组别" type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddGroup()} />
             <button onClick={handleAddGroup} className="text-primary p-2 rounded-full hover:bg-primary/10 active:scale-90 transition-all"><PlusCircle className="w-5 h-5" /></button>
           </div>
-          <button onClick={handleAddGroup} className="w-full bg-surface-container-low text-on-surface-variant py-5 rounded-3xl font-extrabold flex items-center justify-center gap-3 hover:bg-surface-container-high hover:border-primary/40 transition-all border-2 border-dashed border-outline-variant"><FolderPlus className="w-6 h-6" />新建分组</button>
+          <button onClick={handleAddGroup} className="w-full bg-surface-container-low text-on-surface-variant py-3 rounded-3xl font-extrabold flex items-center justify-center gap-3 hover:bg-surface-container-high hover:border-primary/40 transition-all border-2 border-dashed border-outline-variant"><FolderPlus className="w-6 h-6" />新建分组</button>
         </div>
 
         <AnimatePresence>

@@ -93,14 +93,14 @@ export function EditProfileModal({
       <div className="flex gap-3 pt-2">
         <button
           onClick={onClose}
-          className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+          className="flex-1 bg-surface-container-low text-on-surface py-3 rounded-2xl font-semibold tracking-wide text-[11px]"
         >
           取消
         </button>
         <button
           onClick={onSave}
           disabled={isSaving}
-          className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px] disabled:opacity-50"
+          className="flex-1 bg-primary text-on-primary py-3 rounded-2xl font-semibold tracking-wide text-[11px] disabled:opacity-50"
         >
           {isSaving ? '保存中...' : '保存'}
         </button>

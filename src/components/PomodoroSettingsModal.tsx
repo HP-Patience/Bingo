@@ -14,7 +14,7 @@ export function PomodoroSettingsModal({
   onSave: () => void;
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="番茄钟设置" className="z-[110]" contentClassName="max-w-md p-10 space-y-6">
+    <Modal isOpen={isOpen} onClose={onClose} title="番茄钟设置" className="z-[110]" contentClassName="max-w-md p-6 space-y-5">
       <div className="space-y-6">
         <div className="space-y-2">
           <label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">专注时长 (分钟)</label>
@@ -55,7 +55,7 @@ export function PomodoroSettingsModal({
 
       <button
         onClick={onSave}
-        className="w-full bg-primary text-on-primary py-4 rounded-2xl font-semibold tracking-wide text-[11px]"
+        className="w-full bg-primary text-on-primary py-3 rounded-2xl font-semibold tracking-wide text-[11px]"
       >
         保存设置
       </button>
