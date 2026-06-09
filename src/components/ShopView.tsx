@@ -26,12 +26,12 @@ export function ShopView({
   const [isManageMode, setIsManageMode] = useState(false);
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [newItem, setNewItem] = useState<Omit<ShopItem, 'id'>>({ name: '', description: '', cost: 10, icon: 'sparkles', category: 'reward' });
+  const [newItem, setNewItem] = useState<Omit<ShopItem, 'id'>>({ name: '', description: '', cost: 10, icon: 'sparkles', category: 'other', type: 'consumable', rarity: 'common', unlocked: false });
 
   const handleAddItem = () => {
     if (newItem.name.trim()) {
       onAddItem(newItem);
-      setNewItem({ name: '', description: '', cost: 10, icon: 'sparkles', category: 'reward' });
+      setNewItem({ name: '', description: '', cost: 10, icon: 'sparkles', category: 'other', type: 'consumable', rarity: 'common', unlocked: false });
       setIsAdding(false);
     }
   };

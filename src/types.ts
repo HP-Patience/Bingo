@@ -81,6 +81,9 @@ export type ShopItem = {
   cost: number;
   icon: string;
   category: 'snack' | 'entertainment' | 'fitness' | 'other';
+  type?: string;
+  rarity?: string;
+  unlocked?: boolean;
   levelRequirement?: number; // 解锁等级要求
 };
 

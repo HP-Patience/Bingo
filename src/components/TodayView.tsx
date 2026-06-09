@@ -50,7 +50,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
         </p>
       </section>
 
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm mt-4">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm mt-8">
         <div className={cn(
         "grid gap-1",
         tiles.length === 3 && "grid-cols-3",
@@ -107,12 +107,14 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
       </div>
       </div>
 
-      <div className="flex justify-between items-center bg-surface-container-low border border-outline-variant px-3 py-2 rounded-2xl shadow-sm mt-4">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm mt-6">
+        <div className="flex items-center gap-1">
         <ToolbarItem icon={<Shuffle className="w-4 h-4" />} label="洗牌" onClick={onShuffle} />
         <ToolbarItem icon={<Timer className="w-4 h-4" />} label="番茄钟" onClick={onPomodoro} />
         <ToolbarItem icon={<BarChart2 className="w-4 h-4" />} label="统计" onClick={onStats} />
         <ToolbarItem icon={<Bolt className="w-4 h-4" />} label="重置" onClick={onReset} />
         <ToolbarItem icon={<Palette className="w-4 h-4" />} label="主题" onClick={onThemeClick} />
+        </div>
       </div>
     </div>
   );

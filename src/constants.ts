@@ -101,18 +101,18 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
 ];
 
 export const INITIAL_SHOP_ITEMS: ShopItem[] = [
-  { id: 's1', name: '美味零食', description: '奖励自己一包薯片或巧克力', cost: 100, icon: 'cookie', category: 'snack', levelRequirement: 1 },
-  { id: 's2', name: '电影之夜', description: '看一场期待已久的电影', cost: 300, icon: 'film', category: 'entertainment', levelRequirement: 1 },
-  { id: 's3', name: '游戏时间', description: '畅玩 1 小时电子游戏', cost: 200, icon: 'gamepad-2', category: 'entertainment', levelRequirement: 1 },
-  { id: 's4', name: '户外约会', description: '和心爱的人出去走走', cost: 500, icon: 'heart', category: 'entertainment', levelRequirement: 1 },
-  { id: 's5', name: '深度阅读', description: '静心阅读 1 小时', cost: 150, icon: 'book-open', category: 'fitness', levelRequirement: 1 },
-  { id: 's6', name: '按摩放松', description: '缓解一天的疲劳', cost: 800, icon: 'sparkles', category: 'other', levelRequirement: 1 },
+  { id: 's1', name: '美味零食', description: '奖励自己一包薯片或巧克力', cost: 100, icon: 'cookie', category: 'snack', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 1 },
+  { id: 's2', name: '电影之夜', description: '看一场期待已久的电影', cost: 300, icon: 'film', category: 'entertainment', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 1 },
+  { id: 's3', name: '游戏时间', description: '畅玩 1 小时电子游戏', cost: 200, icon: 'gamepad-2', category: 'entertainment', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 1 },
+  { id: 's4', name: '户外约会', description: '和心爱的人出去走走', cost: 500, icon: 'heart', category: 'entertainment', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 1 },
+  { id: 's5', name: '深度阅读', description: '静心阅读 1 小时', cost: 150, icon: 'book-open', category: 'fitness', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 1 },
+  { id: 's6', name: '按摩放松', description: '缓解一天的疲劳', cost: 800, icon: 'sparkles', category: 'other', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 1 },
   // 30级专属奖励
-  { id: 's7', name: '豪华度假', description: '享受一次豪华度假', cost: 5000, icon: 'airplane', category: 'entertainment', levelRequirement: 30 },
-  { id: 's8', name: '高级装备', description: '购买高级健身装备', cost: 3000, icon: 'dumbbell', category: 'fitness', levelRequirement: 30 },
-  { id: 's9', name: '私人教练', description: '聘请私人教练', cost: 8000, icon: 'user', category: 'fitness', levelRequirement: 30 },
-  { id: 's10', name: '豪华晚餐', description: '享用豪华晚餐', cost: 2000, icon: 'utensils', category: 'snack', levelRequirement: 30 },
-  { id: 's11', name: 'VIP体验', description: '享受VIP服务', cost: 10000, icon: 'crown', category: 'other', levelRequirement: 30 },
+  { id: 's7', name: '豪华度假', description: '享受一次豪华度假', cost: 5000, icon: 'airplane', category: 'entertainment', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 30 },
+  { id: 's8', name: '高级装备', description: '购买高级健身装备', cost: 3000, icon: 'dumbbell', category: 'fitness', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 30 },
+  { id: 's9', name: '私人教练', description: '聘请私人教练', cost: 8000, icon: 'user', category: 'fitness', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 30 },
+  { id: 's10', name: '豪华晚餐', description: '享用豪华晚餐', cost: 2000, icon: 'utensils', category: 'snack', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 30 },
+  { id: 's11', name: 'VIP体验', description: '享受VIP服务', cost: 10000, icon: 'crown', category: 'other', type: 'consumable', rarity: 'common', unlocked: false, levelRequirement: 30 },
 ];
 
 export const INITIAL_STATS: Stats = {

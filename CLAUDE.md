@@ -10,7 +10,7 @@ Life Bingo — 基于 React 的宾果游戏式任务管理应用。通过完成�
 
 ```bash
 npm install              # 安装依赖
-npm run dev              # 开发服务器 (port 3000, host 0.0.0.0)
+npm run dev              # 开发服务器 (port 5173, host 0.0.0.0)
 npm run build            # 生产构建
 npm run preview          # 预览生产构建
 npm run lint             # TypeScript 类型检查 (tsc --noEmit)

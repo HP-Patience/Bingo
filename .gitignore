@@ -12,3 +12,6 @@ coverage/
 .codegraph/
 .playwright-mcp/
 .understand-anything/
+
+# Archive (design docs, screenshots, assets)
+Archive/

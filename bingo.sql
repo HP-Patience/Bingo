@@ -5,6 +5,18 @@ EXCEPTION WHEN others THEN END $$;
 DO $$ BEGIN
   ALTER TABLE shop_items RENAME COLUMN price TO cost;
 EXCEPTION WHEN others THEN END $$;
+-- 迁移：确保 shop_items.type 列有默认值
+DO $$ BEGIN
+  ALTER TABLE shop_items ALTER COLUMN type SET DEFAULT 'consumable';
+EXCEPTION WHEN others THEN END $$;
+-- 迁移：确保 shop_items.rarity 列有默认值
+DO $$ BEGIN
+  ALTER TABLE shop_items ALTER COLUMN rarity SET DEFAULT 'common';
+EXCEPTION WHEN others THEN END $$;
+-- 迁移：确保 shop_items.unlocked 列有默认值
+DO $$ BEGIN
+  ALTER TABLE shop_items ALTER COLUMN unlocked SET DEFAULT false;
+EXCEPTION WHEN others THEN END $$;
 
 -- 创建用户表
 CREATE TABLE IF NOT EXISTS users (
