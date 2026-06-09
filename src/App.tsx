@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, X } from 'lucide-react';
@@ -10,6 +10,7 @@ import { getTotalDrawsForLevel } from './gachaUtils';
 import { toDB, fromDB } from './lib/utils';
 import { calculateXP, getTitleForLevel, getNextLevelXp, XP_PER_LEVEL } from './lib/gameLogic';
 import { logError } from './lib/utils';
+import { loadFromCache, saveToCache } from './lib/cache';
 import { Modal, ConfirmDialog } from './components/Modal';
 import { ToastProvider, useToast } from './components/Toast';
 import { Layout } from './components/Layout';
@@ -438,118 +439,156 @@ function AppContent() {
   };
 
   // Data loading
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     const sf = <T,>(promise: PromiseLike<{ data: T }>) =>
       promise.then(({ data }) => data, () => undefined);
 
-    const loadData = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const authUser = session?.user ?? null;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user ?? null;
 
-        if (!authUser) {
-          console.log('🟡 [loadData] 无会话，显示登录页');
-          auth.setUser(null);
-          auth.setIsAuthLoading(false);
-          return;
-        }
-        console.log('🟢 [loadData] 会话存在，开始加载数据:', authUser.email);
-
-        const uid = authUser.id;
-        const { data: userDataArr } = await supabase.from('users').select('id,username,email,joinedat,level,xp,nextlevelxp,balance,title').eq('id', uid);
-        const userData = userDataArr?.[0];
-        let loadedUser: User;
-        if (!userData) {
-          console.log('🟡 [loadData] 用户不在 users 表中，创建新用户:', uid);
-          loadedUser = {
-            id: uid,
-            username: authUser.email?.split('@')[0] || '用户',
-            email: authUser.email || 'user@example.com',
-            avatar: DEFAULT_AVATAR,
-            joinedAt: authUser.created_at || new Date().toISOString(),
-            level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
-          };
-          supabase.from('users').insert(toDB(loadedUser))
-            .then(() => console.log('🟢 [loadData] 新用户已插入 users 表'))
-            .then(null, logError('inserting new user'));
-        } else {
-          console.log('🟢 [loadData] 用户已存在，加载数据:', uid);
-          loadedUser = fromDB<User>(userData);
-          const { data: avatarArr } = await supabase.from('users').select('avatar').eq('id', uid);
-          const dbAvatar = avatarArr?.[0]?.avatar;
-          if (dbAvatar && dbAvatar.startsWith('data:') && !dbAvatar.startsWith('data:image/svg')) {
-            loadedUser.avatar = DEFAULT_AVATAR;
-            migrateBase64Avatar(uid, dbAvatar).then(url => {
-              supabase.from('users').update(toDB({ avatar: url })).eq('id', uid).then(null, logError('updating migrated avatar'));
-              auth.setUser(prev => prev ? { ...prev, avatar: url } : null);
-            }).catch(e => console.error('Avatar migration failed:', e));
-          } else if (dbAvatar) {
-            loadedUser.avatar = dbAvatar;
-          } else {
-            loadedUser.avatar = DEFAULT_AVATAR;
-          }
-        }
-
-        const [
-          groupsRes, tilesRes, historyRes, achievementsRes,
-          statsRes, settingsRes, gridSizeRes, shopItemsRes,
-          gachaRes, shopHistoryRes
-        ] = await Promise.allSettled([
-          sf(supabase.from('task_groups').select('*').eq('user_id', uid)),
-          sf(supabase.from('bingo_tiles').select('*').eq('user_id', uid)),
-          sf(supabase.from('history').select('*').eq('user_id', uid).order('completedat', { ascending: false })),
-          sf(supabase.from('achievements').select('*').eq('user_id', uid)),
-          sf(supabase.from('stats').select('*').eq('user_id', uid)),
-          sf(supabase.from('settings').select('*').eq('user_id', uid)),
-          sf(supabase.from('grid_size').select('*').eq('user_id', uid)),
-          sf(supabase.from('shop_items').select('*').eq('user_id', uid)),
-          sf(supabase.from('gacha').select('*').eq('user_id', uid)),
-          sf(supabase.from('shop_history').select('*').eq('user_id', uid).order('timestamp', { ascending: false })),
-        ]);
-
-        const extractSettled = <T,>(r: PromiseSettledResult<T>): T | undefined =>
-          r.status === 'fulfilled' ? r.value : undefined;
-
-        const groupsData = extractSettled(groupsRes);
-        const tilesData = extractSettled(tilesRes);
-        const historyData = extractSettled(historyRes);
-        const achievementsData = extractSettled(achievementsRes);
-        const statsData = extractSettled(statsRes);
-        const settingsData = extractSettled(settingsRes);
-        const gridSizeData = extractSettled(gridSizeRes);
-        const shopItemsData = extractSettled(shopItemsRes);
-        const gachaData = extractSettled(gachaRes);
-        const shopHistoryData = extractSettled(shopHistoryRes);
-
-        auth.setUser(loadedUser);
-        if (groupsData?.length > 0) tasks.setTaskGroups(groupsData.map((g: Record<string, unknown>) => fromDB<TaskGroup>(g)));
-        if (tilesData?.[0]?.grid) bingo.setBingoTiles(tilesData[0].grid);
-        if (historyData?.length) historyHook.setHistory(historyData.map((h: Record<string, unknown>) => fromDB<HistoryEntry>(h)));
-        if (achievementsData?.length) achievements.setAchievements(achievementsData.map((a: Record<string, unknown>) => fromDB<Achievement>(a)));
-        if (statsData?.[0]) setStats(fromDB<Stats>(statsData[0]));
-        if (settingsData?.[0]) settings.setSettings(fromDB<Settings>(settingsData[0]));
-        if (gridSizeData?.[0]) bingo.setGridSize(gridSizeData[0].size);
-        if (shopItemsData?.length) shop.setShopItems(shopItemsData.map((s: Record<string, unknown>) => fromDB<ShopItem>(s)));
-        if (gachaData?.[0]) {
-          const gs = fromDB<GachaState>(gachaData[0]);
-          const today = new Date().toISOString().split('T')[0];
-          if (gs.lastFreeDrawDate !== today) {
-            gs.availableDraws = (gs.availableDraws || 0) + 1;
-            gs.lastFreeDrawDate = today;
-            gs.freeDrawUsed = false;
-            supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(null, logError('saving daily free draw'));
-          }
-          gacha.setGachaState(gs);
-        }
-        if (shopHistoryData?.length) shop.setShopHistory(shopHistoryData.map((s: Record<string, unknown>) => fromDB<ShopHistoryEntry>(s)));
-
+      if (!authUser) {
+        console.log('🟡 [loadData] 无会话，显示登录页');
+        auth.setUser(null);
         auth.setIsAuthLoading(false);
-      } catch (error) {
-        console.error('Error loading data from Supabase:', error);
-        auth.setIsAuthLoading(false);
+        return;
       }
-    };
+      console.log('🟢 [loadData] 会话存在，开始加载数据:', authUser.email);
 
+      const uid = authUser.id;
+      const cacheKey = `payload_${uid}`;
+
+      // 先从缓存即时显示，再查 Supabase 更新
+      const cached = loadFromCache<Record<string, unknown>>(cacheKey);
+
+      const { data: userDataArr } = await supabase.from('users').select('id,username,email,joinedat,level,xp,nextlevelxp,balance,title').eq('id', uid);
+      const userData = userDataArr?.[0];
+      let loadedUser: User;
+      if (!userData) {
+        console.log('🟡 [loadData] 用户不在 users 表中，创建新用户:', uid);
+        loadedUser = {
+          id: uid,
+          username: authUser.email?.split('@')[0] || '用户',
+          email: authUser.email || 'user@example.com',
+          avatar: DEFAULT_AVATAR,
+          joinedAt: authUser.created_at || new Date().toISOString(),
+          level: 1, xp: 0, nextLevelXp: XP_PER_LEVEL, balance: 0
+        };
+        supabase.from('users').insert(toDB(loadedUser))
+          .then(() => console.log('🟢 [loadData] 新用户已插入 users 表'))
+          .then(null, logError('inserting new user'));
+      } else {
+        console.log('🟢 [loadData] 用户已存在，加载数据:', uid);
+        loadedUser = fromDB<User>(userData);
+        const { data: avatarArr } = await supabase.from('users').select('avatar').eq('id', uid);
+        const dbAvatar = avatarArr?.[0]?.avatar;
+        if (dbAvatar && dbAvatar.startsWith('data:') && !dbAvatar.startsWith('data:image/svg')) {
+          loadedUser.avatar = DEFAULT_AVATAR;
+          migrateBase64Avatar(uid, dbAvatar).then(url => {
+            supabase.from('users').update(toDB({ avatar: url })).eq('id', uid).then(null, logError('updating migrated avatar'));
+            auth.setUser(prev => prev ? { ...prev, avatar: url } : null);
+          }).catch(e => console.error('Avatar migration failed:', e));
+        } else if (dbAvatar) {
+          loadedUser.avatar = dbAvatar;
+        } else {
+          loadedUser.avatar = DEFAULT_AVATAR;
+        }
+      }
+
+      const [
+        groupsRes, tilesRes, historyRes, achievementsRes,
+        statsRes, settingsRes, gridSizeRes, shopItemsRes,
+        gachaRes, shopHistoryRes
+      ] = await Promise.allSettled([
+        sf(supabase.from('task_groups').select('*').eq('user_id', uid)),
+        sf(supabase.from('bingo_tiles').select('*').eq('user_id', uid)),
+        sf(supabase.from('history').select('*').eq('user_id', uid).order('completedat', { ascending: false })),
+        sf(supabase.from('achievements').select('*').eq('user_id', uid)),
+        sf(supabase.from('stats').select('*').eq('user_id', uid)),
+        sf(supabase.from('settings').select('*').eq('user_id', uid)),
+        sf(supabase.from('grid_size').select('*').eq('user_id', uid)),
+        sf(supabase.from('shop_items').select('*').eq('user_id', uid)),
+        sf(supabase.from('gacha').select('*').eq('user_id', uid)),
+        sf(supabase.from('shop_history').select('*').eq('user_id', uid).order('timestamp', { ascending: false })),
+      ]);
+
+      const extractSettled = <T,>(r: PromiseSettledResult<T>): T | undefined =>
+        r.status === 'fulfilled' ? r.value : undefined;
+
+      const groupsData = extractSettled(groupsRes);
+      const tilesData = extractSettled(tilesRes);
+      const historyData = extractSettled(historyRes);
+      const achievementsData = extractSettled(achievementsRes);
+      const statsData = extractSettled(statsRes);
+      const settingsData = extractSettled(settingsRes);
+      const gridSizeData = extractSettled(gridSizeRes);
+      const shopItemsData = extractSettled(shopItemsRes);
+      const gachaData = extractSettled(gachaRes);
+      const shopHistoryData = extractSettled(shopHistoryRes);
+
+      // 有缓存时先即时显示
+      if (cached) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c = cached as any;
+        if (Array.isArray(c.groupsData) && c.groupsData.length > 0)
+          tasks.setTaskGroups(c.groupsData.map((g: Record<string, unknown>) => fromDB<TaskGroup>(g)));
+        if (c.tilesData?.[0]?.grid)
+          bingo.setBingoTiles(c.tilesData[0].grid as BingoTile[][]);
+        if (Array.isArray(c.historyData) && c.historyData.length)
+          historyHook.setHistory(c.historyData.map((h: Record<string, unknown>) => fromDB<HistoryEntry>(h)));
+        if (Array.isArray(c.achievementsData) && c.achievementsData.length)
+          achievements.setAchievements(c.achievementsData.map((a: Record<string, unknown>) => fromDB<Achievement>(a)));
+        if (c.statsData?.[0])
+          setStats(fromDB<Stats>(c.statsData[0]));
+        if (c.settingsData?.[0])
+          settings.setSettings(fromDB<Settings>(c.settingsData[0]));
+        if (c.gridSizeData?.[0])
+          bingo.setGridSize(c.gridSizeData[0].size as number);
+        if (Array.isArray(c.shopItemsData) && c.shopItemsData.length)
+          shop.setShopItems(c.shopItemsData.map((s: Record<string, unknown>) => fromDB<ShopItem>(s)));
+        if (Array.isArray(c.shopHistoryData) && c.shopHistoryData.length)
+          shop.setShopHistory(c.shopHistoryData.map((s: Record<string, unknown>) => fromDB<ShopHistoryEntry>(s)));
+        console.log('📦 [loadData] 缓存即时显示');
+      }
+
+      // 网络数据覆盖缓存
+      auth.setUser(loadedUser);
+      if (groupsData?.length > 0) tasks.setTaskGroups(groupsData.map((g: Record<string, unknown>) => fromDB<TaskGroup>(g)));
+      if (tilesData?.[0]?.grid) bingo.setBingoTiles(tilesData[0].grid);
+      if (historyData?.length) historyHook.setHistory(historyData.map((h: Record<string, unknown>) => fromDB<HistoryEntry>(h)));
+      if (achievementsData?.length) achievements.setAchievements(achievementsData.map((a: Record<string, unknown>) => fromDB<Achievement>(a)));
+      if (statsData?.[0]) setStats(fromDB<Stats>(statsData[0]));
+      if (settingsData?.[0]) settings.setSettings(fromDB<Settings>(settingsData[0]));
+      if (gridSizeData?.[0]) bingo.setGridSize(gridSizeData[0].size);
+      if (shopItemsData?.length) shop.setShopItems(shopItemsData.map((s: Record<string, unknown>) => fromDB<ShopItem>(s)));
+      if (shopHistoryData?.length) shop.setShopHistory(shopHistoryData.map((s: Record<string, unknown>) => fromDB<ShopHistoryEntry>(s)));
+      if (gachaData?.[0]) {
+        const gs = fromDB<GachaState>(gachaData[0]);
+        const today = new Date().toISOString().split('T')[0];
+        if (gs.lastFreeDrawDate !== today) {
+          gs.availableDraws = (gs.availableDraws || 0) + 1;
+          gs.lastFreeDrawDate = today;
+          gs.freeDrawUsed = false;
+          supabase.from('gacha').upsert(toDB({ id: 'current-gacha', user_id: authUser.id, ...gs })).then(null, logError('saving daily free draw'));
+        }
+        gacha.setGachaState(gs);
+      }
+
+      // 缓存已加载的数据（15 分钟有效）
+      saveToCache(cacheKey, {
+        groupsData, tilesData, historyData, achievementsData,
+        statsData, settingsData, gridSizeData, shopItemsData,
+        gachaData, shopHistoryData,
+      });
+
+      auth.setIsAuthLoading(false);
+    } catch (error) {
+      console.error('Error loading data from Supabase:', error);
+      auth.setIsAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     loadData();
 
     let initialLoadDone = false;
@@ -561,7 +600,7 @@ function AppContent() {
       }
       if (event === 'SIGNED_IN' && session?.user) {
         if (recoveryFlowRef.current) return;
-        window.location.reload();
+        loadData();
       } else if (event === 'SIGNED_OUT') {
         auth.setUser(null);
         setRecoveryFlow(false);
@@ -569,7 +608,7 @@ function AppContent() {
     });
 
     return () => { subscription.unsubscribe(); };
-  }, []);
+  }, [loadData]);
 
   // Auto-achievement detection
   useEffect(() => {
