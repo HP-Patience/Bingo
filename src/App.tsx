@@ -179,7 +179,7 @@ function AppContent() {
     if (newLevel > oldLevel) {
       gacha.setGachaState(prev => ({
         ...prev,
-        availableDraws: getTotalDrawsForLevel(newLevel) - (prev.totalDrawsSpent || 0),
+        availableDraws: Math.max(0, getTotalDrawsForLevel(newLevel) - (prev.totalDrawsSpent || 0)),
       }));
     }
 
