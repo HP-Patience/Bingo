@@ -70,7 +70,7 @@ export function Modal({ isOpen, onClose, title, children, footer, closeOnBackdro
           >
             {(title || closeOnBackdrop) && (
               <div className="flex items-center justify-between">
-                {title && <h3 className="text-xl font-black tracking-tight uppercase">{title}</h3>}
+                {title && <h3 className="text-xl font-bold tracking-tight">{title}</h3>}
                 <button
                   onClick={onClose}
                   className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors"
@@ -118,19 +118,19 @@ export function ConfirmDialog({
             {icon}
           </div>
         )}
-        <h3 className="text-xl font-black tracking-tight uppercase">{title}</h3>
+        <h3 className="text-xl font-bold tracking-tight">{title}</h3>
         <p className="text-on-surface-variant text-sm font-medium">{message}</p>
       </div>
       <div className="flex gap-3">
         <button
           onClick={onClose}
-          className="flex-1 bg-surface-container-low text-on-surface py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+          className="flex-1 bg-surface-container-low text-on-surface py-3 rounded-2xl font-bold tracking-wide text-[10px]"
         >
           {cancelLabel}
         </button>
         <button
           onClick={() => { onConfirm(); onClose(); }}
-          className={`flex-1 py-3 rounded-2xl font-bold uppercase tracking-widest text-[10px] ${
+          className={`flex-1 py-3 rounded-2xl font-bold tracking-wide text-[10px] ${
             variant === 'danger'
               ? 'bg-red-500 text-white'
               : 'bg-primary text-on-primary'

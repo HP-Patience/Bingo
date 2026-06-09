@@ -43,12 +43,12 @@ export function ShopView({
   return (
     <div className="space-y-6">
       <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
-        <button className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "bg-primary text-on-primary shadow-lg shadow-primary/20")}>商店</button>
-        <button onClick={() => onTabChange('gacha')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "text-on-surface-variant hover:text-on-surface")}>抽奖</button>
+        <button className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", "bg-primary text-on-primary shadow-lg shadow-primary/20")}>商店</button>
+        <button onClick={() => onTabChange('gacha')} className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", "text-on-surface-variant hover:text-on-surface")}>抽奖</button>
       </div>
       <section className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 relative overflow-hidden shadow-sm">
         <div className="relative z-10 flex justify-between items-center">
-          <div><p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">当前金币</p><h3 className="text-2xl font-extrabold tracking-tighter text-primary">{userBalance.toLocaleString()}</h3></div>
+          <div><p className="text-[10px] font-semibold tracking-wide text-on-surface-variant mb-1">当前金币</p><h3 className="text-2xl font-bold tracking-tight text-primary">{userBalance.toLocaleString()}</h3></div>
           <div className="flex gap-2">
             <button onClick={() => setShowHistory(true)} className="p-3 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-primary transition-all active:scale-95" title="查看购买记录"><History className="w-5 h-5" /></button>
             <button onClick={() => setIsManageMode(!isManageMode)} className={cn("p-3 rounded-xl transition-all active:scale-95", isManageMode ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant")}><Settings2 className="w-5 h-5" /></button>
@@ -65,7 +65,7 @@ export function ShopView({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="text-lg font-bold uppercase tracking-tight"
+              className="text-lg font-bold tracking-tight"
             >{isManageMode ? '管理商店' : '奖励商店'}</motion.h2>
           </AnimatePresence>
           <div className="min-h-[30px] flex items-center">
@@ -78,7 +78,7 @@ export function ShopView({
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   onClick={() => setIsAdding(true)}
-                  className="bg-primary text-on-primary px-3.5 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-widest flex items-center gap-1.5"
+                  className="bg-primary text-on-primary px-3.5 py-1.5 rounded-full font-bold text-[11px] tracking-wide flex items-center gap-1.5"
                 ><Plus className="w-3 h-3" /> 新增商品</motion.button>
               )}
             </AnimatePresence>
@@ -120,7 +120,7 @@ export function ShopView({
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                     >
-                      <button onClick={() => onBuyItem(item)} disabled={userBalance < item.cost} className={cn("px-3.5 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all active:scale-95", userBalance >= item.cost ? "bg-primary text-on-primary shadow-sm shadow-primary/20" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>{item.cost} 金币</button>
+                      <button onClick={() => onBuyItem(item)} disabled={userBalance < item.cost} className={cn("px-3.5 py-2 rounded-lg font-bold text-[10px] tracking-wide transition-all active:scale-95", userBalance >= item.cost ? "bg-primary text-on-primary shadow-sm shadow-primary/20" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>{item.cost} 金币</button>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -133,7 +133,7 @@ export function ShopView({
       <AnimatePresence>
         {(isAdding || editingItem) && (
           <Modal isOpen={true} onClose={() => { setIsAdding(false); setEditingItem(null); }} className="z-[100]" contentClassName="p-8 space-y-6">
-            <h3 className="text-xl font-black tracking-tight uppercase">{isAdding ? '新增商品' : '编辑商品'}</h3>
+            <h3 className="text-xl font-bold tracking-tight">{isAdding ? '新增商品' : '编辑商品'}</h3>
             <div className="space-y-4">
               <div className="space-y-1.5"><label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">商品名称</label><input type="text" className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none" value={isAdding ? newItem.name : editingItem?.name || ''} onChange={(e) => isAdding ? setNewItem({...newItem, name: e.target.value}) : setEditingItem(editingItem ? {...editingItem, name: e.target.value} : null)} /></div>
               <div className="space-y-1.5"><label className="text-[11px] font-semibold tracking-wide text-on-surface-variant px-1">描述</label><input type="text" className="w-full bg-surface-container-low border border-outline-variant rounded-2xl px-5 py-3.5 text-sm font-bold outline-none" value={isAdding ? newItem.description : editingItem?.description || ''} onChange={(e) => isAdding ? setNewItem({...newItem, description: e.target.value}) : setEditingItem(editingItem ? {...editingItem, description: e.target.value} : null)} /></div>

@@ -643,7 +643,7 @@ function AppContent() {
               <line x1="9" y1="21" x2="9" y2="9" />
             </svg>
           </div>
-          <h2 className="text-2xl font-black text-primary tracking-[0.2em]">LIFE BINGO</h2>
+          <h2 className="text-2xl font-bold text-primary tracking-[0.15em] font-headline">Life Bingo</h2>
           <div className="flex items-center justify-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '0ms' }} />
             <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -944,7 +944,7 @@ function AppContent() {
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black tracking-tight uppercase">任务备注</h3>
+                <h3 className="text-xl font-bold tracking-tight">任务备注</h3>
                 <button onClick={() => bingo.setShowNoteModal(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors">
                   <X className="w-5 h-5" />
                 </button>

@@ -20,7 +20,7 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight">{user.username}</h2>
+                <h2 className="text-xl font-bold tracking-tight">{user.username}</h2>
                 {user.title && <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full font-bold">{user.title}</span>}
               </div>
               <p className="text-on-surface-variant text-[10px] font-bold tracking-widest opacity-60">{user.email}</p>
@@ -29,11 +29,11 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">加入时间</p>
+              <p className="text-[11px] font-semibold tracking-wide text-on-surface-variant mb-1">加入时间</p>
               <p className="text-xs font-bold">{new Date(user.joinedAt).toLocaleDateString()}</p>
             </div>
             <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">账号状态</p>
+              <p className="text-[11px] font-semibold tracking-wide text-on-surface-variant mb-1">账号状态</p>
               <p className="text-xs font-bold text-primary">高级会员</p>
             </div>
           </div>
@@ -46,7 +46,7 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
       <section>
         <div className="flex items-center gap-3 mb-4 px-2">
           <Palette className="w-5 h-5 text-on-surface-variant" />
-          <h2 className="font-headline font-bold text-sm uppercase tracking-widest text-on-surface-variant">主题 (Theme)</h2>
+          <h2 className="font-headline font-bold text-sm tracking-wide text-on-surface-variant">主题</h2>
         </div>
         <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant grid grid-cols-5 gap-4 shadow-sm">
           {themes.map((t, i) => (
@@ -58,7 +58,7 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
       <section>
         <div className="flex items-center gap-3 mb-4 px-2">
           <LayoutGrid className="w-5 h-5 text-on-surface-variant" />
-          <h2 className="font-headline font-bold text-sm uppercase tracking-widest text-on-surface-variant">显示设置</h2>
+          <h2 className="font-headline font-bold text-sm tracking-wide text-on-surface-variant">显示设置</h2>
         </div>
         <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
@@ -103,7 +103,7 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
       <section className="space-y-4">
         <div className="flex items-center gap-3 mb-4 px-2">
           <Database className="w-5 h-5 text-on-surface-variant" />
-          <h2 className="font-headline font-bold text-sm uppercase tracking-widest text-on-surface-variant">数据管理 (Data)</h2>
+          <h2 className="font-headline font-bold text-sm tracking-wide text-on-surface-variant">数据管理</h2>
         </div>
         <div className="space-y-3">
           <SettingsButton icon={<FileUp className="w-4 h-4" />} label="导出数据" onClick={onExportData} />
@@ -115,12 +115,12 @@ export function SettingsView({ settings, onUpdateSettings, user, onLogout, onEdi
       <footer className="pt-6 pb-12 text-center space-y-5">
         <div className="inline-block p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-sm"><LayoutGrid className="w-8 h-8 text-primary" /></div>
         <div className="space-y-2">
-          <h3 className="text-2xl font-black text-primary tracking-[0.2em] mb-1">LIFE BINGO</h3>
-          <p className="text-on-surface-variant text-xs font-bold tracking-widest opacity-60 uppercase">版本 2.4.0 (极简优化)</p>
+          <h3 className="text-2xl font-bold text-primary tracking-[0.12em] font-headline">Life Bingo</h3>
+          <p className="text-on-surface-variant text-xs font-semibold tracking-wide opacity-60">版本 2.4.0 (极简优化)</p>
         </div>
         <div className="space-y-1 opacity-30">
-          <p className="text-[10px] uppercase font-black tracking-[0.3em]">ICP 备案号: 2023000456-1</p>
-          <p className="text-[10px] uppercase font-black tracking-[0.3em]">© 2024 Zenith Grid Labs</p>
+          <p className="text-[10px] font-semibold tracking-[0.15em]">ICP 备案号: 2023000456-1</p>
+          <p className="text-[10px] font-semibold tracking-[0.15em]">© 2024 Zenith Grid Labs</p>
         </div>
       </footer>
     </div>

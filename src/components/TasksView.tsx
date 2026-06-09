@@ -59,7 +59,7 @@ export function TasksView({
     <div className="space-y-5">
       <div className="space-y-5">
         <section className="space-y-4">
-          <h3 className="text-sm font-bold text-on-surface-variant tracking-wider uppercase">格子大小</h3>
+          <h3 className="text-sm font-semibold text-on-surface-variant tracking-wide">格子大小</h3>
           <div className="flex gap-2">
             {[3, 4, 5, 6].map(size => (
               <button key={size} onClick={() => onGridSizeChange(size)} className={cn("flex-1 py-3 px-2 rounded-2xl font-bold transition-all", gridSize === size ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high")}>{size}x{size}</button>
@@ -87,7 +87,7 @@ export function TasksView({
                     ) : (
                       <span className="text-xl font-extrabold tracking-tight cursor-pointer hover:text-primary transition-colors" onClick={() => startEditing(group)}>{group.name}</span>
                     )}
-                    <span className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mt-1">{group.tasks.length} 任务</span>
+                    <span className="text-[10px] font-semibold text-on-surface-variant/50 tracking-wide mt-1">{group.tasks.length} 任务</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button onClick={() => {

@@ -72,8 +72,8 @@ export function AchievementsView({
     <div className="space-y-4">
       <section className="space-y-4">
         <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
-          <button onClick={() => setViewMode('achievements')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", viewMode === 'achievements' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>成就</button>
-          <button onClick={() => setViewMode('stats')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", viewMode === 'stats' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>统计信息</button>
+          <button onClick={() => setViewMode('achievements')} className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", viewMode === 'achievements' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>成就</button>
+          <button onClick={() => setViewMode('stats')} className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", viewMode === 'stats' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>统计信息</button>
         </div>
       </section>
 
@@ -82,7 +82,7 @@ export function AchievementsView({
           <motion.div key="achievements" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-tight">核心成就</h2>
+                <h2 className="text-lg font-bold tracking-tight">核心成就</h2>
                 <div className="bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant"><span className="text-[10px] font-bold text-on-surface-variant">已解锁 {coreAchievements.filter(a => a.unlocked).length} / {coreAchievements.length}</span></div>
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -90,10 +90,10 @@ export function AchievementsView({
                   <button key={achievement.id} onClick={() => setSelectedAchievement(achievement)} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-95", !achievement.unlocked && "opacity-30")}>
                     <div className={cn("w-full aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all p-2", achievement.unlocked ? "bg-surface-container-lowest border border-outline-variant shadow-sm" : "bg-surface-container-low border border-outline-variant/50")}>
                       <AchievementIcon name={achievement.icon} className="w-8 h-8 text-primary mb-1" />
-                      {achievement.level && <div className="absolute -top-1.5 -right-1.5 bg-primary text-on-primary text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest">Lv{achievement.level}</div>}
+                      {achievement.level && <div className="absolute -top-1.5 -right-1.5 bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-wide">Lv{achievement.level}</div>}
                       <span className="text-[10px] text-on-surface-variant/60 text-center leading-tight px-0.5 line-clamp-2">{achievement.description}</span>
                     </div>
-                    <span className="text-[9px] font-bold uppercase tracking-tighter text-center leading-tight px-1 line-clamp-1">{achievement.title}</span>
+                    <span className="text-[9px] font-semibold tracking-tight text-center leading-tight px-1 line-clamp-1">{achievement.title}</span>
                   </button>
                 ))}
               </div>
@@ -101,7 +101,7 @@ export function AchievementsView({
 
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-tight">自定义成就</h2>
+                <h2 className="text-lg font-bold tracking-tight">自定义成就</h2>
                 <div className="bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant"><span className="text-[10px] font-bold text-on-surface-variant">已达成 {customAchievements.filter(a => a.unlocked).length} / {customAchievements.length}</span></div>
               </div>
               {customAchievements.length > 0 ? (
@@ -112,7 +112,7 @@ export function AchievementsView({
                         <AchievementIcon name={achievement.icon} className="w-8 h-8 text-primary mb-1" />
                         <span className="text-[10px] text-on-surface-variant/60 text-center leading-tight px-0.5 line-clamp-2">{achievement.requirement || achievement.description}</span>
                       </div>
-                      <span className="text-[9px] font-bold uppercase tracking-tighter text-center leading-tight px-1 line-clamp-1">{achievement.title}</span>
+                      <span className="text-[9px] font-semibold tracking-tight text-center leading-tight px-1 line-clamp-1">{achievement.title}</span>
                     </button>
                   ))}
                 </div>
@@ -121,7 +121,7 @@ export function AchievementsView({
               )}
 
               <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 text-center space-y-3 relative overflow-hidden">
-                <div className="space-y-1"><h3 className="text-xl font-extrabold tracking-tight uppercase">定义你的成就</h3><p className="text-on-surface-variant text-xs px-6 font-medium">为你的独特个人胜利创建自定义徽章。</p></div>
+                <div className="space-y-1"><h3 className="text-xl font-bold tracking-tight">定义你的成就</h3><p className="text-on-surface-variant text-xs px-6 font-medium">为你的独特个人胜利创建自定义徽章。</p></div>
                 {!isAddingCustom ? (
                   <button onClick={() => setIsAddingCustom(true)} className="w-full bg-primary text-on-primary py-3 rounded-2xl font-semibold tracking-wide text-[11px] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-primary/20"><PlusCircle className="w-5 h-5" /> 创建自定义成就</button>
                 ) : (
@@ -150,7 +150,7 @@ export function AchievementsView({
             {isEditing ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-black tracking-tight uppercase">编辑自定义成就</h3>
+                  <h3 className="text-xl font-bold tracking-tight">编辑自定义成就</h3>
                   <button onClick={() => setIsEditing(false)} className="p-2 text-on-surface-variant/40 hover:text-on-surface transition-colors"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="space-y-4">
@@ -177,17 +177,17 @@ export function AchievementsView({
                 <div className="flex flex-col items-center gap-6">
                   <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center"><AchievementIcon name={selectedAchievement.icon} className="w-12 h-12 text-primary" /></div>
                   <div className="text-center space-y-2">
-                    <h3 className="text-3xl font-black tracking-tight uppercase">{selectedAchievement.title}</h3>
+                    <h3 className="text-3xl font-bold tracking-tight">{selectedAchievement.title}</h3>
                     <p className="text-on-surface-variant font-medium text-sm leading-relaxed">{selectedAchievement.description}</p>
-                    {selectedAchievement.requirement && <p className="text-primary font-bold text-xs uppercase tracking-widest">条件: {selectedAchievement.requirement}</p>}
+                    {selectedAchievement.requirement && <p className="text-primary font-bold text-xs tracking-wide">条件: {selectedAchievement.requirement}</p>}
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant">
-                    <div className="flex justify-between items-center mb-3"><span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">解锁进度</span><span className="text-[10px] font-bold text-primary">{selectedAchievement.unlocked ? '100%' : '0%'}</span></div>
+                    <div className="flex justify-between items-center mb-3"><span className="text-[10px] font-semibold tracking-wide text-on-surface-variant">解锁进度</span><span className="text-[10px] font-bold text-primary">{selectedAchievement.unlocked ? '100%' : '0%'}</span></div>
                     <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden"><div className="h-full bg-primary transition-all duration-1000" style={{ width: selectedAchievement.unlocked ? '100%' : '0%' }} /></div>
                   </div>
-                  {selectedAchievement.unlockedAt && <div className="flex items-center gap-3 px-2"><CalendarIcon className="w-4 h-4 text-on-surface-variant" /><span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">解锁于 {new Date(selectedAchievement.unlockedAt).toLocaleDateString()}</span></div>}
+                  {selectedAchievement.unlockedAt && <div className="flex items-center gap-3 px-2"><CalendarIcon className="w-4 h-4 text-on-surface-variant" /><span className="text-[10px] font-bold text-on-surface-variant tracking-wide">解锁于 {new Date(selectedAchievement.unlockedAt).toLocaleDateString()}</span></div>}
                 </div>
                 <div className="space-y-3">
                   {selectedAchievement.isCustom && (

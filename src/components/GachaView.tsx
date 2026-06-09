@@ -38,10 +38,10 @@ export function GachaView({
   return (
     <div className="space-y-6">
       <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
-        <button onClick={() => onTabChange('shop')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "text-on-surface-variant hover:text-on-surface")}>
+        <button onClick={() => onTabChange('shop')} className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", "text-on-surface-variant hover:text-on-surface")}>
           商店
         </button>
-        <button className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", "bg-primary text-on-primary shadow-lg shadow-primary/20")}>
+        <button className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", "bg-primary text-on-primary shadow-lg shadow-primary/20")}>
           抽奖
         </button>
       </div>
@@ -50,20 +50,20 @@ export function GachaView({
         <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
         <div className="relative z-10">
           <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">抽奖奖池</p>
-            <h3 className="text-3xl font-extrabold tracking-tighter text-primary mb-2">等级 {userLevel}</h3>
+            <p className="text-[10px] font-semibold tracking-wide text-on-surface-variant mb-2">抽奖奖池</p>
+            <h3 className="text-3xl font-bold tracking-tight text-primary mb-2">等级 {userLevel}</h3>
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-4">
             <div className="text-center">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">可用抽奖次数</p>
-              <div className="text-4xl font-extrabold tracking-tighter text-primary">{gachaState.availableDraws}</div>
+              <p className="text-[10px] font-semibold tracking-wide text-on-surface-variant mb-1">可用抽奖次数</p>
+              <div className="text-4xl font-bold tracking-tight text-primary">{gachaState.availableDraws}</div>
               {gachaState.lastFreeDrawDate === new Date().toISOString().split('T')[0] && !gachaState.freeDrawUsed && gachaState.availableDraws > 0 && (
-                <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full">含今日免费</span>
+                <span className="inline-block mt-2 text-[10px] font-semibold tracking-wide text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full">含今日免费</span>
               )}
             </div>
 
-            <button onClick={onDraw} disabled={gachaState.availableDraws <= 0} className={cn("w-full py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg", gachaState.availableDraws > 0 ? "bg-primary text-on-primary hover:scale-[1.02] shadow-primary/30" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>
+            <button onClick={onDraw} disabled={gachaState.availableDraws <= 0} className={cn("w-full py-3 rounded-2xl font-bold text-sm tracking-wide transition-all active:scale-95 shadow-lg", gachaState.availableDraws > 0 ? "bg-primary text-on-primary hover:scale-[1.02] shadow-primary/30" : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed")}>
               {gachaState.availableDraws > 0 ? '🎁 开始抽奖' : '升级获取抽奖机会'}
             </button>
           </div>
@@ -72,7 +72,7 @@ export function GachaView({
 
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold uppercase tracking-tight">抽奖记录</h2>
+          <h2 className="text-lg font-bold tracking-tight">抽奖记录</h2>
           <button onClick={() => setShowHelp(true)} className="p-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors">
             <HelpCircle className="w-5 h-5" />
           </button>
@@ -86,7 +86,7 @@ export function GachaView({
                     {entry.reward.type === 'xp' ? <Zap className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                   </div>
                   <div>
-                    <span className={cn("text-[10px] font-bold uppercase", getRarityColor(entry.reward.rarity))}>{getRarityName(entry.reward.rarity)}</span>
+                    <span className={cn("text-[10px] font-bold tracking-wide", getRarityColor(entry.reward.rarity))}>{getRarityName(entry.reward.rarity)}</span>
                     <p className="text-[10px] text-on-surface-variant font-medium">{new Date(entry.timestamp).toLocaleDateString('zh-CN')}</p>
                   </div>
                 </div>

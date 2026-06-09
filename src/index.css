@@ -4,7 +4,7 @@
 
 :root {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-headline: "Manrope", sans-serif;
+  --font-headline: "Source Serif 4", Georgia, serif;
 
   --surface: #f9f9f9;
   --surface-container-low: #f2f4f4;
@@ -46,12 +46,11 @@
     font-family: var(--font-headline);
   }
 
-  /* 确保按钮有点击效果 */
+  /* ensure buttons have click effect */
   button {
     @apply transition-all duration-200;
   }
 
-  /* 为交互元素添加背景底色 */
   .bg-surface {
     background-color: var(--surface);
   }
@@ -113,12 +112,11 @@
   }
 }
 
-/* 为 dark 主题添加玻璃效果 */
 [data-theme='dark'] .glass {
   background-color: rgba(10, 10, 10, 0.8);
 }
 
-/* 全局去除所有元素的聚焦轮廓/阴影 */
+/* global focus ring removal */
 *, *::before, *::after {
   --tw-ring-offset-width: 0px;
 }

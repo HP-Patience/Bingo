@@ -58,10 +58,10 @@ export function CalendarView({ history, onBackToToday, onDeleteEntry, onEditEntr
   return (
     <div className="space-y-5">
       <div className="flex bg-surface-container-low rounded-2xl p-1.5 border border-outline-variant">
-        <button onClick={() => setSubTab('calendar')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", subTab === 'calendar' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>
+        <button onClick={() => setSubTab('calendar')} className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", subTab === 'calendar' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>
           日历
         </button>
-        <button onClick={() => setSubTab('history')} className={cn("flex-1 py-3 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all", subTab === 'history' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>
+        <button onClick={() => setSubTab('history')} className={cn("flex-1 py-3 rounded-xl font-bold tracking-wide text-[11px] transition-all", subTab === 'history' ? "bg-primary text-on-primary shadow-lg shadow-primary/20" : "text-on-surface-variant hover:text-on-surface")}>
           历史
         </button>
       </div>
@@ -88,7 +88,7 @@ export function CalendarView({ history, onBackToToday, onDeleteEntry, onEditEntr
                 </div>
                 <div className="grid grid-cols-7 mb-4">
                   {['一', '二', '三', '四', '五', '六', '日'].map(d => (
-                    <span key={d} className="text-center text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{d}</span>
+                    <span key={d} className="text-center text-[10px] font-semibold text-on-surface-variant/60 tracking-wide">{d}</span>
                   ))}
                 </div>
                 <div className="grid grid-cols-7 gap-2">
@@ -100,7 +100,7 @@ export function CalendarView({ history, onBackToToday, onDeleteEntry, onEditEntr
                   ))}
                 </div>
                 <div className="mt-5 flex justify-center">
-                  <button onClick={onBackToToday} className="bg-surface-container-low text-primary px-6 py-2.5 rounded-full font-bold text-[11px] tracking-wider uppercase active:scale-95 transition-all flex items-center gap-2 border border-outline-variant">
+                  <button onClick={onBackToToday} className="bg-surface-container-low text-primary px-6 py-2.5 rounded-full font-bold text-[11px] tracking-wide active:scale-95 transition-all flex items-center gap-2 border border-outline-variant">
                     <CalendarIcon className="w-4 h-4" /> 返回今天
                   </button>
                 </div>

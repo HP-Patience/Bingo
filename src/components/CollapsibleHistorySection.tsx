@@ -25,7 +25,7 @@ export function CollapsibleHistorySection({ dateStr, tasks, defaultExpanded = fa
       >
         <div className="flex items-baseline gap-3">
           <h2 className="text-xl font-bold">{dateStr}</h2>
-          <span className="text-on-surface-variant text-[10px] font-bold tracking-widest uppercase opacity-60">
+          <span className="text-on-surface-variant text-[10px] font-semibold tracking-wide opacity-60">
             {tasks.length} 任务完成
           </span>
         </div>

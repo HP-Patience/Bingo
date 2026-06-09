@@ -8,7 +8,7 @@ export function ToolbarItem({ icon, label, onClick }: { icon: React.ReactNode, l
       <div className="text-on-surface-variant group-hover:text-primary transition-colors">
         {icon}
       </div>
-      <span className="text-[10px] font-semibold text-on-surface-variant/70 uppercase tracking-tighter">{label}</span>
+      <span className="text-[10px] font-semibold text-on-surface-variant/70 tracking-wide">{label}</span>
     </button>
   );
 }

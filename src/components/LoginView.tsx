@@ -181,8 +181,8 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           <div className="inline-block p-6 rounded-full bg-primary/10 text-primary mb-4">
             <Lock className="w-10 h-10" />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tighter uppercase">设置新密码</h2>
-          <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">输入您的新密码</p>
+          <h2 className="text-2xl font-bold tracking-tight">设置新密码</h2>
+          <p className="text-on-surface-variant font-semibold tracking-wide text-xs">输入您的新密码</p>
         </div>
 
         <form onSubmit={handleUpdatePassword} className="space-y-6">
@@ -223,7 +223,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           </div>
 
           <button type="submit"
-            className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+            className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold tracking-wide text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
             disabled={loading}
           >
             {loading ? '处理中...' : '更新密码'}
@@ -241,8 +241,8 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           <div className="inline-block p-6 rounded-full bg-primary/10 text-primary mb-4">
             <Lock className="w-12 h-12" />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tighter uppercase">重置密码</h2>
-          <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">输入邮箱地址，我们将发送重置链接</p>
+          <h2 className="text-2xl font-bold tracking-tight">重置密码</h2>
+          <p className="text-on-surface-variant font-semibold tracking-wide text-xs">输入邮箱地址，我们将发送重置链接</p>
         </div>
 
         <form onSubmit={handleForgotPassword} className="space-y-6">
@@ -263,7 +263,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           </div>
 
           <button type="submit"
-            className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+            className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold tracking-wide text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
             disabled={loading}
           >
             {loading ? '发送中...' : '发送重置链接'}
@@ -272,7 +272,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           <div className="text-center">
             <button type="button"
               onClick={() => { setIsResetPassword(false); setError(''); setSuccessMessage(''); }}
-              className="text-[10px] font-bold text-primary uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-1 mx-auto"
+              className="text-[10px] font-bold text-primary tracking-wide hover:opacity-80 transition-opacity flex items-center justify-center gap-1 mx-auto"
             >
               <ArrowLeft className="w-3 h-3" />返回登录
             </button>
@@ -289,8 +289,8 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
         <div className="inline-block p-6 rounded-full bg-primary/10 text-primary mb-4">
           <Bolt className="w-10 h-10" />
         </div>
-        <h2 className="text-2xl font-extrabold tracking-tighter uppercase">{isLogin ? '欢迎回来' : '开启新征程'}</h2>
-        <p className="text-on-surface-variant font-bold tracking-widest text-xs uppercase">记录你的每一份成长</p>
+        <h2 className="text-2xl font-bold tracking-tight">{isLogin ? '欢迎回来' : '开启新征程'}</h2>
+        <p className="text-on-surface-variant font-semibold tracking-wide text-xs">记录你的每一份成长</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -325,7 +325,6 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
                 value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
             </div>
             <div className="bg-surface-container-low border border-outline-variant rounded-2xl px-4 py-3 flex items-center gap-3">
-              <Bolt className="w-5 h-5 text-on-surface-variant" />
               <input type={showPassword ? 'text' : 'password'} placeholder="密码"
                 className="bg-transparent border-none outline-none focus:ring-0 text-sm font-bold w-full"
                 value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} />
@@ -339,7 +338,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
 
         {/* Submit button */}
         <button type="submit"
-          className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          className="w-full bg-primary text-on-primary py-3 rounded-3xl font-bold tracking-wide text-xs shadow-lg shadow-primary/20 active:scale-95 transition-all"
           disabled={loading}
         >
           {loading ? '处理中...' : (isLogin ? '立即登录' : '创建账号')}
@@ -349,7 +348,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
         <div className="text-center space-y-4">
           <button type="button"
             onClick={() => { setIsResetPassword(true); setError(''); setSuccessMessage(''); }}
-            className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
+            className="text-[10px] font-bold text-on-surface-variant tracking-wide opacity-60 hover:opacity-100 transition-opacity"
           >
             忘记密码？
           </button>
@@ -357,7 +356,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           {isLogin && error && error.includes('验证') && (
             <div>
               <button type="button" onClick={resendVerificationEmail} disabled={loading}
-                className="text-[10px] font-bold text-primary uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50">
+                className="text-[10px] font-bold text-primary tracking-wide hover:opacity-80 transition-opacity disabled:opacity-50">
                 {loading ? '发送中...' : '重新发送验证邮件'}
               </button>
             </div>
@@ -371,7 +370,7 @@ export function LoginView({ isRecoveryFlow }: LoginViewProps) {
           <div className="w-full border-t border-outline-variant/40" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-surface px-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+          <span className="bg-surface px-4 text-[10px] font-bold text-on-surface-variant tracking-wide">
             或使用社交账号
           </span>
         </div>

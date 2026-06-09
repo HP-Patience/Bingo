@@ -70,35 +70,35 @@ export function StatsView({ stats, history, timeRange, setTimeRange, isTimeRange
     <div className="space-y-5 pb-6">
       <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-2xl shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black uppercase tracking-widest">{getTimeRangeLabel(timeRange)}数据</h2>
+          <h2 className="text-lg font-bold tracking-wide">{getTimeRangeLabel(timeRange)}数据</h2>
           <button onClick={() => setIsTimeRangeModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-outline-variant rounded-full shadow-sm hover:bg-surface-container-high transition-colors">
             <SettingsIcon className="w-4 h-4 text-violet-500" />
-            <span className="text-sm font-bold uppercase tracking-widest">时间范围</span>
+            <span className="text-sm font-bold tracking-wide">时间范围</span>
           </button>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-surface-container-high border border-outline-variant p-4 rounded-xl shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-primary"><Zap className="w-4 h-4" /><span className="text-[10px] font-black uppercase tracking-widest">累计经验</span></div>
-            <div className="flex items-baseline gap-1"><span className="text-3xl font-black tracking-tighter">{rangeStats.totalXp}</span><span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">XP</span></div>
+            <div className="flex items-center gap-2 text-primary"><Zap className="w-4 h-4" /><span className="text-[10px] font-bold tracking-wide">累计经验</span></div>
+            <div className="flex items-baseline gap-1"><span className="text-3xl font-bold tracking-tight">{rangeStats.totalXp}</span><span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">XP</span></div>
           </div>
           <div className="bg-surface-container-high border border-outline-variant p-4 rounded-xl shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-amber-500"><Flame className="w-4 h-4" /><span className="text-[10px] font-black uppercase tracking-widest">当前连击</span></div>
-            <div className="flex items-baseline gap-1"><span className="text-3xl font-black tracking-tighter">{rangeStats.currentStreak}</span><span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">天</span></div>
+            <div className="flex items-center gap-2 text-amber-500"><Flame className="w-4 h-4" /><span className="text-[10px] font-bold tracking-wide">当前连击</span></div>
+            <div className="flex items-baseline gap-1"><span className="text-3xl font-bold tracking-tight">{rangeStats.currentStreak}</span><span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">天</span></div>
           </div>
           <div className="bg-surface-container-high border border-outline-variant p-4 rounded-xl shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-emerald-500"><CheckCircle2 className="w-4 h-4" /><span className="text-[10px] font-black uppercase tracking-widest">已完任务</span></div>
-            <div className="flex items-baseline gap-1"><span className="text-3xl font-black tracking-tighter">{rangeStats.totalCompleted}</span><span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">个</span></div>
+            <div className="flex items-center gap-2 text-emerald-500"><CheckCircle2 className="w-4 h-4" /><span className="text-[10px] font-bold tracking-wide">已完任务</span></div>
+            <div className="flex items-baseline gap-1"><span className="text-3xl font-bold tracking-tight">{rangeStats.totalCompleted}</span><span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">个</span></div>
           </div>
           <div className="bg-surface-container-high border border-outline-variant p-4 rounded-xl shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-violet-500"><Timer className="w-4 h-4" /><span className="text-[10px] font-black uppercase tracking-widest">专注时长</span></div>
-            <div className="flex items-baseline gap-1"><span className="text-3xl font-black tracking-tighter">{rangeStats.hours}</span><span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">h {rangeStats.minutes}m</span></div>
+            <div className="flex items-center gap-2 text-violet-500"><Timer className="w-4 h-4" /><span className="text-[10px] font-bold tracking-wide">专注时长</span></div>
+            <div className="flex items-baseline gap-1"><span className="text-3xl font-bold tracking-tight">{rangeStats.hours}</span><span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">h {rangeStats.minutes}m</span></div>
           </div>
         </div>
       </div>
 
       <section className="bg-surface-container-lowest border border-outline-variant p-5 rounded-2xl shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <div className="space-y-1"><h3 className="text-sm font-black uppercase tracking-widest">经验趋势</h3><p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">最近 7 天的 XP 获取情况</p></div>
+          <div className="space-y-1"><h3 className="text-sm font-bold tracking-wide">经验趋势</h3><p className="text-[10px] font-semibold text-on-surface-variant/40 tracking-wide">最近 7 天的 XP 获取情况</p></div>
           <TrendingUp className="w-5 h-5 text-primary" />
         </div>
         <div className="h-48 w-full relative">
@@ -118,7 +118,7 @@ export function StatsView({ stats, history, timeRange, setTimeRange, isTimeRange
 
       <section className="bg-surface-container-lowest border border-outline-variant p-5 rounded-2xl shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <div className="space-y-1"><h3 className="text-sm font-black uppercase tracking-widest">专注分布</h3><p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">每日专注时长记录</p></div>
+          <div className="space-y-1"><h3 className="text-sm font-bold tracking-wide">专注分布</h3><p className="text-[10px] font-semibold text-on-surface-variant/40 tracking-wide">每日专注时长记录</p></div>
           <Activity className="w-5 h-5 text-violet-500" />
         </div>
         <div className="h-48 w-full relative">
@@ -137,12 +137,12 @@ export function StatsView({ stats, history, timeRange, setTimeRange, isTimeRange
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-2xl shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-amber-500"><Trophy className="w-4 h-4" /><span className="text-[10px] font-black uppercase tracking-widest">Bingo 连线</span></div>
-          <div className="flex items-baseline gap-1"><span className="text-2xl font-black tracking-tighter">{stats.bingosCount}</span><span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">次</span></div>
+          <div className="flex items-center gap-2 text-amber-500"><Trophy className="w-4 h-4" /><span className="text-[10px] font-bold tracking-wide">Bingo 连线</span></div>
+          <div className="flex items-baseline gap-1"><span className="text-2xl font-bold tracking-tight">{stats.bingosCount}</span><span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">次</span></div>
         </div>
         <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-2xl shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-primary"><Target className="w-4 h-4" /><span className="text-[10px] font-black uppercase tracking-widest">金色任务</span></div>
-          <div className="flex items-baseline gap-1"><span className="text-2xl font-black tracking-tighter">{stats.goldenTilesCompleted}</span><span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">个</span></div>
+          <div className="flex items-center gap-2 text-primary"><Target className="w-4 h-4" /><span className="text-[10px] font-bold tracking-wide">金色任务</span></div>
+          <div className="flex items-baseline gap-1"><span className="text-2xl font-bold tracking-tight">{stats.goldenTilesCompleted}</span><span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">个</span></div>
         </div>
       </div>
 

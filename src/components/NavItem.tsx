@@ -15,7 +15,7 @@ export function NavItem({ icon, label, isActive, onClick }: { icon: React.ReactN
       <div className={cn("transition-all duration-300", isActive && "scale-110")}>
         {icon}
       </div>
-      <span className="text-[9px] font-semibold mt-0.5 tracking-wider">{label}</span>
+      <span className="text-[9px] font-semibold mt-0.5 tracking-wide">{label}</span>
       {isActive && (
         <motion.div
           layoutId="nav-active"

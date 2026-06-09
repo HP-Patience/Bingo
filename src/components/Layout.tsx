@@ -196,7 +196,7 @@ export function Layout({ children, activeTab, onTabChange, user, onLoginClick, s
         <div className="flex justify-between items-center px-6 h-16">
           <div className="flex items-center gap-2 text-primary active:scale-95 transition-all cursor-pointer">
             <Bolt className="w-4 h-4" />
-            <span className="font-headline font-semibold text-sm uppercase tracking-tight">Life Bingo</span>
+            <span className="font-headline font-bold text-sm tracking-tight">Life Bingo</span>
           </div>
           {user ? (
             <div className="flex items-center gap-4">
@@ -211,7 +211,7 @@ export function Layout({ children, activeTab, onTabChange, user, onLoginClick, s
                     />
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest">{user.xp} / {user.nextLevelXp} XP</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 tracking-wide">{user.xp} / {user.nextLevelXp} XP</span>
               </div>
               <div className="flex items-center gap-1 bg-surface-container-low/50 px-2 py-0.5 rounded-full">
                 <Zap className="w-3 h-3 fill-primary" />
