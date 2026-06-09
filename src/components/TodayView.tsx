@@ -50,7 +50,7 @@ export function TodayView({ tiles, onToggleTile, onShuffle, onReset, onPomodoro,
         </p>
       </section>
 
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm mt-8">
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-3 shadow-sm mt-[67px]">
         <div className={cn(
         "grid gap-1",
         tiles.length === 3 && "grid-cols-3",
