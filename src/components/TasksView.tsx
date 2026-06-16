@@ -102,13 +102,17 @@ export function TasksView({
 
                 {expandedGroups[group.id] && (
                   <>
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="添加任务..." className="flex-1 bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:outline-none" value={newTaskNames[group.id] || ''} onChange={(e) => setNewTaskNames(prev => ({ ...prev, [group.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)} />
-                      <button onClick={() => handleAddTask(group.id)} className="bg-primary/10 text-primary p-2 rounded-xl hover:bg-primary/20 transition-colors"><Plus className="w-5 h-5" /></button>
-                      <button onClick={() => { const newSelected = new Set(selectedTaskIds); if (allSelected) { group.tasks.forEach(t => newSelected.delete(t.id)); } else { group.tasks.forEach(t => newSelected.add(t.id)); } setSelectedTaskIds(newSelected); }} className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 px-3">
-                        {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}{allSelected ? '取消' : '全选'}
-                      </button>
-                      <button onClick={() => { if (deleteMode.has(group.id)) { const newMode = new Set(deleteMode); newMode.delete(group.id); setDeleteMode(newMode); } else { setDeleteMode(new Set([...deleteMode, group.id])); } }} className={cn("p-2 rounded-xl transition-colors", deleteMode.has(group.id) ? "bg-red-500 text-white" : "text-on-surface-variant hover:text-red-500 hover:bg-red-500/10")}><Trash2 className="w-5 h-5" /></button>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <input type="text" placeholder="添加任务..." className="max-w-[50%] bg-surface-container-low border-none rounded-xl px-4 py-2 text-sm font-medium focus:outline-none" value={newTaskNames[group.id] || ''} onChange={(e) => setNewTaskNames(prev => ({ ...prev, [group.id]: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && handleAddTask(group.id)} />
+                        <button onClick={() => handleAddTask(group.id)} className="bg-primary/10 text-primary p-2 rounded-xl hover:bg-primary/20 transition-colors"><Plus className="w-5 h-5" /></button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { const newSelected = new Set(selectedTaskIds); if (allSelected) { group.tasks.forEach(t => newSelected.delete(t.id)); } else { group.tasks.forEach(t => newSelected.add(t.id)); } setSelectedTaskIds(newSelected); }} className="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 px-3">
+                          {allSelected ? <X className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}{allSelected ? '取消' : '全选'}
+                        </button>
+                        <button onClick={() => { if (deleteMode.has(group.id)) { const newMode = new Set(deleteMode); newMode.delete(group.id); setDeleteMode(newMode); } else { setDeleteMode(new Set([...deleteMode, group.id])); } }} className="p-2 text-on-surface-variant hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
