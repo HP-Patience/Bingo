@@ -33,15 +33,6 @@ export function CalendarView({ history, onBackToToday, onDeleteEntry, onEditEntr
 
   const selectedTasks = getTasksForDate(selectedDate);
 
-  const getHeatmapColor = (date: Date) => {
-    const count = getTasksForDate(date).length;
-    if (count === 0) return 'bg-surface-container-low';
-    if (count < 3) return 'bg-primary/20';
-    if (count < 6) return 'bg-primary/40';
-    if (count < 9) return 'bg-primary/70';
-    return 'bg-primary';
-  };
-
   const historyByDate = history.reduce((acc, entry) => {
     const dateStr = new Date(entry.completedAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
     if (!acc[dateStr]) acc[dateStr] = [];
@@ -93,9 +84,13 @@ export function CalendarView({ history, onBackToToday, onDeleteEntry, onEditEntr
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                   {days.map((day, idx) => (
-                    <div key={idx} onClick={() => day && setSelectedDate(day)} className={cn("aspect-square relative flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-all rounded-xl", !day && "invisible", day && isSameDay(day, selectedDate) && "ring-2 ring-primary ring-offset-2 ring-offset-surface-container-lowest", day && getHeatmapColor(day))}>
-                      {day?.getDate().toString().padStart(2, '0')}
-                      {day && isSameDay(day, new Date()) && <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full" />}
+                    <div key={idx} onClick={() => day && setSelectedDate(day)} className={cn("aspect-square relative flex flex-col items-center justify-center text-sm font-bold cursor-pointer transition-all rounded-xl", !day && "invisible", day && isSameDay(day, selectedDate) && "ring-2 ring-primary ring-offset-2 ring-offset-surface-container-lowest", day && "bg-surface-container-low")}>
+                      {day?.getDate()}
+                      {day && isSameDay(day, new Date()) ? (
+                        <span className="absolute bottom-0.5 text-[9px] font-bold text-primary leading-none">Today</span>
+                      ) : (
+                        day && getTasksForDate(day).length > 0 && <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full" />
+                      )}
                     </div>
                   ))}
                 </div>
